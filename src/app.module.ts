@@ -7,12 +7,10 @@ import { PropiedadModule } from './propiedad/propiedad.module';
 
 @Module({
   imports: [
-    // 1. Configura ConfigModule para cargar variables de entorno
     ConfigModule.forRoot({
-      isGlobal: true, // Hace que ConfigModule esté disponible en toda la aplicación
-      envFilePath: ['.env.development', '.env'], // Carga .env.development primero, luego .env
+      isGlobal: true,
+      envFilePath: ['.env.development', '.env'],
     }),
-    // 2. Configura TypeOrmModule para la conexión a la base de datos
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -20,15 +18,14 @@ import { PropiedadModule } from './propiedad/propiedad.module';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_DATABASE || 'arqview',
-      entities: [
-  
-      ],
-      synchronize: true, 
-      logging: false, 
+      entities: [__dirname + '/**/*.entity{.ts,.js}'], // Añadido para incluir entidades
+      synchronize: true,
+      dropSchema: true, // Recrea el esquema al iniciar
+      logging: true, // Activado para depuración
     }),
     PropiedadModule,
   ],
-  controllers: [AppController], // Aquí listarás tus controladores
-  providers: [AppService], // Aquí listarás tus servicios (lógica de negocio)
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

@@ -12,6 +12,7 @@ const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const typeorm_1 = require("@nestjs/typeorm");
 const config_1 = require("@nestjs/config");
+const propiedad_module_1 = require("./propiedad/propiedad.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -29,10 +30,12 @@ exports.AppModule = AppModule = __decorate([
                 username: process.env.DB_USERNAME || 'postgres',
                 password: process.env.DB_PASSWORD || 'postgres',
                 database: process.env.DB_DATABASE || 'arqview',
-                entities: [],
+                entities: [__dirname + '/**/*.entity{.ts,.js}'],
                 synchronize: true,
-                logging: false,
+                dropSchema: true,
+                logging: true,
             }),
+            propiedad_module_1.PropiedadModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
