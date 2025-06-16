@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config'; // Para variables de entorno
+import { PropiedadModule } from './propiedad/propiedad.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ConfigModule } from '@nestjs/config'; // Para variables de entorno
       synchronize: true, 
       logging: false, 
     }),
+    PropiedadModule,
   ],
   controllers: [AppController], // Aquí listarás tus controladores
   providers: [AppService], // Aquí listarás tus servicios (lógica de negocio)
