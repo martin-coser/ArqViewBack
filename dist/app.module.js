@@ -33,7 +33,7 @@ exports.AppModule = AppModule = __decorate([
                 entities: [__dirname + '/**/*.entity{.ts,.js}'],
                 synchronize: true,
                 dropSchema: true,
-                logging: true,
+                logging: false,
             }),
             propiedad_module_1.PropiedadModule,
         ],

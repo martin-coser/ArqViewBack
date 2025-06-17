@@ -21,7 +21,7 @@ import { PropiedadModule } from './propiedad/propiedad.module';
       entities: [__dirname + '/**/*.entity{.ts,.js}'], // Añadido para incluir entidades
       synchronize: true,
       dropSchema: true, // Recrea el esquema al iniciar
-      logging: true, // Activado para depuración
+      logging: false, // Activado para depuración
     }),
     PropiedadModule,
   ],
