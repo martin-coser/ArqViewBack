@@ -7,6 +7,12 @@ const typeorm_1 = require("typeorm");
 async function bootstrap() {
     const logger = new common_1.Logger('Bootstrap');
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    app.enableCors({
+        origin: 'http://localhost:4000',
+        methods: 'GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH',
+        credentials: true,
+    });
+    app.useGlobalPipes(new common_1.ValidationPipe());
     const port = process.env.PORT ?? 3000;
     await app.listen(port);
     logger.log(`🚀 Servidor corriendo en http://localhost:${port}`);

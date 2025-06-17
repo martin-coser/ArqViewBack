@@ -1,26 +1,52 @@
+import { IsNotEmpty, IsNumber, IsString } from "class-validator"
+
 export class CreatePropiedadDto {
 
+    @IsString()
+    @IsNotEmpty()
     nombre: string
 
+    @IsString()
+    @IsNotEmpty()
     descripcion:string
 
+    @IsString()
+    @IsNotEmpty()
     direccion: string 
     
-    localidad:number 
+    @IsNumber()
+    @IsNotEmpty()
+    localidad:number // foranea
     
+    @IsString()
+    @IsNotEmpty()
     precio:number
 
+    @IsNumber()
+    @IsNotEmpty()
     superficie:number 
 
-    tipoPropiedad:number 
+    @IsNumber()
+    @IsNotEmpty()
+    tipoPropiedad:number // foranea
 
-    tipoVisualizacion:number 
+    @IsNumber()
+    @IsNotEmpty()
+    tipoVisualizacion:number // foranea
 
-    estiloArquitectonico:number 
+    @IsNumber()
+    @IsNotEmpty()
+    estiloArquitectonico:number // foranea
 
+    @IsNumber()
+    @IsNotEmpty()
     cantidadBanios:number
 
+    @IsNumber()
+    @IsNotEmpty()
     cantidadDormitorios:number
-    
+
+    @IsNumber()
+    @IsNotEmpty()
     cantidadAmbientes:number
 }

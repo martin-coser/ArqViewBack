@@ -1,11 +1,21 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger } from '@nestjs/common';
-import { DataSource } from 'typeorm'; // Importa DataSource de TypeORM
+import { Logger, ValidationPipe } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
+
+  // Habilitar CORS para permitir el frontend en http://localhost:4000
+  app.enableCors({
+    origin: 'http://localhost:4000',
+    methods: 'GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH',
+    credentials: true,
+  });
+
+  // Habilitar validaciones globales
+  app.useGlobalPipes(new ValidationPipe());
 
   // Iniciar el servidor
   const port = process.env.PORT ?? 3000;
