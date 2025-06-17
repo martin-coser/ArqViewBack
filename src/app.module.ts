@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config'; // Para variables de entorno
 import { PropiedadModule } from './propiedad/propiedad.module';
+import { TipoDePropiedadModule } from './tipo-de-propiedad/tipo-de-propiedad.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { PropiedadModule } from './propiedad/propiedad.module';
       logging: false, // Activado para depuración
     }),
     PropiedadModule,
+    TipoDePropiedadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
