@@ -32,6 +32,8 @@ import { TipoDeVisualizacionModule } from './tipo-de-visualizacion/tipo-de-visua
     TipoDePropiedadModule,
     LocalidadModule,
     ProvinciaModule,
+    EstiloArquitectonicoModule,
+    TipoDeVisualizacionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
