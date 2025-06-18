@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config'; // Para variables de entorno
 import { PropiedadModule } from './propiedad/propiedad.module';
 import { TipoDePropiedadModule } from './tipo-de-propiedad/tipo-de-propiedad.module';
+import { LocalidadModule } from './localidad/localidad.module';
+import { ProvinciaModule } from './provincia/provincia.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { TipoDePropiedadModule } from './tipo-de-propiedad/tipo-de-propiedad.mod
     }),
     PropiedadModule,
     TipoDePropiedadModule,
+    LocalidadModule,
+    ProvinciaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
