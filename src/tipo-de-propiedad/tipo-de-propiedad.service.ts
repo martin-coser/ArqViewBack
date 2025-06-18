@@ -2,7 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { CreateTipoDePropiedadDto } from './dto/create-tipo-de-propiedad.dto';
 import { UpdateTipoDePropiedadDto } from './dto/update-tipo-de-propiedad.dto'; 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { TipoDePropiedad } from './entities/tipo-de-propiedad.entity';
 
 
