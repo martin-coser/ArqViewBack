@@ -14,14 +14,14 @@ export class TipoDeVisualizacionService {
   ){}
 
   async create(createTipoDeVisualizacionDto: CreateTipoDeVisualizacionDto):Promise<TipoDeVisualizacion> {
-    //Verifico no exista un estilo arquitectonico con el mismo nombre antes de crear.
+    //Verifico no exista un tipo de visualizacion con el mismo nombre antes de crear.
     const { nombre } = createTipoDeVisualizacionDto
     const tipoDeVisualizacionExistente = await this.tipoDeVisualizacionRepository.findOneBy({ nombre })
     if(tipoDeVisualizacionExistente) {
       throw new NotFoundException('El tipo de visualizacion ya existe')
     }
 
-    // Creo y guardo el estilo arquitectonico en la BD.
+    // Creo y guardo el tipo de visualizacion en la BD.
     const tipoDeVisualizacion = this.tipoDeVisualizacionRepository.create(createTipoDeVisualizacionDto)
     return await this.tipoDeVisualizacionRepository.save(tipoDeVisualizacion)
   }
