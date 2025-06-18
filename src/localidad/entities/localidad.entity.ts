@@ -1,4 +1,5 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Provincia } from "src/provincia/entities/provincia.entity";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class Localidad {
@@ -12,9 +13,8 @@ export class Localidad {
     @Column({ nullable: true})
     codigoPostal: number;
 
-    // @ManyToOne(() => Provincia)
-    // @JoinColumn({name: 'provincia_id'})
-    @Column()
-    provincia: number; // clave foranea a provincia. El tipo de dato real es Provincia, se cambiara al agregar la entidad Provincia.
+    @ManyToOne(() => Provincia , { eager: true })
+    @JoinColumn({name: 'provincia_id'})
+    provincia: Provincia; // clave foranea a provincia.
 
 }

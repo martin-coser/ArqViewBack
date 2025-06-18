@@ -1,4 +1,5 @@
 import { IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { Provincia } from "src/provincia/entities/provincia.entity";
 
 export class CreateLocalidadDto {
 
@@ -12,5 +13,5 @@ export class CreateLocalidadDto {
 
     @IsInt()
     @IsOptional()
-    provincia?: number; // clave foranea a provincia.
+    provincia?: Provincia; // clave foranea a provincia.
 }
