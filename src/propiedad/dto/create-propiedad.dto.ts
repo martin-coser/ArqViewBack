@@ -18,7 +18,7 @@ export class CreatePropiedadDto {
     @IsNotEmpty()
     localidad:number // foranea
     
-    @IsString()
+    @IsNumber()
     @IsNotEmpty()
     precio:number
 

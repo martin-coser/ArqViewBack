@@ -1,8 +1,8 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateTipoDePropiedadDto } from './create-tipo-de-propiedad.dto';
+import { CreateTipoDeVisualizacionDto } from './create-tipo-de-visualizacion.dto';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-export class UpdateTipoDePropiedadDto extends PartialType(CreateTipoDePropiedadDto) {
+export class UpdateTipoDeVisualizacionDto extends PartialType(CreateTipoDeVisualizacionDto) {
     @IsString()
     @IsNotEmpty()
     @IsOptional()
@@ -11,5 +11,4 @@ export class UpdateTipoDePropiedadDto extends PartialType(CreateTipoDePropiedadD
     @IsString()
     @IsOptional()
     descripcion?: string 
-
 }
