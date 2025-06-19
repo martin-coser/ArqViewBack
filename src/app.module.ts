@@ -24,8 +24,8 @@ import { TipoDeVisualizacionModule } from './tipo-de-visualizacion/tipo-de-visua
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_DATABASE || 'arqview',
       entities: [__dirname + '/**/*.entity{.ts,.js}'], // Añadido para incluir entidades
-      synchronize: true,
-      dropSchema: true, // Recrea el esquema al iniciar
+      synchronize: false,
+      dropSchema: false, // Recrea el esquema al iniciar
       logging: false, // Activado para depuración
     }),
     PropiedadModule,
