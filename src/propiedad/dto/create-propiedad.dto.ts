@@ -1,5 +1,5 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsString } from "class-validator"
-import { TipoVisualizacion } from "../entities/TipoVisualizacion.enum"
+import { IsArray, IsEnum, IsInt, IsNotEmpty, IsNumber, IsString } from "class-validator"
+import { TipoOperacion } from "../entities/TipoOperacion.enum"
 import { Type } from "class-transformer"
 
 export class CreatePropiedadDto {
@@ -34,10 +34,10 @@ export class CreatePropiedadDto {
     @Type(() => Number)
     tipoPropiedad:number // foranea
 
-    @IsEnum(TipoVisualizacion)
-    @IsNotEmpty()
-    tipoVisualizacion:TipoVisualizacion
-
+    @IsArray()
+    @IsInt({ each: true })
+    tipoVisualizaciones: number[]
+    
     @IsNumber()
     @IsNotEmpty()
     @Type(() => Number)
@@ -54,4 +54,8 @@ export class CreatePropiedadDto {
     @IsNumber()
     @IsNotEmpty()
     cantidadAmbientes:number
+
+    @IsEnum(TipoOperacion)
+    @IsNotEmpty()
+    tipoOperacion:TipoOperacion
 }

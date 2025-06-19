@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreatePropiedadDto } from './create-propiedad.dto';
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
-import { TipoVisualizacion } from '../entities/TipoVisualizacion.enum';
+import { IsArray, IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { TipoOperacion } from '../entities/TipoOperacion.enum';
 import { Type } from 'class-transformer';
 
 export class UpdatePropiedadDto extends PartialType(CreatePropiedadDto) {
@@ -43,10 +43,10 @@ export class UpdatePropiedadDto extends PartialType(CreatePropiedadDto) {
     @Type(() => Number)
     tipoPropiedad?:number // foranea
 
-    @IsEnum(TipoVisualizacion)
-    @IsNotEmpty()
+    @IsArray()
+    @IsInt({ each: true })
     @IsOptional()
-    tipoVisualizacion?:TipoVisualizacion 
+    tipoVisualizaciones: number[]
 
     @IsNumber()
     @IsNotEmpty()
@@ -68,4 +68,9 @@ export class UpdatePropiedadDto extends PartialType(CreatePropiedadDto) {
     @IsNotEmpty()
     @IsOptional()
     cantidadAmbientes?:number
+
+    @IsEnum(TipoOperacion)
+    @IsNotEmpty()
+    @IsOptional()
+    tipoOperacion?:TipoOperacion
 }

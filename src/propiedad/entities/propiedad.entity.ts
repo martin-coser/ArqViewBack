@@ -1,8 +1,10 @@
 import { EstiloArquitectonico } from "src/estilo-arquitectonico/entities/estilo-arquitectonico.entity"
 import { Localidad } from "src/localidad/entities/localidad.entity"
 import { TipoDePropiedad } from "src/tipo-de-propiedad/entities/tipo-de-propiedad.entity"
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
-import { TipoVisualizacion } from "./TipoVisualizacion.enum"
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
+import { TipoOperacion } from "./TipoOperacion.enum"
+import { TipoDeVisualizacion } from "src/tipo-de-visualizacion/entities/tipo-de-visualizacion.entity"
+
 
 @Entity()
 export class Propiedad {
@@ -33,11 +35,13 @@ export class Propiedad {
     @JoinColumn({ name: 'tipoDePropiedad_id' })
     tipoPropiedad:TipoDePropiedad 
 
-    @Column({
-    type: 'enum',
-    enum: TipoVisualizacion
+    @ManyToMany(() => TipoDeVisualizacion, { eager: true })
+    @JoinTable({
+        name: 'propiedad_tipo_visualizacion',
+        joinColumn: { name: 'propiedad_id', referencedColumnName: 'id' },
+        inverseJoinColumn: { name: 'tipo_visualizacion_id', referencedColumnName: 'id' },
     })
-    tipoVisualizacion: TipoVisualizacion;
+    tipoVisualizaciones: TipoDeVisualizacion[];
 
     @ManyToOne(() => EstiloArquitectonico, { eager: true })
     @JoinColumn({ name: 'estiloArquitectonico_id' })
@@ -51,5 +55,11 @@ export class Propiedad {
     
     @Column({ type: 'integer' })
     cantidadAmbientes:number
+
+    @Column({
+    type: 'enum',
+    enum: TipoOperacion
+    })
+    tipoOperacion: TipoOperacion;
 
 }
