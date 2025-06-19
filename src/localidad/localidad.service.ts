@@ -15,13 +15,11 @@ export class LocalidadService {
 
 
   async create(createLocalidadDto: CreateLocalidadDto): Promise<Localidad> {
-    // Verifico que no exista un tipo de propiedad con el mismo nombre antes de crear.
         const { nombre } = createLocalidadDto;
         const localidadExistente = await this.localidadRepository.findOneBy({ nombre });
         if (localidadExistente) {
           throw new NotFoundException('La localidad ya existe');
         } 
-        // Creo y guardo el tipo de propiedad en la BD.
         const localidad = this.localidadRepository.create(createLocalidadDto);
         return await this.localidadRepository.save(localidad);
   }

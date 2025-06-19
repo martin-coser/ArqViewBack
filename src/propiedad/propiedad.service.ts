@@ -3,29 +3,94 @@ import { CreatePropiedadDto } from './dto/create-propiedad.dto';
 import { UpdatePropiedadDto } from './dto/update-propiedad.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Propiedad } from './entities/propiedad.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { Localidad } from 'src/localidad/entities/localidad.entity';
+import { TipoDePropiedad } from 'src/tipo-de-propiedad/entities/tipo-de-propiedad.entity';
+import { EstiloArquitectonico } from 'src/estilo-arquitectonico/entities/estilo-arquitectonico.entity';
+import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-visualizacion.entity';
 
 @Injectable()
 export class PropiedadService {
 
-  constructor(
-    @InjectRepository(Propiedad)
-    private propiedadRepository: Repository<Propiedad>,
-  ){}
+constructor(
+  @InjectRepository(Propiedad)
+  private propiedadRepository: Repository<Propiedad>,
+
+  @InjectRepository(Localidad)
+  private localidadRepository: Repository<Localidad>,
+
+  @InjectRepository(TipoDePropiedad)
+  private tipoPropiedadRepository: Repository<TipoDePropiedad>,
+
+  @InjectRepository(EstiloArquitectonico)
+  private estiloArquitectonicoRepository: Repository<EstiloArquitectonico>,
+  @InjectRepository(TipoDeVisualizacion)
+  private tipoDeVisualizacionRepository: Repository<TipoDeVisualizacion>, // Agrega el repositorio
+) {}
+
 
   async create(createPropiedadDto: CreatePropiedadDto): Promise<Propiedad> {
+      const {
+        direccion,
+        localidad: localidadId,
+        tipoPropiedad: tipoPropiedadId,
+        estiloArquitectonico: estiloId,
+        tipoVisualizaciones: tipoVisualizacionIds, // Nombre corregido
+        nombre,
+        descripcion,
+        precio,
+        superficie,
+        cantidadBanios,
+        cantidadDormitorios,
+        cantidadAmbientes,
+        tipoOperacion,
+      } = createPropiedadDto;
 
-    //Verifico que no exista una direccion antes de crear la propiedad.
-    const { direccion } = createPropiedadDto
-    const propiedadExistente = await this.propiedadRepository.findOneBy({ direccion })
-    if (propiedadExistente){
-      throw new ConflictException('La direccion ya existe')
+      // Verifica si la dirección ya existe
+      const propiedadExistente = await this.propiedadRepository.findOneBy({ direccion });
+      if (propiedadExistente) {
+        throw new ConflictException('La dirección ya existe');
+      }
+
+      // Busca los objetos relacionados
+      const localidad = await this.localidadRepository.findOne({ where: { id: localidadId } });
+      if (!localidad) throw new NotFoundException(`Localidad con id ${localidadId} no existe`);
+
+      const tipoPropiedad = await this.tipoPropiedadRepository.findOne({ where: { id: tipoPropiedadId } });
+      if (!tipoPropiedad) throw new NotFoundException(`Tipo de propiedad con id ${tipoPropiedadId} no existe`);
+
+      const estiloArquitectonico = await this.estiloArquitectonicoRepository.findOne({ where: { id: estiloId } });
+      if (!estiloArquitectonico) throw new NotFoundException(`Estilo arquitectónico con id ${estiloId} no existe`);
+
+      // Busca los tipos de visualización
+      const tipoVisualizaciones = await this.tipoDeVisualizacionRepository.findBy({
+        id: In(tipoVisualizacionIds),
+      });
+      if (tipoVisualizaciones.length !== tipoVisualizacionIds.length) {
+        throw new NotFoundException(`Uno o más tipos de visualización no existen`);
+      }
+
+      // Crea la entidad
+      const propiedad = this.propiedadRepository.create({
+        nombre,
+        descripcion,
+        direccion,
+        localidad,
+        precio,
+        superficie,
+        tipoPropiedad,
+        tipoVisualizaciones, // Nombre corregido
+        estiloArquitectonico,
+        cantidadBanios,
+        cantidadDormitorios,
+        cantidadAmbientes,
+        tipoOperacion,
+      });
+
+      // Guarda la propiedad
+      return await this.propiedadRepository.save(propiedad);
     }
 
-    //Creo y guardo la propiedad en la BD.
-    const propiedad = this.propiedadRepository.create(createPropiedadDto)
-    return await this.propiedadRepository.save(propiedad)
-  }
 
   async findAll(): Promise<Propiedad[]> {
     return await this.propiedadRepository.find()
