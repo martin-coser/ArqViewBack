@@ -1,4 +1,6 @@
-import { IsNotEmpty, IsNumber, IsString } from "class-validator"
+import { IsArray, IsEnum, IsInt, IsNotEmpty, IsNumber, IsString } from "class-validator"
+import { TipoOperacion } from "../entities/TipoOperacion.enum"
+import { Type } from "class-transformer"
 
 export class CreatePropiedadDto {
 
@@ -16,6 +18,7 @@ export class CreatePropiedadDto {
     
     @IsNumber()
     @IsNotEmpty()
+    @Type(() => Number)
     localidad:number // foranea
     
     @IsNumber()
@@ -28,14 +31,16 @@ export class CreatePropiedadDto {
 
     @IsNumber()
     @IsNotEmpty()
+    @Type(() => Number)
     tipoPropiedad:number // foranea
 
+    @IsArray()
+    @IsInt({ each: true })
+    tipoVisualizaciones: number[]
+    
     @IsNumber()
     @IsNotEmpty()
-    tipoVisualizacion:number // foranea
-
-    @IsNumber()
-    @IsNotEmpty()
+    @Type(() => Number)
     estiloArquitectonico:number // foranea
 
     @IsNumber()
@@ -49,4 +54,8 @@ export class CreatePropiedadDto {
     @IsNumber()
     @IsNotEmpty()
     cantidadAmbientes:number
+
+    @IsEnum(TipoOperacion)
+    @IsNotEmpty()
+    tipoOperacion:TipoOperacion
 }
