@@ -6,21 +6,21 @@ export class Cliente {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @Column()
+    @Column({ type : 'varchar', length: 255 })
     nombre: string;
 
-    @Column()
+    @Column({ type : 'varchar', length: 255 })
     apellido: string;
 
-    @Column()
+    @Column({ type : 'date' })
     fechaNacimiento: Date;
 
-    @Column()
+    @Column({ type : 'varchar', length: 255 })
     direccion: string;
     
     /* @ManyToOne(() => Cuenta , { eager: true })
-        @JoinColumn({name: 'cuenta_id'})
-        provincia: Cuenta; // clave foranea a cuenta. */
+    @JoinColumn({name: 'cuenta_id'}) */
+    cuenta: number; // clave foranea a cuenta. */ 
 
     @ManyToOne(() => Localidad , { eager: true })
         @JoinColumn({name: 'localidad_id'})

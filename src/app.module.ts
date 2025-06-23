@@ -25,7 +25,7 @@ import { ClienteModule } from './cliente/cliente.module';
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_DATABASE || 'arqview',
       entities: [__dirname + '/**/*.entity{.ts,.js}'], // Añadido para incluir entidades
-      synchronize: false,
+      synchronize: true,
       dropSchema: false, // Recrea el esquema al iniciar
       logging: false, // Activado para depuración
     }),

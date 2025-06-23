@@ -20,9 +20,9 @@ export class UpdateClienteDto extends PartialType(CreateClienteDto) {
     @IsNotEmpty()
     direccion?: string;
 
-    //@IsNumber()
-    //@IsNotEmpty()
-    // cuenta?: Cuenta; // Clave foránea a cuenta, se mantiene opcional para permitir actualizaciones parciales.
+    @IsNumber()
+    @IsNotEmpty()
+    cuenta?: number;
     
     @IsNumber()
     @IsNotEmpty()

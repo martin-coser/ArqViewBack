@@ -11,19 +11,19 @@ export class CreateClienteDto {
     apellido: string;
     
     @IsNotEmpty()
-    @IsDate()
+    @IsString()
     fechaNacimiento: Date;
     
     @IsString()
     @IsNotEmpty()
     direccion: string;
 
+    @IsNotEmpty()
     @IsNumber()
-    @IsNotEmpty()   
-    //cuenta : Cuenta;
+    cuenta : number;   // clave foranea a cuenta. 
 
     @IsNumber()
     @IsNotEmpty()
-    localidad?: Localidad; // clave foranea a localidad.
+    localidad: Localidad; // clave foranea a localidad.
 
 }
