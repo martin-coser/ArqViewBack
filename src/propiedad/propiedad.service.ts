@@ -104,22 +104,73 @@ constructor(
     return propiedad;
   }
 
-  async update(id: number, updatePropiedadDto: UpdatePropiedadDto): Promise<Propiedad> {
+  async update( id: number, updatePropiedadDto: UpdatePropiedadDto,): Promise<Propiedad> {
+    
+    // Buscar la propiedad existente por su ID
+    const propiedadToUpdate = await this.propiedadRepository.findOne({where: { id },
+    // Cargar las relaciones necesarias para evitar problemas de referencia
+      relations: ['localidad', 'tipoPropiedad', 'estiloArquitectonico', 'tipoVisualizaciones'],
+    });
 
-    //Validacion de Direccion
-    const propiedad = await this.findOne(id);
+    if (!propiedadToUpdate) {
+      throw new NotFoundException(`Propiedad con ID ${id} no encontrada`);
+    }
 
-    //Comprueba si el DTO incluye una nueva direccion y si es diferente a la direccion actual de la propiedad.
-    if (updatePropiedadDto.direccion && updatePropiedadDto.direccion !== propiedad.direccion) {
-      const propiedadExistente = await this.propiedadRepository.findOneBy({
-        direccion: updatePropiedadDto.direccion,
-      });
-      if (propiedadExistente) {
-        throw new ConflictException('La direccion ya existe');
+    // Verificar si la nueva dirección ya existe en otra propiedad
+  
+    if (updatePropiedadDto.direccion && updatePropiedadDto.direccion !== propiedadToUpdate.direccion) {
+      const propiedadConMismaDireccion = await this.propiedadRepository.findOneBy({ direccion: updatePropiedadDto.direccion });
+      //si existe una propiedad con la misma dirección y no es la misma propiedad que estamos actualizando, lanzamos un error de conflicto
+      if (propiedadConMismaDireccion && propiedadConMismaDireccion.id !== id) {
+        throw new ConflictException('La nueva dirección ya está registrada en otra propiedad');
       }
     }
-    Object.assign(propiedad, updatePropiedadDto);
-    return this.propiedadRepository.save(propiedad);
+    // Actualizar los campos de la propiedad
+    Object.assign(propiedadToUpdate, updatePropiedadDto);
+
+    // Actualizar los campos que son relaciones (foráneas)
+    if (updatePropiedadDto.localidad !== undefined) {
+      const localidad = await this.localidadRepository.findOne({ where: { id: updatePropiedadDto.localidad } });
+      if (!localidad) {
+        throw new NotFoundException(`Localidad con id ${updatePropiedadDto.localidad} no existe`);
+      }
+      propiedadToUpdate.localidad = localidad;
+    }
+
+    if (updatePropiedadDto.tipoPropiedad !== undefined) {
+      const tipoPropiedad = await this.tipoPropiedadRepository.findOne({ where: { id: updatePropiedadDto.tipoPropiedad } });
+      if (!tipoPropiedad) {
+        throw new NotFoundException(`Tipo de propiedad con id ${updatePropiedadDto.tipoPropiedad} no existe`);
+      }
+      propiedadToUpdate.tipoPropiedad = tipoPropiedad;
+    }
+
+    if (updatePropiedadDto.estiloArquitectonico !== undefined) {
+      const estiloArquitectonico = await this.estiloArquitectonicoRepository.findOne({ where: { id: updatePropiedadDto.estiloArquitectonico } });
+      if (!estiloArquitectonico) {
+        throw new NotFoundException(`Estilo arquitectónico con id ${updatePropiedadDto.estiloArquitectonico} no existe`);
+      }
+      propiedadToUpdate.estiloArquitectonico = estiloArquitectonico;
+    }
+    // Actualizar las relaciones de tipoVisualizaciones
+    if (updatePropiedadDto.tipoVisualizaciones !== undefined) {
+      if (updatePropiedadDto.tipoVisualizaciones === null || updatePropiedadDto.tipoVisualizaciones.length === 0) {
+        propiedadToUpdate.tipoVisualizaciones = []; // Elimina todas las relaciones existentes
+      } else {
+        const tipoVisualizaciones = await this.tipoDeVisualizacionRepository.findBy({
+          id: In(updatePropiedadDto.tipoVisualizaciones),
+        });
+
+        // Asegúrate de que todos los IDs proporcionados existan
+        if (tipoVisualizaciones.length !== updatePropiedadDto.tipoVisualizaciones.length) {
+          throw new NotFoundException(`Uno o más tipos de visualización proporcionados no existen.`);
+        }
+        propiedadToUpdate.tipoVisualizaciones = tipoVisualizaciones;
+      }
+    }
+
+    // 5. Guardar los cambios en la base de datos
+    return await this.propiedadRepository.save(propiedadToUpdate);
   }
 
   async remove(id: number):Promise<void> {

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe } from '@nestjs/common';
 import { PropiedadService } from './propiedad.service';
 import { CreatePropiedadDto } from './dto/create-propiedad.dto';
 import { UpdatePropiedadDto } from './dto/update-propiedad.dto';
@@ -27,8 +27,8 @@ export class PropiedadController {
 
   @Patch('/update/:id')
   @HttpCode(HttpStatus.OK)
-  async update(@Param('id') id: string, @Body() updatePropiedadDto: UpdatePropiedadDto) {
-    return await this.propiedadService.update(+id, updatePropiedadDto);
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updatePropiedadDto: UpdatePropiedadDto) {
+    return await this.propiedadService.update(id, updatePropiedadDto);
   }
 
   @Delete('/remove/:id')
