@@ -9,8 +9,7 @@ import { LocalidadModule } from './localidad/localidad.module';
 import { ProvinciaModule } from './provincia/provincia.module';
 import { EstiloArquitectonicoModule } from './estilo-arquitectonico/estilo-arquitectonico.module';
 import { TipoDeVisualizacionModule } from './tipo-de-visualizacion/tipo-de-visualizacion.module';
-import { ClienteModule } from './cliente/cliente.module';
-import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -36,6 +35,7 @@ import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
     ProvinciaModule,
     EstiloArquitectonicoModule,
     TipoDeVisualizacionModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
