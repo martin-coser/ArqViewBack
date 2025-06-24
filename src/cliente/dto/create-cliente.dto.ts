@@ -1,4 +1,5 @@
 import { IsDate, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { Cuenta } from "src/auth/entities/cuenta.entity";
 import { Localidad } from "src/localidad/entities/localidad.entity";
 
 export class CreateClienteDto {
@@ -20,7 +21,7 @@ export class CreateClienteDto {
 
     @IsNotEmpty()
     @IsNumber()
-    cuenta : number;   // clave foranea a cuenta. 
+    cuenta : Cuenta;   // clave foranea a cuenta. 
 
     @IsNumber()
     @IsNotEmpty()
