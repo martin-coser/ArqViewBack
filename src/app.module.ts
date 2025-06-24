@@ -28,7 +28,6 @@ import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
       entities: [__dirname + '/**/*.entity{.ts,.js}'], // Añadido para incluir entidades
       synchronize: true,
       dropSchema: false, // Recrea el esquema al iniciar
-      //dropSchema: true, // Recrea el esquema al iniciar
       logging: false, // Activado para depuración
     }),
     PropiedadModule,

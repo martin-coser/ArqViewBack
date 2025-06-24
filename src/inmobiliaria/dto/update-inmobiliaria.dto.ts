@@ -6,16 +6,16 @@ import { Type } from 'class-transformer';
 export class UpdateInmobiliariaDto extends PartialType(CreateInmobiliariaDto) {
     @IsString()
     @IsNotEmpty()
-    nombre: string
+    nombre?: string
 
     @IsString()
     @IsNotEmpty()
-    direccion: string 
+    direccion?: string 
 
     @IsNumber()
     @IsNotEmpty()
     @Type(() => Number)
-    localidad:number // foranea
+    localidad?:number // foranea
 
-    cuenta:number
+    cuenta?:number
 }
