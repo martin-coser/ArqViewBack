@@ -10,6 +10,7 @@ import { ProvinciaModule } from './provincia/provincia.module';
 import { EstiloArquitectonicoModule } from './estilo-arquitectonico/estilo-arquitectonico.module';
 import { TipoDeVisualizacionModule } from './tipo-de-visualizacion/tipo-de-visualizacion.module';
 import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
       database: process.env.DB_DATABASE || 'arqview',
       entities: [__dirname + '/**/*.entity{.ts,.js}'], // Añadido para incluir entidades
       synchronize: true,
-      dropSchema: true, // Recrea el esquema al iniciar
+      dropSchema: false, // Recrea el esquema al iniciar
       logging: false, // Activado para depuración
     }),
     PropiedadModule,
@@ -36,6 +37,7 @@ import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
     EstiloArquitectonicoModule,
     TipoDeVisualizacionModule,
     InmobiliariaModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
