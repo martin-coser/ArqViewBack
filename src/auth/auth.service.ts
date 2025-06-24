@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cuenta } from './entities/cuenta.entity';
 import { Repository } from 'typeorm';
@@ -24,6 +24,17 @@ export class AuthService {
 
   async register(registerCuentaDto: RegisterCuentaDto): Promise<Cuenta> {
     const { nombreUsuario, password, email, rol } = registerCuentaDto
+    // Verificar si el nombre de usuario ya existe
+    const cuentaPorNombre = await this.cuentaRepository.findOne({ where: { nombreUsuario } });
+    if (cuentaPorNombre) {
+      throw new NotFoundException('El nombre de usuario ya está en uso');
+    }
+    // Verificar si el email ya existe
+    const cuentaPorEmail = await this.cuentaRepository.findOne({ where: { email } });
+    if (cuentaPorEmail) {
+      throw new NotFoundException('El email ya está en uso');
+    }
+    
     const hashedPassword = await bcrypt.hash(password, 10)
     const cuenta = this.cuentaRepository.create({
       nombreUsuario,
@@ -32,7 +43,6 @@ export class AuthService {
       rol,
       login: new Date()
     })
-
     await this.cuentaRepository.save(cuenta)
 
     return cuenta
@@ -62,6 +72,17 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
     };
+  }
+
+  async findAll(): Promise<Cuenta[]> {
+     await this.cuentaRepository.find({
+      relations: ['cliente', 'inmobiliaria'], // Cargar relaciones si es necesario
+});
+    const cuentas = await this.cuentaRepository.find();
+    if (!cuentas || cuentas.length === 0) {
+      throw new NotFoundException('No se encontraron cuentas');
+    }
+    return cuentas;
   }
 
 }
