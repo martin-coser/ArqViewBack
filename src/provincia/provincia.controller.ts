@@ -1,8 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { ProvinciaService } from './provincia.service';
 import { CreateProvinciaDto } from './dto/create-provincia.dto';
 import { UpdateProvinciaDto } from './dto/update-provincia.dto';
 import { Provincia } from './entities/provincia.entity';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/decoradores/roles.decorator';
 
 @Controller('provincia')
 export class ProvinciaController {
@@ -10,6 +13,8 @@ export class ProvinciaController {
 
   @Post('/create')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   async create(@Body() createProvinciaDto: CreateProvinciaDto) : Promise<Provincia> {
     return await this.provinciaService.create(createProvinciaDto);
   }
