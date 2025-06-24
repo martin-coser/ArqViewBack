@@ -1,4 +1,6 @@
+import { Type } from "class-transformer";
 import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { Cuenta } from "src/auth/entities/cuenta.entity";
 import { Localidad } from "src/localidad/entities/localidad.entity";
 
 export class CreateClienteDto {
@@ -20,10 +22,12 @@ export class CreateClienteDto {
 
     @IsNotEmpty()
     @IsNumber()
-    cuenta : number;   // clave foranea a cuenta. 
+    @Type(() => Number)
+    cuenta : Cuenta;   // clave foranea a cuenta. 
 
     @IsNumber()
     @IsNotEmpty()
+    @Type(() => Number)
     localidad: Localidad; // clave foranea a localidad.
 
 }

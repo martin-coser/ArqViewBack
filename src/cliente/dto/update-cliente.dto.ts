@@ -2,6 +2,7 @@ import { PartialType } from '@nestjs/mapped-types';
 import { CreateClienteDto } from './create-cliente.dto';
 import { Localidad } from 'src/localidad/entities/localidad.entity';
 import { IsDate, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { Cuenta } from 'src/auth/entities/cuenta.entity';
 
 export class UpdateClienteDto extends PartialType(CreateClienteDto) {
     @IsString()
@@ -22,7 +23,7 @@ export class UpdateClienteDto extends PartialType(CreateClienteDto) {
 
     @IsNumber()
     @IsNotEmpty()
-    cuenta?: number;
+    cuenta?: Cuenta;
     
     @IsNumber()
     @IsNotEmpty()

@@ -1,3 +1,4 @@
+import { Cuenta } from "src/auth/entities/cuenta.entity";
 import { Localidad } from "src/localidad/entities/localidad.entity";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
@@ -18,11 +19,11 @@ export class Cliente {
     @Column({ type : 'varchar', length: 255 })
     direccion: string;
     
-    /* @ManyToOne(() => Cuenta , { eager: true })
-    @JoinColumn({name: 'cuenta_id'}) */
-    cuenta: number; // clave foranea a cuenta. */ 
-
+    @ManyToOne(() => Cuenta , { eager: true })
+    @JoinColumn({name: 'cuenta_id'})
+    cuenta: Cuenta; // clave foranea a cuenta. */ 
+    
     @ManyToOne(() => Localidad , { eager: true })
-        @JoinColumn({name: 'localidad_id'})
-        localidad: Localidad; // clave foranea a localidad.
+    @JoinColumn({name: 'localidad_id'})
+    localidad: Localidad; // clave foranea a localidad.
 }

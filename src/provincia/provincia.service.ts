@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateProvinciaDto } from './dto/create-provincia.dto';
 import { UpdateProvinciaDto } from './dto/update-provincia.dto';
 import { In, Repository } from 'typeorm';
@@ -27,7 +27,7 @@ export class ProvinciaService {
   async findAll(): Promise<Provincia[]> {
   const provincias = await this.provinciaRepository.find();
   if (!provincias || provincias.length === 0) {
-    throw new Error('No se encontraron provincias');
+    throw new NotFoundException('No se encontraron provincias');
   }
   return provincias;
   }
@@ -35,7 +35,7 @@ export class ProvinciaService {
   async findOne(id: number) : Promise<Provincia> {
     const provincia =await this.provinciaRepository.findOneBy({ id });
     if(!provincia){
-      throw new Error(`No se encontró la provincia con id ${id}`);
+      throw new NotFoundException(`No se encontró la provincia con id ${id}`);
     }
     return provincia;
   }
@@ -43,7 +43,7 @@ export class ProvinciaService {
   async update(id: number, updateProvinciaDto: UpdateProvinciaDto) : Promise<Provincia> {
     const provincia =await this.findOne(id);
     if (!provincia) {
-      throw new Error(`No se encontró la provincia con id ${id}`);
+      throw new NotFoundException(`No se encontró la provincia con id ${id}`);
     }
     // Actualizo los campos de la provincia
     Object.assign(provincia, updateProvinciaDto);
@@ -54,7 +54,7 @@ export class ProvinciaService {
   async remove(id: number) : Promise<void> {
   const provincia = await this.findOne(id);
     if (!provincia) {
-      throw new Error(`No se encontró la provincia con id ${id}`);
+      throw new NotFoundException(`No se encontró la provincia con id ${id}`);
     }
     // Elimino la provincia de la BD.
     await this.provinciaRepository.delete(id);
