@@ -10,8 +10,6 @@ import { ProvinciaModule } from './provincia/provincia.module';
 import { EstiloArquitectonicoModule } from './estilo-arquitectonico/estilo-arquitectonico.module';
 import { TipoDeVisualizacionModule } from './tipo-de-visualizacion/tipo-de-visualizacion.module';
 import { AuthModule } from './auth/auth.module';
-import { ClienteModule } from './cliente/cliente.module';
-import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
 
 @Module({
   imports: [
@@ -38,8 +36,6 @@ import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
     EstiloArquitectonicoModule,
     TipoDeVisualizacionModule,
     AuthModule,
-    ClienteModule,
-    InmobiliariaModule
   ],
   controllers: [AppController],
   providers: [AppService],

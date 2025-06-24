@@ -8,8 +8,8 @@ import { Cliente } from './entities/cliente.entity';
 export class ClienteController {
   constructor(private readonly clienteService: ClienteService) {}
   
-  @HttpCode(HttpStatus.CREATED)
   @Post('/create')
+  @HttpCode(HttpStatus.CREATED)
   async create(@Body() createClienteDto: CreateClienteDto) : Promise<Cliente> {
     return await this.clienteService.create(createClienteDto);
   }

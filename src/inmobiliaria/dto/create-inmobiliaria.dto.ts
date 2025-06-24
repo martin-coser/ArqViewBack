@@ -16,5 +16,8 @@ export class CreateInmobiliariaDto {
     @Type(() => Number)
     localidad:number // foranea
 
+    @IsNumber()
+    @IsNotEmpty()
+    @Type(() => Number)
     cuenta:number
 }
