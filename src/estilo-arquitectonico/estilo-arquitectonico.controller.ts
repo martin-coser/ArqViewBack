@@ -1,7 +1,10 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
 import { EstiloArquitectonicoService } from './estilo-arquitectonico.service';
 import { CreateEstiloArquitectonicoDto } from './dto/create-estilo-arquitectonico.dto';
 import { UpdateEstiloArquitectonicoDto } from './dto/update-estilo-arquitectonico.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/decoradores/roles.decorator';
 
 @Controller('estiloArquitectonico')
 export class EstiloArquitectonicoController {
@@ -9,6 +12,8 @@ export class EstiloArquitectonicoController {
 
   @Post('/create')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   async create(@Body() createEstiloArquitectonicoDto: CreateEstiloArquitectonicoDto) {
     return await this.estiloArquitectonicoService.create(createEstiloArquitectonicoDto);
   }
@@ -27,12 +32,16 @@ export class EstiloArquitectonicoController {
 
   @Patch('/update/:id')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   async update(@Param('id') id: string, @Body() updateEstiloArquitectonicoDto: UpdateEstiloArquitectonicoDto) {
     return await this.estiloArquitectonicoService.update(+id, updateEstiloArquitectonicoDto);
   }
 
   @Delete('/remove/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   async remove(@Param('id') id: string) {
     return await this.estiloArquitectonicoService.remove(+id);
   }

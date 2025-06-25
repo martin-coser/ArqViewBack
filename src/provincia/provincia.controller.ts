@@ -33,11 +33,15 @@ export class ProvinciaController {
 
   @Patch('/update/:id')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateProvinciaDto: UpdateProvinciaDto) : Promise<Provincia> {
     return await this.provinciaService.update(id, updateProvinciaDto);
   }
 
   @Delete('/remove/:id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN')
   async remove(@Param('id') id: number) : Promise<void> {
     await this.provinciaService.remove(id);
   }

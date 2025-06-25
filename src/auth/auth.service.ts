@@ -75,9 +75,6 @@ export class AuthService {
   }
 
   async findAll(): Promise<Cuenta[]> {
-     await this.cuentaRepository.find({
-      relations: ['cliente', 'inmobiliaria'], // Cargar relaciones si es necesario
-});
     const cuentas = await this.cuentaRepository.find();
     if (!cuentas || cuentas.length === 0) {
       throw new NotFoundException('No se encontraron cuentas');
