@@ -21,8 +21,6 @@ export class LocalidadController {
 
   @Get('/findAll')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN','INMOBILIARIA')
   async findAll() : Promise<Localidad[]> {
     return await this.localidadService.findAll();
   }
