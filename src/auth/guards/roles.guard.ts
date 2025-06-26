@@ -1,30 +1,26 @@
-import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { ROLES_KEY } from 'src/decoradores/roles.decorator';
+
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-
-  // El Reflector nos permite acceder a los metadatos definidos con @SetMetadata (o decoradores personalizados como @Roles)
   constructor(private reflector: Reflector) {}
 
-  // Este método se ejecuta automáticamente antes de entrar a una ruta protegida
   canActivate(context: ExecutionContext): boolean {
+    // Obtener los roles requeridos para la ruta actual
+    const requiredRoles = this.reflector.get<string[]>(ROLES_KEY, context.getHandler());
 
-    // Obtenemos el rol requerido para la ruta actual (si fue definido con @SetMetadata o @Roles)
-    const requiredRole = this.reflector.get<string>('role', context.getHandler());
-
-    // Si no se especificó ningún rol, se permite el acceso (la ruta es pública o no restringida por rol)
-    if (!requiredRole) {
+    // Si no se especificaron roles, permitir el acceso
+    if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
 
-    // Obtenemos el objeto request de la petición HTTP actual
+    // Obtener el objeto request y el usuario autenticado
     const request = context.switchToHttp().getRequest();
-
-    // Extraemos el usuario autenticado del request (esto lo establece previamente JwtStrategy)
     const user = request.user;
 
-    // Validamos que el usuario exista y que su rol coincida con el rol requerido para la ruta
-    return user && user.rol === requiredRole;
+    // Verificar que el usuario existe y que su rol está en la lista de roles permitidos
+    return user && user.rol && requiredRoles.includes(user.rol);
   }
 }

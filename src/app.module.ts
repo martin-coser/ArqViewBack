@@ -13,6 +13,7 @@ import { AuthModule } from './auth/auth.module';
 import { ClienteModule } from './cliente/cliente.module';
 import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -38,8 +39,8 @@ import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
     EstiloArquitectonicoModule,
     TipoDeVisualizacionModule,
     AuthModule,
-    ClienteModule,
-    InmobiliariaModule
+    InmobiliariaModule,
+    ClienteModule
   ],
   controllers: [AppController],
   providers: [AppService],
