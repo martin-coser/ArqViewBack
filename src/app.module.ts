@@ -12,6 +12,7 @@ import { TipoDeVisualizacionModule } from './tipo-de-visualizacion/tipo-de-visua
 import { AuthModule } from './auth/auth.module';
 import { ClienteModule } from './cliente/cliente.module';
 import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
+import { Imagen2dModule } from './imagen2d/imagen2d.module';
 
 
 @Module({
@@ -29,7 +30,7 @@ import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
       database: process.env.DB_DATABASE || 'arqview',
       entities: [__dirname + '/**/*.entity{.ts,.js}'], // Añadido para incluir entidades
       synchronize: true,
-      dropSchema: true, // Recrea el esquema al iniciar
+      dropSchema: false, // Recrea el esquema al iniciar
       logging: false, // Activado para depuración
     }),
     PropiedadModule,
@@ -40,7 +41,8 @@ import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
     TipoDeVisualizacionModule,
     AuthModule,
     InmobiliariaModule,
-    ClienteModule
+    ClienteModule,
+    Imagen2dModule
   ],
   controllers: [AppController],
   providers: [AppService],
