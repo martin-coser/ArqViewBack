@@ -2,10 +2,15 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { NestExpressApplication } from '@nestjs/platform-express'; // Necesario para useStaticAssets
+import { join } from 'path'; // Necesario para construir la ruta
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule); // Tipamos como NestExpressApplication
+
+  // Configurar archivos estáticos para la carpeta imagenes2d
+  app.useStaticAssets(join(__dirname, '..', 'imagenes2d'), { prefix: '/imagenes2d/' });
 
   // Habilitar CORS para permitir el frontend en http://localhost:4000
   app.enableCors({
@@ -25,7 +30,6 @@ async function bootstrap() {
   // === Verificar conexión a la base de datos usando TypeORM de forma segura ===
   try {
     const dataSource = app.get(DataSource); // Obtener la instancia de DataSource inyectada por TypeORM
-  
     if (dataSource.isInitialized) {
       logger.log('✅ Conexión a la base de datos establecida con éxito.');
     } else {

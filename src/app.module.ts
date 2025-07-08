@@ -12,6 +12,8 @@ import { TipoDeVisualizacionModule } from './tipo-de-visualizacion/tipo-de-visua
 import { AuthModule } from './auth/auth.module';
 import { ClienteModule } from './cliente/cliente.module';
 import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
+import { Imagen2dModule } from './imagen2d/imagen2d.module';
+
 
 @Module({
   imports: [
@@ -40,6 +42,9 @@ import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
     ClienteModule,
     InmobiliariaModule,
     AuthModule,
+    InmobiliariaModule,
+    ClienteModule,
+    Imagen2dModule
   ],
   controllers: [AppController],
   providers: [AppService],

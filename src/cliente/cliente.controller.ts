@@ -1,15 +1,18 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { ClienteService } from './cliente.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { Cliente } from './entities/cliente.entity';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/decoradores/roles.decorator';
 
 @Controller('cliente')
 export class ClienteController {
   constructor(private readonly clienteService: ClienteService) {}
   
-  @HttpCode(HttpStatus.CREATED)
   @Post('/create')
+  @HttpCode(HttpStatus.CREATED)
   async create(@Body() createClienteDto: CreateClienteDto) : Promise<Cliente> {
     return await this.clienteService.create(createClienteDto);
   }
@@ -28,12 +31,16 @@ export class ClienteController {
 
   @HttpCode(HttpStatus.OK)
   @Patch('/update/:id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('CLIENTE')
   update(@Param('id', ParseIntPipe) id: number, @Body() updateClienteDto: UpdateClienteDto) : Promise<Cliente> {
     return this.clienteService.update(id, updateClienteDto);
   }
   
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete('/remove/:id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN','CLIENTE')
   remove(@Param('id', ParseIntPipe) id: number) : Promise<void> {
     return this.clienteService.remove(id);
   }
