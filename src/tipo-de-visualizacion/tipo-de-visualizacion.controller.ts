@@ -20,8 +20,6 @@ export class TipoDeVisualizacionController {
 
   @Get('/findAll')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN','INMOBILIARIA')
   async findAll() {
     return await this.tipoDeVisualizacionService.findAll();
   }
