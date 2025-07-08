@@ -57,4 +57,15 @@ export class Imagen2dService {
     // Eliminar la entrada de la base de datos
     await this.imagen2dRepository.remove(imagen);
   }
+
+  async updateDescription(id: number, descripcion: string): Promise<Imagen2d> {
+  const imagen = await this.imagen2dRepository.findOneBy({ id });
+
+  if (!imagen) {
+    throw new NotFoundException(`Imagen con ID ${id} no encontrada.`);
+  }
+
+  imagen.descripcion = descripcion;
+  return this.imagen2dRepository.save(imagen);
+  }
 }
