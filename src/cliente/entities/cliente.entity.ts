@@ -1,5 +1,5 @@
 import { Cuenta } from "src/auth/entities/cuenta.entity";
-import { listaDeInteres } from "src/lista-de-interes/entities/lista-de-intere.entity";
+import { ListaDeInteres } from "src/lista-de-interes/entities/lista-de-interes.entity";
 import { Localidad } from "src/localidad/entities/localidad.entity";
 
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
@@ -29,6 +29,6 @@ export class Cliente {
     @JoinColumn({name: 'localidad_id'})
     localidad: Localidad; // clave foranea a localidad.
 
-    @OneToMany(() => listaDeInteres, (listaDeInteres: listaDeInteres) => listaDeInteres.cliente)
-    intereses: listaDeInteres[]; 
+    @OneToMany(() => ListaDeInteres, (listaDeInteres: ListaDeInteres) => listaDeInteres.cliente)
+    intereses: ListaDeInteres[]; 
 }

@@ -6,7 +6,7 @@ import { Propiedad } from '../../propiedad/entities/propiedad.entity'; // ✅ As
 
 @Entity()
 @Unique(['cliente', 'propiedad']) // Asegura que un cliente no pueda tener el mismo interés en la misma propiedad más de una vez
-export class listaDeInteres {
+export class ListaDeInteres {
     
     @PrimaryGeneratedColumn()
     id: number;

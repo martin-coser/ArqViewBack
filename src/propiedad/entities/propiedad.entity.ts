@@ -4,7 +4,7 @@ import { TipoDePropiedad } from "src/tipo-de-propiedad/entities/tipo-de-propieda
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { TipoOperacion } from "./TipoOperacion.enum"
 import { TipoDeVisualizacion } from "src/tipo-de-visualizacion/entities/tipo-de-visualizacion.entity"
-import { listaDeInteres } from "src/lista-de-interes/entities/lista-de-intere.entity"
+import { ListaDeInteres } from "src/lista-de-interes/entities/lista-de-interes.entity"
 import { Inmobiliaria } from "src/inmobiliaria/entities/inmobiliaria.entity"
 
 
@@ -70,8 +70,8 @@ export class Propiedad {
     @Column({ type: 'double precision', nullable: true })
     longitud: number;
 
-    @OneToMany(() => listaDeInteres, listaDeInteres => listaDeInteres.propiedad)
-    intereses: listaDeInteres[];
+    @OneToMany(() => ListaDeInteres, listaDeInteres => listaDeInteres.propiedad)
+    intereses: ListaDeInteres[];
 
     @ManyToOne(() => Inmobiliaria, { eager: true })
     @JoinColumn({ name: 'inmobiliaria_id' })
