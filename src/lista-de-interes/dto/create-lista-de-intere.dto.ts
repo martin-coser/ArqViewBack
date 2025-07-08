@@ -1,5 +1,14 @@
-export class CreateListaDeIntereDto {
+import { Type } from "class-transformer";
+import { ArrayMinSize, IsArray, IsInt, IsNumber, IsOptional } from "class-validator";
 
+export class CreateListaDeInteresDto {
+
+    @IsOptional() // La lista puede crearse vacía inicialmente
+    @IsArray({ message: 'Las propiedades deben ser un array de IDs.' })
+    @IsNumber({}, { each: true, message: 'Cada ID de propiedad debe ser un número.' })
+    @IsInt({ each: true, message: 'Cada ID de propiedad debe ser un número entero.' })
+    @Type(() => Number) 
+    propiedadIds?: number[];
     
 
 }
