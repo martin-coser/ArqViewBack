@@ -62,4 +62,10 @@ export class Propiedad {
     })
     tipoOperacion: TipoOperacion;
 
+    @Column({ type: 'double precision', nullable: true })
+    latitud: number;
+
+    @Column({ type: 'double precision', nullable: true })
+    longitud: number;
+
 }
