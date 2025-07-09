@@ -20,8 +20,6 @@ export class PropiedadController {
 
   @Get('/findAll')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('CLIENTE','INMOBILIARIA')
   async findAll() {
     return await this.propiedadService.findAll();
   }

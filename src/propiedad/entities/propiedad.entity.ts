@@ -1,9 +1,11 @@
 import { EstiloArquitectonico } from "src/estilo-arquitectonico/entities/estilo-arquitectonico.entity"
 import { Localidad } from "src/localidad/entities/localidad.entity"
 import { TipoDePropiedad } from "src/tipo-de-propiedad/entities/tipo-de-propiedad.entity"
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm"
 import { TipoOperacion } from "./TipoOperacion.enum"
 import { TipoDeVisualizacion } from "src/tipo-de-visualizacion/entities/tipo-de-visualizacion.entity"
+import { ListaDeInteres } from "src/lista-de-interes/entities/lista-de-interes.entity"
+import { Inmobiliaria } from "src/inmobiliaria/entities/inmobiliaria.entity"
 
 
 @Entity()
@@ -62,4 +64,16 @@ export class Propiedad {
     })
     tipoOperacion: TipoOperacion;
 
+    @Column({ type: 'double precision', nullable: true })
+    latitud: number;
+
+    @Column({ type: 'double precision', nullable: true })
+    longitud: number;
+
+    @OneToMany(() => ListaDeInteres, listaDeInteres => listaDeInteres.propiedad)
+    intereses: ListaDeInteres[];
+
+    @ManyToOne(() => Inmobiliaria, { eager: true })
+    @JoinColumn({ name: 'inmobiliaria_id' })
+    inmobiliaria:Inmobiliaria 
 }
