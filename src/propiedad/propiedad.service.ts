@@ -35,7 +35,7 @@ constructor(
         localidad: localidadId,
         tipoPropiedad: tipoPropiedadId,
         estiloArquitectonico: estiloId,
-        tipoVisualizaciones: tipoVisualizacionIds, // Nombre corregido
+        tipoVisualizaciones: tipoVisualizacionIds, 
         nombre,
         descripcion,
         precio,
@@ -44,6 +44,9 @@ constructor(
         cantidadDormitorios,
         cantidadAmbientes,
         tipoOperacion,
+        latitud,
+        longitud,
+        inmobiliaria_id, // foranea, id de la inmobiliaria que publica la propiedad
       } = createPropiedadDto;
 
       // Verifica si la dirección ya existe
@@ -85,6 +88,9 @@ constructor(
         cantidadDormitorios,
         cantidadAmbientes,
         tipoOperacion,
+        latitud,
+        longitud,
+        inmobiliaria: { id: inmobiliaria_id }, // Asigna la inmobiliaria por su ID
       });
 
       // Guarda la propiedad
