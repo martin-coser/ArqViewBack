@@ -1,4 +1,4 @@
-import { Controller, Post, UploadedFile, UseInterceptors, Body, Delete, HttpCode, HttpStatus, Param, Patch } from '@nestjs/common';
+import { Controller, Post, UploadedFile, UseInterceptors, Body, Delete, HttpCode, HttpStatus, Param, Patch, Get } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Imagen2dService } from './imagen2d.service';
 import { UploadImagen2dDto } from './dto/upload-imagen2d.dto';
@@ -7,6 +7,12 @@ import { Imagen2d } from './entities/imagen2d.entity';
 @Controller('imagen2d')
 export class Imagen2dController {
   constructor(private readonly imagen2dService: Imagen2dService) {}
+
+  // aplicar metodo findByPropiedad del servicio
+  @Get('/findByPropiedad/:id')
+  async findByPropiedad(@Param('id') id: number): Promise<Imagen2d[]> {
+    return this.imagen2dService.findByPropiedad(id);
+  }
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))

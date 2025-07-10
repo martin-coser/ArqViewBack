@@ -80,4 +80,21 @@ export class Imagen2dService {
   imagen.descripcion = descripcion;
   return this.imagen2dRepository.save(imagen);
   }
+
+  async findByPropiedad(propiedadId: number): Promise<Imagen2d[]> {
+    // Verificar si la propiedad existe
+    const propiedad = await this.propiedadRepository.findOneBy({ id: propiedadId });
+
+    if (!propiedad) {
+      throw new NotFoundException(`Propiedad con ID ${propiedadId} no encontrada.`);
+    }
+
+    // Buscar todas las imágenes asociadas a la propiedad
+    const imagenes = await this.imagen2dRepository.find({
+      where: { propiedad: { id: propiedadId } },
+    });
+
+    return imagenes;
+  }
+
 }
