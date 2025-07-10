@@ -6,10 +6,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Imagen2d } from './entities/imagen2d.entity';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Imagen2d]),
+    TypeOrmModule.forFeature([Imagen2d, Propiedad]),
     MulterModule.register({
       storage: diskStorage({
         destination: './imagenes2d', // Carpeta donde se guardan las imágenes
