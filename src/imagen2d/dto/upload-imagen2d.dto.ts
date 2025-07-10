@@ -1,3 +1,13 @@
+import { Type } from "class-transformer";
+import { IsNotEmpty, IsNumber, IsString } from "class-validator";
+
 export class UploadImagen2dDto {
-  descripcion?: string; // Opcional
+
+  @IsString()
+  descripcion: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  @Type(() => Number)
+  propiedad: number;
 }

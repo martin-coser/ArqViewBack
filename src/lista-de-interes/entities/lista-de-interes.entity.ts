@@ -1,25 +1,28 @@
-// src/lista-de-interes/entities/interes-propiedad.entity.ts
 
-import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Column, Unique } from 'typeorm';
-import { Cliente } from '../../cliente/entities/cliente.entity'; // ✅ Asegúrate de que esta ruta sea correcta para tu entidad Cliente
-import { Propiedad } from '../../propiedad/entities/propiedad.entity'; // ✅ Asegúrate de que esta ruta sea correcta para tu entidad Propiedad
+import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Column, Unique, OneToOne, ManyToMany, JoinTable } from 'typeorm';
+import { Cliente } from '../../cliente/entities/cliente.entity';
+import { Propiedad } from '../../propiedad/entities/propiedad.entity'; 
+import { IsString } from 'class-validator';
 
 @Entity()
-@Unique(['cliente', 'propiedad']) // Asegura que un cliente no pueda tener el mismo interés en la misma propiedad más de una vez
 export class ListaDeInteres {
     
     @PrimaryGeneratedColumn()
     id: number;
-
-    @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-    fechaAgregado: Date;
-
-    @ManyToOne(() => Cliente, cliente => cliente.intereses, { eager: true, onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'clienteId' }) // La columna FK en esta tabla será 'clienteId'
+    
+    @Column({ type: 'varchar', length: 255, nullable: false, default: 'Mis Favoritas' })
+    @IsString({ message: 'El nombre debe ser una cadena de texto.' })
+    nombre: string;
+    
+    @OneToOne(() => Cliente, cliente => cliente.listaDeInteres, { onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'clienteId', referencedColumnName: 'id' })
     cliente: Cliente;
 
-    @ManyToOne(() => Propiedad, propiedad => propiedad.intereses, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'propiedadId' }) //  Esta es la FK propiedadId
-    propiedad: Propiedad;
-
+    @ManyToMany(() => Propiedad, propiedad => propiedad.listasDeInteres)
+    @JoinTable({
+    name: 'lista_de_interes_propiedades',
+    joinColumn: { name: 'listaDeInteresId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'propiedadId', referencedColumnName: 'id' },
+  })
+  propiedades: Propiedad[];
 }

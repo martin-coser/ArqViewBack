@@ -2,7 +2,7 @@ import { Cuenta } from "src/auth/entities/cuenta.entity";
 import { ListaDeInteres } from "src/lista-de-interes/entities/lista-de-interes.entity";
 import { Localidad } from "src/localidad/entities/localidad.entity";
 
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class Cliente {
@@ -29,6 +29,6 @@ export class Cliente {
     @JoinColumn({name: 'localidad_id'})
     localidad: Localidad; // clave foranea a localidad.
 
-    @OneToMany(() => ListaDeInteres, (listaDeInteres: ListaDeInteres) => listaDeInteres.cliente)
-    intereses: ListaDeInteres[]; 
+    @OneToOne(() => ListaDeInteres, listaDeInteres => listaDeInteres.cliente, { cascade: ['insert', 'update', 'remove'] })
+    listaDeInteres: ListaDeInteres;
 }

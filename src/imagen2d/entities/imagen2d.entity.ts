@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Imagen2d {
@@ -10,4 +11,9 @@ export class Imagen2d {
 
   @Column({ nullable: true }) // Permitimos que sea opcional
   descripcion: string;
+
+  //muchas imagenes pertecen a una propiedad
+  @ManyToOne(() => Propiedad, {eager: true})
+  @JoinColumn({ name: 'propiedad_id' })
+  propiedad: Propiedad
 }

@@ -70,4 +70,9 @@ export class CreatePropiedadDto {
     @Max(180, { message: 'La longitud debe ser menor o igual a 180.' })
     @Type(() => Number) 
     longitud: number;
+
+    @IsInt()
+    @IsNotEmpty()
+    inmobiliaria_id: number // foranea, id de la inmobiliaria que publica la propiedad   
+
 }

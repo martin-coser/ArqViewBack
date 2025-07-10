@@ -26,8 +26,6 @@ export class PropiedadController {
 
   @Get('/findOne/:id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('CLIENTE','INMOBILIARIA')
   async findOne(@Param('id') id: string) {
     return await this.propiedadService.findOne(+id);
   }
