@@ -4,7 +4,6 @@ import { IsNotEmpty, IsNumber, IsString } from "class-validator";
 export class UploadImagen2dDto {
 
   @IsString()
-  @IsNotEmpty()
   descripcion: string;
 
   @IsNumber()
