@@ -5,18 +5,30 @@ import { Imagen2d } from './entities/imagen2d.entity';
 import { UploadImagen2dDto } from './dto/upload-imagen2d.dto';
 import * as fs from 'fs'; // Importa el módulo 'fs' para operaciones de archivos
 import * as path from 'path'; // Importa el módulo 'path' para resolver rutas
+import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 
 @Injectable()
 export class Imagen2dService {
   constructor(
     @InjectRepository(Imagen2d)
     private readonly imagen2dRepository: Repository<Imagen2d>,
+    @InjectRepository(Propiedad)
+    private readonly propiedadRepository: Repository<Propiedad>,
   ) {}
 
   async upload(file: Express.Multer.File, uploadImagen2dDto?: UploadImagen2dDto): Promise<{ imageUrl: string }> {
     // Crear una nueva instancia de Imagen2d
     const imagen = new Imagen2d();
     imagen.filePath = `/imagenes2d/${file.filename}`; // Ruta pública de la imagen
+
+    const propiedad = await this.propiedadRepository.findOneBy({ id: uploadImagen2dDto?.propiedad });
+
+    if (!propiedad) {
+      throw new NotFoundException(`Propiedad con ID ${uploadImagen2dDto?.propiedad} no encontrada.`);
+    }
+
+    imagen.propiedad = propiedad; 
+
     if (uploadImagen2dDto?.descripcion) {
       imagen.descripcion = uploadImagen2dDto.descripcion; // Asignar descripción si se proporciona
     }
