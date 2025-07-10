@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { CreateListaDeIntereDto } from './dto/create-lista-de-intere.dto';
-import { UpdateListaDeIntereDto } from './dto/update-lista-de-intere.dto';
+import { CreateListaDeInteresDto } from './dto/create-lista-de-intere.dto';
+import { UpdateListaDeInteresDto } from './dto/update-lista-de-intere.dto';
+
 
 @Injectable()
 export class ListaDeInteresService {
-  create(createListaDeIntereDto: CreateListaDeIntereDto) {
+  create(createListaDeIntereDto: CreateListaDeInteresDto) {
     return 'This action adds a new listaDeIntere';
   }
 
@@ -16,7 +17,7 @@ export class ListaDeInteresService {
     return `This action returns a #${id} listaDeIntere`;
   }
 
-  update(id: number, updateListaDeIntereDto: UpdateListaDeIntereDto) {
+  update(id: number, updateListaDeIntereDto: UpdateListaDeInteresDto) {
     return `This action updates a #${id} listaDeIntere`;
   }
 

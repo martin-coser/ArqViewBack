@@ -70,10 +70,10 @@ export class Propiedad {
     @Column({ type: 'double precision', nullable: true })
     longitud: number;
 
-    @OneToMany(() => ListaDeInteres, listaDeInteres => listaDeInteres.propiedad)
-    intereses: ListaDeInteres[];
-
     @ManyToOne(() => Inmobiliaria, { eager: true })
     @JoinColumn({ name: 'inmobiliaria_id' })
     inmobiliaria:Inmobiliaria 
+
+    @ManyToMany(() => ListaDeInteres, listaDeInteres => listaDeInteres.propiedades)
+    listasDeInteres: ListaDeInteres[];
 }

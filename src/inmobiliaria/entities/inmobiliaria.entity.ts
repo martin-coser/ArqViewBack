@@ -10,7 +10,7 @@ export class Inmobiliaria {
     @Column({type: 'varchar' , length: 255})
     nombre: string
 
-    @Column({unique: true, type: 'varchar', length: 255 })
+    @Column({ type: 'varchar', length: 255 })
     direccion: string // uruguay 1340
 
 
