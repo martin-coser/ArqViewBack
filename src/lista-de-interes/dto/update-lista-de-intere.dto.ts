@@ -1,9 +1,11 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateListaDeInteresDto } from './create-lista-de-intere.dto';
-import { IsArray, IsInt, IsNumber, IsOptional } from 'class-validator';
+import { IsArray, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateListaDeInteresDto extends PartialType(CreateListaDeInteresDto) {
+        @IsString({ message: 'El nombre debe ser una cadena de texto.' })
+        nombre?: string | undefined
 
         @IsOptional() // La lista puede crearse vacía inicialmente
         @IsArray({ message: 'Las propiedades deben ser un array de IDs.' })
