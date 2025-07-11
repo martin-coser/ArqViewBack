@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Cliente } from 'src/cliente/entities/cliente.entity';
+import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Cuenta {
@@ -26,4 +27,7 @@ export class Cuenta {
 
   @Column({ type: 'timestamp', nullable: true })
   logout: Date;
+
+  @OneToOne(() => Cliente, cliente => cliente.cuenta) 
+  cliente: Cliente;
 }

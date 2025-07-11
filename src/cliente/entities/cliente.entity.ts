@@ -21,9 +21,9 @@ export class Cliente {
     @Column({ type : 'varchar', length: 255 })
     direccion: string;
     
-    @ManyToOne(() => Cuenta , { eager: true })
+    @OneToOne(() => Cuenta, cuenta => cuenta.cliente, { onDelete: 'CASCADE' }) 
     @JoinColumn({name: 'cuenta_id'})
-    cuenta: Cuenta; // clave foranea a cuenta. */ 
+    cuenta: Cuenta;  
     
     @ManyToOne(() => Localidad , { eager: true })
     @JoinColumn({name: 'localidad_id'})

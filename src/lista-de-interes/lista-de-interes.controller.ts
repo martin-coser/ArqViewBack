@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards, Req, ParseIntPipe, UnauthorizedException } from '@nestjs/common';
 import { ListaDeInteresService } from './lista-de-interes.service';
 import { CreateListaDeInteresDto } from './dto/create-lista-de-intere.dto';
 import { UpdateListaDeInteresDto } from './dto/update-lista-de-intere.dto';
@@ -16,9 +16,13 @@ export class ListaDeInteresController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('CLIENTE')
-  async create(@Body() createListaDeIntereDto: CreateListaDeInteresDto, @Req() req) : Promise<ListaDeInteres> {
-    const clienteId = req.user.id; // saco el id del cliente del token JWT
-  return await this.listaDeInteresService.create(createListaDeIntereDto, clienteId);
+  async create(@Body() createListaDeInteresDto: CreateListaDeInteresDto, @Req() req): Promise<ListaDeInteres> {
+    const cuentaId = req.user.id; // ID de la Cuenta, no del Cliente
+    if (!cuentaId) {
+      throw new UnauthorizedException('No se pudo obtener el ID de la cuenta del token');
+    }
+    console.log('Cuenta ID:', cuentaId);
+    return await this.listaDeInteresService.create(createListaDeInteresDto, cuentaId);
   }
 
   @Get('/findAll')
