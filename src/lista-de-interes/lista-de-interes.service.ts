@@ -1,116 +1,140 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ListaDeInteres } from './entities/lista-de-interes.entity';
+import { Cliente } from '../cliente/entities/cliente.entity';
+import { Propiedad } from '../propiedad/entities/propiedad.entity';
 import { CreateListaDeInteresDto } from './dto/create-lista-de-intere.dto';
 import { UpdateListaDeInteresDto } from './dto/update-lista-de-intere.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ListaDeInteres } from './entities/lista-de-interes.entity';
-import { Repository, In } from 'typeorm';
-import { Propiedad } from '../propiedad/entities/propiedad.entity';
-import { Cliente } from '../cliente/entities/cliente.entity'; // Importa la entidad Cliente
 
 
 @Injectable()
 export class ListaDeInteresService {
   constructor(
-        @InjectRepository(ListaDeInteres)
-        private listaDeInteresRepository: Repository<ListaDeInteres>,
-        @InjectRepository(Propiedad)
-        private propiedadRepository: Repository<Propiedad>,
-        @InjectRepository(Cliente)
-        private clienteRepository: Repository<Cliente>,
-      ) {}
+    @InjectRepository(ListaDeInteres)
+    private listaDeInteresRepository: Repository<ListaDeInteres>,
+    @InjectRepository(Cliente)
+    private clienteRepository: Repository<Cliente>,
+    @InjectRepository(Propiedad)
+    private propiedadRepository: Repository<Propiedad>,
+  ) {}
 
-  async create(createListaDeInteresDto: CreateListaDeInteresDto, clienteId: number) : Promise<ListaDeInteres> {
-    const { nombre, propiedadIds } = createListaDeInteresDto;
-    // Verifica si el cliente existe
-    const cliente = await this.clienteRepository.findOne({ where: { id: clienteId } });
-    if (!cliente) {
-      throw new NotFoundException(`Cliente con id ${clienteId} no encontrado`);
-    }
-    // Crea una nueva lista de interés
-    const listaDeInteres = this.listaDeInteresRepository.create({
-      nombre: nombre || 'Mis Favoritas',
-      cliente: cliente,
-      propiedades: [],
+  async create(createListaDeInteresDto: CreateListaDeInteresDto, cuentaId: number): Promise<ListaDeInteres> {
+  // Buscar el cliente asociado a la cuenta
+  const cliente = await this.clienteRepository.findOne({
+    where: { cuenta: { id: cuentaId } },
+    relations: ['cuenta', 'listaDeInteres'],
+  });
+
+  if (!cliente) {
+    throw new NotFoundException(`No se encontró un cliente asociado a la cuenta con ID ${cuentaId}`);
+  }
+
+  if (!cliente.cuenta) {
+    throw new BadRequestException(`El cliente no tiene una cuenta asociada`);
+  }
+
+  // Verificar si el cliente ya tiene una lista de interés
+  if (cliente.listaDeInteres) {
+    throw new BadRequestException(`El cliente con ID ${cliente.id} ya tiene una lista de interés`);
+  }
+
+  // Crear la lista de interés
+  const listaDeInteres = this.listaDeInteresRepository.create({
+    cliente,
+    propiedades: [],
+  });
+
+  if (createListaDeInteresDto.propiedadIds && createListaDeInteresDto.propiedadIds.length > 0) {
+    const propiedades = await this.propiedadRepository.find({
+      where: createListaDeInteresDto.propiedadIds.map(id => ({ id })),
     });
-        const propiedades = await this.propiedadRepository.findBy({ id: In(propiedadIds ?? []) });
-        if (propiedades.length !== (propiedadIds?.length ?? 0)) {
-          throw new NotFoundException('Algunas propiedades no fueron encontradas');
-        }
-        listaDeInteres.propiedades = propiedades;
-        return await this.listaDeInteresRepository.save(listaDeInteres);
+    if (propiedades.length !== createListaDeInteresDto.propiedadIds.length) {
+      throw new NotFoundException('Una o más propiedades no encontradas');
+    }
+    listaDeInteres.propiedades = propiedades;
+  }
+
+  // Guardar la lista de interés
+  const savedLista = await this.listaDeInteresRepository.save(listaDeInteres);
+
+  // Actualizar el cliente para reflejar la relación inversa
+  cliente.listaDeInteres = savedLista;
+  await this.clienteRepository.save(cliente);
+
+  // Recargar la lista con todas las relaciones para la respuesta
+  const listaConRelaciones = await this.listaDeInteresRepository.findOne({
+    where: { id: savedLista.id },
+    relations: ['cliente', 'cliente.cuenta', 'cliente.localidad', 'propiedades'],
+  });
+
+  if (!listaConRelaciones) {
+    throw new NotFoundException(`Lista de interés con ID ${savedLista.id} no encontrada después de guardar.`);
+  }
+
+  return listaConRelaciones;
+}
+
+  async findByClient(cuentaId: number): Promise<ListaDeInteres> {
+    const cliente = await this.clienteRepository.findOne({
+      where: { cuenta: { id: cuentaId } },
+      relations: ['listaDeInteres'],
+    });
+
+    if (!cliente || !cliente.listaDeInteres) {
+      throw new NotFoundException(`Lista de interés no encontrada para la cuenta con ID ${cuentaId}`);
     }
 
-
-  async findAll() : Promise<ListaDeInteres[]> {
-    const listasDeInteres = await this.listaDeInteresRepository.find({
+    const lista = await this.listaDeInteresRepository.findOne({
+      where: { id: cliente.listaDeInteres.id },
       relations: ['cliente', 'propiedades'],
     });
-    if (!listasDeInteres || listasDeInteres.length === 0) {
-      throw new NotFoundException('No se encontraron listas de interés');
+
+    if (!lista) {
+      throw new NotFoundException(`Lista de interés no encontrada para la cuenta con ID ${cuentaId}`);
     }
-    return listasDeInteres;
+
+    return lista;
+  }
+
+  async findAll(): Promise<ListaDeInteres[]> {
+    return await this.listaDeInteresRepository.find({
+      relations: ['cliente', 'propiedades'],
+    });
   }
 
   async findOne(id: number): Promise<ListaDeInteres> {
-    const listaDeInteres = await this.listaDeInteresRepository.findOne({
-      where: { id }, // Busca por el ID de la lista de interés
-      relations: ['cliente', 'propiedades'], // Carga el cliente asociado y las propiedades de la lista
-    });
-
-    if (!listaDeInteres) {
-      throw new NotFoundException(`Lista de interés con ID ${id} no encontrada.`);
-    }
-
-    return listaDeInteres;
-  }
-  
-
-  async update(id: number, updateListaDeInteresDto: UpdateListaDeInteresDto, ClienteId?: number): Promise<ListaDeInteres> {
-
-    const listaDeInteresToUpdate = await this.listaDeInteresRepository.findOne({
+    const lista = await this.listaDeInteresRepository.findOne({
       where: { id },
       relations: ['cliente', 'propiedades'],
     });
-    if (!listaDeInteresToUpdate) {
-      throw new NotFoundException(`Lista de interés con ID ${id} no encontrada.`);
+
+    if (!lista) {
+      throw new NotFoundException(`Lista de interés con ID ${id} no encontrada`);
     }
 
-    if (ClienteId && listaDeInteresToUpdate.cliente.id !== ClienteId) {
-      throw new ForbiddenException('No tienes permiso para actualizar esta lista de interés.');
-    }
-    Object.assign(listaDeInteresToUpdate, updateListaDeInteresDto);
-
-    // 4. Manejar la relación ManyToMany 'propiedades' explícitamente si se proporcionan nuevos IDs
-    if (updateListaDeInteresDto.propiedadIds !== undefined) {
-      // Buscar todas las propiedades con los IDs proporcionados
-      const propiedades = await this.propiedadRepository.findBy({
-        id: In(updateListaDeInteresDto.propiedadIds),
-      });
-
-      // Verificar que todas las propiedades con IDs proporcionados existan
-      if (propiedades.length !== updateListaDeInteresDto.propiedadIds.length) {
-        // Encontrar cuáles IDs no fueron encontrados para un mensaje más útil
-        const foundIds = new Set(propiedades.map(p => p.id));
-        const notFoundIds = updateListaDeInteresDto.propiedadIds.filter(id => !foundIds.has(id));
-        throw new NotFoundException(`Algunas propiedades no fueron encontradas: ${notFoundIds.join(', ')}`);
-      }
-
-      // Reemplazar el array de propiedades existente con el nuevo conjunto.
-      listaDeInteresToUpdate.propiedades = propiedades;
-    }
-
-    return await this.listaDeInteresRepository.save(listaDeInteresToUpdate);
+    return lista;
   }
 
+  async update(id: number, updateListaDeInteresDto: UpdateListaDeInteresDto): Promise<ListaDeInteres> {
+    const lista = await this.findOne(id);
 
-  async remove(id: number) : Promise<void> {
-    const listaDeInteres = await this.listaDeInteresRepository.findOne({ where: { id } });
-    if (!listaDeInteres) {
-      throw new NotFoundException(`Lista de interés con ID ${id} no encontrada.`);
+    // Actualizar propiedades si se proporcionan
+    if (updateListaDeInteresDto.propiedadIds) {
+      const propiedades = await this.propiedadRepository.find({
+        where: updateListaDeInteresDto.propiedadIds.map(id => ({ id })),
+      });
+      if (propiedades.length !== updateListaDeInteresDto.propiedadIds.length) {
+        throw new NotFoundException('Una o más propiedades no encontr “‘Una o más propiedades no encontradas’');
+      }
+      lista.propiedades = propiedades;
     }
-    const result = await this.listaDeInteresRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`No se pudo eliminar la lista de interés con ID ${id}.`);
-    }
+
+    return await this.listaDeInteresRepository.save(lista);
+  }
+
+  async remove(id: number): Promise<void> {
+    const lista = await this.findOne(id);
+    await this.listaDeInteresRepository.remove(lista);
   }
 }

@@ -8,6 +8,7 @@ import { Localidad } from 'src/localidad/entities/localidad.entity';
 import { TipoDePropiedad } from 'src/tipo-de-propiedad/entities/tipo-de-propiedad.entity';
 import { EstiloArquitectonico } from 'src/estilo-arquitectonico/entities/estilo-arquitectonico.entity';
 import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-visualizacion.entity';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class PropiedadService {
@@ -26,6 +27,7 @@ constructor(
   private estiloArquitectonicoRepository: Repository<EstiloArquitectonico>,
   @InjectRepository(TipoDeVisualizacion)
   private tipoDeVisualizacionRepository: Repository<TipoDeVisualizacion>, // Agrega el repositorio
+  private eventEmitter: EventEmitter2,
 ) {}
 
 
@@ -110,11 +112,10 @@ constructor(
     return propiedad;
   }
 
-  async update( id: number, updatePropiedadDto: UpdatePropiedadDto,): Promise<Propiedad> {
-    
+  async update(id: number, updatePropiedadDto: UpdatePropiedadDto): Promise<Propiedad> {
     // Buscar la propiedad existente por su ID
-    const propiedadToUpdate = await this.propiedadRepository.findOne({where: { id },
-    // Cargar las relaciones necesarias para evitar problemas de referencia
+    const propiedadToUpdate = await this.propiedadRepository.findOne({
+      where: { id },
       relations: ['localidad', 'tipoPropiedad', 'estiloArquitectonico', 'tipoVisualizaciones'],
     });
 
@@ -122,15 +123,27 @@ constructor(
       throw new NotFoundException(`Propiedad con ID ${id} no encontrada`);
     }
 
-    // Verificar si la nueva dirección ya existe en otra propiedad
+    // Detectar cambios relevantes para notificaciones
+    const cambios: string[] = [];
+    if (updatePropiedadDto.precio && updatePropiedadDto.precio !== propiedadToUpdate.precio) {
+      cambios.push(`Precio cambiado de ${propiedadToUpdate.precio} a ${updatePropiedadDto.precio}`);
+    }
+    if (updatePropiedadDto.tipoOperacion && updatePropiedadDto.tipoOperacion !== propiedadToUpdate.tipoOperacion) {
+      cambios.push(`Estado cambiado de ${propiedadToUpdate.tipoOperacion} a ${updatePropiedadDto.tipoOperacion}`);
+    }
   
+    if (updatePropiedadDto.nombre && updatePropiedadDto.nombre !== propiedadToUpdate.nombre) {
+      cambios.push(`Nombre cambiado de "${propiedadToUpdate.nombre}" a "${updatePropiedadDto.nombre}"`);
+    }
+
+    // Verificar si la nueva dirección ya existe en otra propiedad
     if (updatePropiedadDto.direccion && updatePropiedadDto.direccion !== propiedadToUpdate.direccion) {
       const propiedadConMismaDireccion = await this.propiedadRepository.findOneBy({ direccion: updatePropiedadDto.direccion });
-      //si existe una propiedad con la misma dirección y no es la misma propiedad que estamos actualizando, lanzamos un error de conflicto
       if (propiedadConMismaDireccion && propiedadConMismaDireccion.id !== id) {
         throw new ConflictException('La nueva dirección ya está registrada en otra propiedad');
       }
     }
+
     // Actualizar los campos de la propiedad
     Object.assign(propiedadToUpdate, updatePropiedadDto);
 
@@ -141,6 +154,7 @@ constructor(
         throw new NotFoundException(`Localidad con id ${updatePropiedadDto.localidad} no existe`);
       }
       propiedadToUpdate.localidad = localidad;
+      cambios.push(`Localidad cambiada a "${localidad.nombre}"`);
     }
 
     if (updatePropiedadDto.tipoPropiedad !== undefined) {
@@ -149,34 +163,53 @@ constructor(
         throw new NotFoundException(`Tipo de propiedad con id ${updatePropiedadDto.tipoPropiedad} no existe`);
       }
       propiedadToUpdate.tipoPropiedad = tipoPropiedad;
+      cambios.push(`Tipo de propiedad cambiado a "${tipoPropiedad.nombre}"`);
     }
 
     if (updatePropiedadDto.estiloArquitectonico !== undefined) {
-      const estiloArquitectonico = await this.estiloArquitectonicoRepository.findOne({ where: { id: updatePropiedadDto.estiloArquitectonico } });
+      const estiloArquitectonico = await this.estiloArquitectonicoRepository.findOne({
+        where: { id: updatePropiedadDto.estiloArquitectonico },
+      });
       if (!estiloArquitectonico) {
         throw new NotFoundException(`Estilo arquitectónico con id ${updatePropiedadDto.estiloArquitectonico} no existe`);
       }
       propiedadToUpdate.estiloArquitectonico = estiloArquitectonico;
+      cambios.push(`Estilo arquitectónico cambiado a "${estiloArquitectonico.nombre}"`);
     }
-    // Actualizar las relaciones de tipoVisualizaciones
+
     if (updatePropiedadDto.tipoVisualizaciones !== undefined) {
       if (updatePropiedadDto.tipoVisualizaciones === null || updatePropiedadDto.tipoVisualizaciones.length === 0) {
-        propiedadToUpdate.tipoVisualizaciones = []; // Elimina todas las relaciones existentes
+        propiedadToUpdate.tipoVisualizaciones = [];
+        cambios.push('Tipos de visualización eliminados');
       } else {
         const tipoVisualizaciones = await this.tipoDeVisualizacionRepository.findBy({
           id: In(updatePropiedadDto.tipoVisualizaciones),
         });
-
-        // Asegúrate de que todos los IDs proporcionados existan
         if (tipoVisualizaciones.length !== updatePropiedadDto.tipoVisualizaciones.length) {
-          throw new NotFoundException(`Uno o más tipos de visualización proporcionados no existen.`);
+          throw new NotFoundException(`Uno o más tipos de visualización proporcionados no existen`);
         }
-        propiedadToUpdate.tipoVisualizaciones = tipoVisualizaciones;
+        const oldVisualizaciones = propiedadToUpdate.tipoVisualizaciones.map(v => v.id).sort();
+        const newVisualizaciones = updatePropiedadDto.tipoVisualizaciones.sort();
+        if (JSON.stringify(oldVisualizaciones) !== JSON.stringify(newVisualizaciones)) {
+          propiedadToUpdate.tipoVisualizaciones = tipoVisualizaciones;
+          cambios.push(`Tipos de visualización actualizados`);
+        }
       }
     }
 
-    // 5. Guardar los cambios en la base de datos
-    return await this.propiedadRepository.save(propiedadToUpdate);
+    // Guardar los cambios en la base de datos
+    const updatedPropiedad = await this.propiedadRepository.save(propiedadToUpdate);
+
+    // Emitir evento si hubo cambios relevantes
+    
+    if (cambios.length > 0) {
+      this.eventEmitter.emit('propiedad.actualizada', {
+        propiedadId: id,
+        cambios: cambios.join(', '),
+        
+      });    }
+
+    return updatedPropiedad;
   }
 
   async remove(id: number):Promise<void> {
