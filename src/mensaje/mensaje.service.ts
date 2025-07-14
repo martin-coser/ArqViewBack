@@ -8,7 +8,7 @@ import { CrearMensajeDto } from './dto/crear-mensaje.dto';
 
 @Injectable()
 export class MensajeService {
-constructor(
+  constructor(
     @InjectRepository(Mensaje)
     private repositorioMensajes: Repository<Mensaje>,
     @InjectRepository(Cliente)
@@ -49,33 +49,27 @@ constructor(
     return this.repositorioMensajes.save(mensaje);
   }
 
-  async obtenerConversacion(idRemitente: number, idReceptor: number, tipoRemitente: string, tipoReceptor: string): Promise<Mensaje[]> {
-  return this.repositorioMensajes.find({
-    where: [
-      // Caso 1: Remitente → Receptor
-      {
-        remitenteCliente: tipoRemitente === 'CLIENTE' ? { id: idRemitente } : undefined,
-        remitenteInmobiliaria: tipoRemitente === 'INMOBILIARIA' ? { id: idRemitente } : undefined,
-        receptorCliente: tipoReceptor === 'CLIENTE' ? { id: idReceptor } : undefined,
-        receptorInmobiliaria: tipoReceptor === 'INMOBILIARIA' ? { id: idReceptor } : undefined,
-      },
-      // Caso 2: Receptor → Remitente (conversación en la otra dirección)
-      {
-        remitenteCliente: tipoReceptor === 'CLIENTE' ? { id: idReceptor } : undefined,
-        remitenteInmobiliaria: tipoReceptor === 'INMOBILIARIA' ? { id: idReceptor } : undefined,
-        receptorCliente: tipoRemitente === 'CLIENTE' ? { id: idRemitente } : undefined,
-        receptorInmobiliaria: tipoRemitente === 'INMOBILIARIA' ? { id: idRemitente } : undefined,
-      },
-    ],
-    relations: [
-      'remitenteCliente',
-      'remitenteInmobiliaria',
-      'receptorCliente',
-      'receptorInmobiliaria',
-    ],
-    order: {
-      fechaCreacion: 'ASC',
-    },
-  });
-}
+  async findMessagesByTypeAndId(type: string, id: number): Promise<Mensaje[]> {
+    let query = this.repositorioMensajes.createQueryBuilder('mensaje');
+
+    if (type === 'CLIENTE') {
+      query = query
+        .leftJoinAndSelect('mensaje.remitenteCliente', 'remitenteCliente')
+        .leftJoinAndSelect('mensaje.receptorCliente', 'receptorCliente')
+        .leftJoinAndSelect('mensaje.remitenteInmobiliaria', 'remitenteInmobiliaria')
+        .leftJoinAndSelect('mensaje.receptorInmobiliaria', 'receptorInmobiliaria')
+        .where('mensaje.remitenteClienteId = :id OR mensaje.receptorClienteId = :id', { id });
+    } else if (type === 'INMOBILIARIA') {
+      query = query
+        .leftJoinAndSelect('mensaje.remitenteCliente', 'remitenteCliente')
+        .leftJoinAndSelect('mensaje.receptorCliente', 'receptorCliente')
+        .leftJoinAndSelect('mensaje.remitenteInmobiliaria', 'remitenteInmobiliaria')
+        .leftJoinAndSelect('mensaje.receptorInmobiliaria', 'receptorInmobiliaria')
+        .where('mensaje.remitenteInmobiliariaId = :id OR mensaje.receptorInmobiliariaId = :id', { id });
+    } else {
+      throw new Error('Tipo no válido. Use "cliente" o "inmobiliaria"');
+    }
+
+    return query.getMany();
+  }
 }

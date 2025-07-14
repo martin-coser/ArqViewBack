@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
 import { MensajeService } from './mensaje.service';
 import { CrearMensajeDto } from './dto/crear-mensaje.dto';
 import { Mensaje } from './entities/mensaje.entity';
@@ -35,39 +35,11 @@ export class MensajeController {
     return response;
   }
 
-  @Get(':idRemitente/:idReceptor/:tipoRemitente/:tipoReceptor')
-  async obtenerConversacion(
-    @Param('idRemitente', ParseIntPipe) idRemitente: number,
-    @Param('idReceptor', ParseIntPipe) idReceptor: number,
-    @Param('tipoRemitente') tipoRemitente: string,
-    @Param('tipoReceptor') tipoReceptor: string,
-  ): Promise<MensajeResponseDto[]> {
-    const mensajes: Mensaje[] = await this.mensajeService.obtenerConversacion(
-      idRemitente,
-      idReceptor,
-      tipoRemitente,
-      tipoReceptor,
-    );
-
-    const response: MensajeResponseDto[] = mensajes.map((mensaje) => ({
-      id: mensaje.id,
-      contenido: mensaje.contenido,
-      fechaCreacion: mensaje.fechaCreacion,
-      remitenteCliente: mensaje.remitenteCliente
-        ? {
-            id: mensaje.remitenteCliente.id,
-            nombre: mensaje.remitenteCliente.nombre,
-            apellido: mensaje.remitenteCliente.apellido,
-          }
-        : undefined,
-      receptorInmobiliaria: mensaje.receptorInmobiliaria
-        ? {
-            id: mensaje.receptorInmobiliaria.id,
-            nombre: mensaje.receptorInmobiliaria.nombre,
-          }
-        : undefined,
-    }));
-
-    return response;
+  @Get(':type/:id')
+  async getMessagesByTypeAndId(
+    @Param('type') type: string,
+    @Param('id', ParseIntPipe) id: number
+  ): Promise<Mensaje[]> {  
+    return this.mensajeService.findMessagesByTypeAndId(type, id);
   }
 }
