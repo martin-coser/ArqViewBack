@@ -10,5 +10,5 @@ export class UpdateListaDeInteresDto extends PartialType(CreateListaDeInteresDto
         @IsNumber({}, { each: true, message: 'Cada ID de propiedad debe ser un número.' })
         @IsInt({ each: true, message: 'Cada ID de propiedad debe ser un número entero.' })
         @Type(() => Number) 
-        propiedadIds?: number[];
+        propiedades?: number[];
 }

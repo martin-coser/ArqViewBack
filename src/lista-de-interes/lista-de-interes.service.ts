@@ -45,11 +45,11 @@ export class ListaDeInteresService {
     propiedades: [],
   });
 
-  if (createListaDeInteresDto.propiedadIds && createListaDeInteresDto.propiedadIds.length > 0) {
+  if (createListaDeInteresDto.propiedades && createListaDeInteresDto.propiedades.length > 0) {
     const propiedades = await this.propiedadRepository.find({
-      where: createListaDeInteresDto.propiedadIds.map(id => ({ id })),
+      where: createListaDeInteresDto.propiedades.map(id => ({ id })),
     });
-    if (propiedades.length !== createListaDeInteresDto.propiedadIds.length) {
+    if (propiedades.length !== createListaDeInteresDto.propiedades.length) {
       throw new NotFoundException('Una o más propiedades no encontradas');
     }
     listaDeInteres.propiedades = propiedades;
@@ -120,11 +120,11 @@ export class ListaDeInteresService {
     const lista = await this.findOne(id);
 
     // Actualizar propiedades si se proporcionan
-    if (updateListaDeInteresDto.propiedadIds) {
+    if (updateListaDeInteresDto.propiedades) {
       const propiedades = await this.propiedadRepository.find({
-        where: updateListaDeInteresDto.propiedadIds.map(id => ({ id })),
+        where: updateListaDeInteresDto.propiedades.map(id => ({ id })),
       });
-      if (propiedades.length !== updateListaDeInteresDto.propiedadIds.length) {
+      if (propiedades.length !== updateListaDeInteresDto.propiedades.length) {
         throw new NotFoundException('Una o más propiedades no encontr “‘Una o más propiedades no encontradas’');
       }
       lista.propiedades = propiedades;
