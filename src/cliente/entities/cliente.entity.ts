@@ -30,7 +30,7 @@ export class Cliente {
     @JoinColumn({name: 'localidad_id'})
     localidad: Localidad; // clave foranea a localidad.
 
-    @OneToOne(() => ListaDeInteres, listaDeInteres => listaDeInteres.cliente, { cascade: ['insert', 'update', 'remove'] })
+    @OneToOne(() => ListaDeInteres, listaDeInteres => listaDeInteres.cliente, { cascade: ['insert', 'update'], onDelete: 'SET NULL', nullable: true })
     @JoinColumn({name: 'listaDeInteres_id'})
     listaDeInteres: ListaDeInteres;
     
