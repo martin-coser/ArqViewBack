@@ -30,6 +30,12 @@ export class PropiedadController {
     return await this.propiedadService.findOne(+id);
   }
 
+  @Get('/findByInmobiliaria/:id')
+  @HttpCode(HttpStatus.OK)
+  async findByInmobiliaria(@Param('id') id: string) {
+    return await this.propiedadService.findByInmobiliaria(+id);
+  }
+
   @Patch('/update/:id')
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('jwt'), RolesGuard)

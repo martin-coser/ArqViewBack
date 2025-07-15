@@ -112,6 +112,16 @@ constructor(
     return propiedad;
   }
 
+  async findByInmobiliaria(id: number): Promise<Propiedad[]> {
+    const propiedades = await this.propiedadRepository.find({
+      where: { inmobiliaria: { id } },
+    });
+    if (!propiedades || propiedades.length === 0) {
+      throw new NotFoundException(`No se encontraron propiedades para la inmobiliaria con id ${id}`);
+    }
+    return propiedades;
+  }
+
   async update(id: number, updatePropiedadDto: UpdatePropiedadDto): Promise<Propiedad> {
     // Buscar la propiedad existente por su ID
     const propiedadToUpdate = await this.propiedadRepository.findOne({
