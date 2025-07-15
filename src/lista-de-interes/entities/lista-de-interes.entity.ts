@@ -11,14 +11,14 @@ export class ListaDeInteres {
     id: number;
     
     @OneToOne(() => Cliente, cliente => cliente.listaDeInteres, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: 'clienteId', referencedColumnName: 'id' })
+    @JoinColumn({ name: 'cliente_id', referencedColumnName: 'id' })
     cliente: Cliente;
 
     @ManyToMany(() => Propiedad, propiedad => propiedad.listasDeInteres)
     @JoinTable({
     name: 'lista_de_interes_propiedades',
-    joinColumn: { name: 'listaDeInteresId', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'propiedadId', referencedColumnName: 'id' },
+    joinColumn: { name: 'listaDeInteres_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'propiedad_id', referencedColumnName: 'id' },
   })
   propiedades: Propiedad[];
 }

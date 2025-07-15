@@ -15,10 +15,13 @@ import { InmobiliariaModule } from './inmobiliaria/inmobiliaria.module';
 import { Imagen2dModule } from './imagen2d/imagen2d.module';
 import { ListaDeInteresModule } from './lista-de-interes/lista-de-interes.module';
 import { MensajeModule } from './mensaje/mensaje.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { NotificacionModule } from './notificacion/notificacion.module'; 
 
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.development', '.env'],
@@ -48,7 +51,8 @@ import { MensajeModule } from './mensaje/mensaje.module';
     ClienteModule,
     Imagen2dModule,
     ListaDeInteresModule,
-    MensajeModule
+    MensajeModule,
+    NotificacionModule, // Asegúrate de que este módulo esté importado
   ],
   controllers: [AppController],
   providers: [AppService],
