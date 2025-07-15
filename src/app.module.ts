@@ -44,6 +44,8 @@ import { NotificacionModule } from './notificacion/notificacion.module';
     ProvinciaModule,
     EstiloArquitectonicoModule,
     TipoDeVisualizacionModule,
+    ClienteModule,
+    InmobiliariaModule,
     AuthModule,
     InmobiliariaModule,
     ClienteModule,
