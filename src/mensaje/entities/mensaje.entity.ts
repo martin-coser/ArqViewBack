@@ -1,6 +1,7 @@
 import { Cliente } from "src/cliente/entities/cliente.entity";
 import { Inmobiliaria } from "src/inmobiliaria/entities/inmobiliaria.entity";
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { NotificacionMensaje } from "src/notificacion/entities/notificacionMensaje.entity";
+import { Column, CreateDateColumn, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class Mensaje {
@@ -24,4 +25,7 @@ export class Mensaje {
 
     @CreateDateColumn()
     fechaCreacion: Date;
+
+    @OneToOne(() => NotificacionMensaje, notificacionMensaje => notificacionMensaje.mensaje)
+    notificacionMensaje: NotificacionMensaje;
 }
