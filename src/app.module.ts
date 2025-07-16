@@ -52,7 +52,7 @@ import { NotificacionModule } from './notificacion/notificacion.module';
     Imagen2dModule,
     ListaDeInteresModule,
     MensajeModule,
-    NotificacionModule, // Asegúrate de que este módulo esté importado
+    NotificacionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
