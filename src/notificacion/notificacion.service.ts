@@ -49,7 +49,7 @@ export class NotificacionService {
 
     // Si el nombre antiguo y el nuevo existen y son diferentes, usamos el formato "viejo" a "nuevo"
     if (payload.oldNombre && payload.newNombre && payload.oldNombre !== payload.newNombre) {
-      emailSubject = `Actualización de nombre en propiedad: "${payload.oldNombre}" a "${payload.newNombre}"`;
+      emailSubject = `Actualización De Propiedad"`;
     } else {
       // Si el nombre no cambió o no se proporcionó, usamos el formato general con el nombre actual de la propiedad
       emailSubject = `Actualización en la propiedad "${propiedad.nombre}" en tu lista de interés`;
@@ -59,23 +59,9 @@ export class NotificacionService {
 
 
     for (const lista of listas) {
-      // Validaciones para asegurar que el cliente y su email son válidos
-      if (!lista.cliente) {
-        console.warn(`  [OMITIDA] Lista ${lista.id}: Cliente no asociado.`);
-        continue;
-      }
-      if (!lista.cliente.cuenta) {
-        console.warn(`  [OMITIDA] Lista ${lista.id}: Cliente ${lista.cliente.id} no tiene una cuenta asociada.`);
-        continue;
-      }
-      if (!lista.cliente.cuenta.email) {
-        console.warn(`  [OMITIDA] Lista ${lista.id}: Cliente ${lista.cliente.id} (Cuenta ${lista.cliente.cuenta.id}) no tiene un email.`);
-        continue;
-      }
-
       // Crear y guardar la notificación en la base de datos
       const notificacion = this.notificacionRepository.create({
-        mensaje: `Cambios en la Propiedad "${propiedad.nombre}" en tu lista de interés`, // Este mensaje es para la DB
+        mensaje: `Cambios en la Propiedad "${propiedad.nombre}" en tu lista de interés`, 
         tipo: 'PROPIEDAD_ACTUALIZADA',
         cliente: lista.cliente,
         propiedad,
