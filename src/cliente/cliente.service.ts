@@ -16,7 +16,7 @@ export class ClienteService {
     const { nombre, apellido, fechaNacimiento, direccion, localidad } = createClienteDto;
   
     const clienteExistente = await this.clienteRepository.findOne({
-      where: { nombre, apellido, fechaNacimiento, direccion, localidad },
+      where: { nombre, apellido, fechaNacimiento, direccion, localidad},
     });
     if (clienteExistente) {
       throw new NotFoundException('El cliente ya existe');
@@ -27,7 +27,9 @@ export class ClienteService {
   }
 
   async findAll() : Promise<Cliente[]> {
-    const clientes = await this.clienteRepository.find();
+    const clientes = await this.clienteRepository.find({
+      relations: ['cuenta'], // Cargar las relaciones
+    })
     if (!clientes || clientes.length === 0) {
       throw new NotFoundException('No se encontraron clientes');
     }
