@@ -21,7 +21,6 @@ export class ListaDeInteresController {
     if (!cuentaId) {
       throw new UnauthorizedException('No se pudo obtener el ID de la cuenta del token');
     }
-    console.log('Cuenta ID:', cuentaId);
     return await this.listaDeInteresService.create(createListaDeInteresDto, cuentaId);
   }
 

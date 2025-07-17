@@ -9,6 +9,7 @@ import { TipoDePropiedad } from 'src/tipo-de-propiedad/entities/tipo-de-propieda
 import { EstiloArquitectonico } from 'src/estilo-arquitectonico/entities/estilo-arquitectonico.entity';
 import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-visualizacion.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 
 @Injectable()
 export class PropiedadService {
@@ -26,7 +27,9 @@ constructor(
   @InjectRepository(EstiloArquitectonico)
   private estiloArquitectonicoRepository: Repository<EstiloArquitectonico>,
   @InjectRepository(TipoDeVisualizacion)
-  private tipoDeVisualizacionRepository: Repository<TipoDeVisualizacion>, // Agrega el repositorio
+  private tipoDeVisualizacionRepository: Repository<TipoDeVisualizacion>,
+  @InjectRepository(Inmobiliaria)
+  private inmobiliariaRepository: Repository<Inmobiliaria>,
   private eventEmitter: EventEmitter2,
 ) {}
 
@@ -123,101 +126,97 @@ constructor(
   }
 
   async update(id: number, updatePropiedadDto: UpdatePropiedadDto): Promise<Propiedad> {
-    // Buscar la propiedad existente por su ID
-    const propiedadToUpdate = await this.propiedadRepository.findOne({
+    const oldPropiedad = await this.propiedadRepository.findOne({
       where: { id },
-      relations: ['localidad', 'tipoPropiedad', 'estiloArquitectonico', 'tipoVisualizaciones'],
     });
 
-    if (!propiedadToUpdate) {
+    if (!oldPropiedad) {
       throw new NotFoundException(`Propiedad con ID ${id} no encontrada`);
     }
 
-    // Detectar cambios relevantes para notificaciones
     const cambios: string[] = [];
-    if (updatePropiedadDto.precio && updatePropiedadDto.precio !== propiedadToUpdate.precio) {
-      cambios.push(`Precio cambiado de ${propiedadToUpdate.precio} a ${updatePropiedadDto.precio}`);
-    }
-    if (updatePropiedadDto.tipoOperacion && updatePropiedadDto.tipoOperacion !== propiedadToUpdate.tipoOperacion) {
-      cambios.push(`Estado cambiado de ${propiedadToUpdate.tipoOperacion} a ${updatePropiedadDto.tipoOperacion}`);
-    }
-  
-    if (updatePropiedadDto.nombre && updatePropiedadDto.nombre !== propiedadToUpdate.nombre) {
-      cambios.push(`Nombre cambiado de "${propiedadToUpdate.nombre}" a "${updatePropiedadDto.nombre}"`);
+    let oldNombre: string = oldPropiedad.nombre; // Guardamos el nombre antiguo
+
+    // Nombre
+    if (updatePropiedadDto.nombre !== undefined && updatePropiedadDto.nombre !== oldPropiedad.nombre) {
+      cambios.push(`El nombre cambió de "${oldPropiedad.nombre}" a "${updatePropiedadDto.nombre}".`);
+     
     }
 
-    // Verificar si la nueva dirección ya existe en otra propiedad
-    if (updatePropiedadDto.direccion && updatePropiedadDto.direccion !== propiedadToUpdate.direccion) {
+    // Descripción
+    if (updatePropiedadDto.descripcion !== undefined && updatePropiedadDto.descripcion !== oldPropiedad.descripcion) {
+      cambios.push(`La descripción fue actualizada.`);
+    }
+
+    // Precio
+    if (updatePropiedadDto.precio !== undefined && updatePropiedadDto.precio !== oldPropiedad.precio) {
+      cambios.push(`El precio cambió de $${oldPropiedad.precio} a $${updatePropiedadDto.precio}.`);
+    }
+
+    // Tipo de Operación
+    if (updatePropiedadDto.tipoOperacion !== undefined && updatePropiedadDto.tipoOperacion !== oldPropiedad.tipoOperacion) {
+      cambios.push(`El tipo de operación cambió de "${oldPropiedad.tipoOperacion}" a "${updatePropiedadDto.tipoOperacion}".`);
+    }
+
+    // Manejo de la dirección si se actualiza (único campo con validación de conflicto)
+    if (updatePropiedadDto.direccion !== undefined && updatePropiedadDto.direccion !== oldPropiedad.direccion) {
       const propiedadConMismaDireccion = await this.propiedadRepository.findOneBy({ direccion: updatePropiedadDto.direccion });
       if (propiedadConMismaDireccion && propiedadConMismaDireccion.id !== id) {
         throw new ConflictException('La nueva dirección ya está registrada en otra propiedad');
       }
     }
 
-    // Actualizar los campos de la propiedad
-    Object.assign(propiedadToUpdate, updatePropiedadDto);
+    // Actualizar los campos de la propiedad (incluyendo el nombre si cambió)
+    Object.assign(oldPropiedad, updatePropiedadDto);
 
-    // Actualizar los campos que son relaciones (foráneas)
+    // Actualizar las relaciones ManyToOne y ManyToMany (sin generar mensajes de cambio para el email)
     if (updatePropiedadDto.localidad !== undefined) {
       const localidad = await this.localidadRepository.findOne({ where: { id: updatePropiedadDto.localidad } });
-      if (!localidad) {
-        throw new NotFoundException(`Localidad con id ${updatePropiedadDto.localidad} no existe`);
-      }
-      propiedadToUpdate.localidad = localidad;
-      cambios.push(`Localidad cambiada a "${localidad.nombre}"`);
+      if (!localidad) throw new NotFoundException(`Localidad con id ${updatePropiedadDto.localidad} no existe`);
+      oldPropiedad.localidad = localidad;
     }
 
     if (updatePropiedadDto.tipoPropiedad !== undefined) {
       const tipoPropiedad = await this.tipoPropiedadRepository.findOne({ where: { id: updatePropiedadDto.tipoPropiedad } });
-      if (!tipoPropiedad) {
-        throw new NotFoundException(`Tipo de propiedad con id ${updatePropiedadDto.tipoPropiedad} no existe`);
-      }
-      propiedadToUpdate.tipoPropiedad = tipoPropiedad;
-      cambios.push(`Tipo de propiedad cambiado a "${tipoPropiedad.nombre}"`);
+      if (!tipoPropiedad) throw new NotFoundException(`Tipo de propiedad con id ${updatePropiedadDto.tipoPropiedad} no existe`);
+      oldPropiedad.tipoPropiedad = tipoPropiedad;
     }
 
     if (updatePropiedadDto.estiloArquitectonico !== undefined) {
-      const estiloArquitectonico = await this.estiloArquitectonicoRepository.findOne({
-        where: { id: updatePropiedadDto.estiloArquitectonico },
-      });
-      if (!estiloArquitectonico) {
-        throw new NotFoundException(`Estilo arquitectónico con id ${updatePropiedadDto.estiloArquitectonico} no existe`);
-      }
-      propiedadToUpdate.estiloArquitectonico = estiloArquitectonico;
-      cambios.push(`Estilo arquitectónico cambiado a "${estiloArquitectonico.nombre}"`);
+      const estiloArquitectonico = await this.estiloArquitectonicoRepository.findOne({ where: { id: updatePropiedadDto.estiloArquitectonico } });
+      if (!estiloArquitectonico) throw new NotFoundException(`Estilo arquitectónico con id ${updatePropiedadDto.estiloArquitectonico} no existe`);
+      oldPropiedad.estiloArquitectonico = estiloArquitectonico;
     }
 
     if (updatePropiedadDto.tipoVisualizaciones !== undefined) {
       if (updatePropiedadDto.tipoVisualizaciones === null || updatePropiedadDto.tipoVisualizaciones.length === 0) {
-        propiedadToUpdate.tipoVisualizaciones = [];
-        cambios.push('Tipos de visualización eliminados');
+        oldPropiedad.tipoVisualizaciones = [];
       } else {
-        const tipoVisualizaciones = await this.tipoDeVisualizacionRepository.findBy({
-          id: In(updatePropiedadDto.tipoVisualizaciones),
-        });
+        const tipoVisualizaciones = await this.tipoDeVisualizacionRepository.findBy({ id: In(updatePropiedadDto.tipoVisualizaciones) });
         if (tipoVisualizaciones.length !== updatePropiedadDto.tipoVisualizaciones.length) {
           throw new NotFoundException(`Uno o más tipos de visualización proporcionados no existen`);
         }
-        const oldVisualizaciones = propiedadToUpdate.tipoVisualizaciones.map(v => v.id).sort();
-        const newVisualizaciones = updatePropiedadDto.tipoVisualizaciones.sort();
-        if (JSON.stringify(oldVisualizaciones) !== JSON.stringify(newVisualizaciones)) {
-          propiedadToUpdate.tipoVisualizaciones = tipoVisualizaciones;
-          cambios.push(`Tipos de visualización actualizados`);
-        }
+        oldPropiedad.tipoVisualizaciones = tipoVisualizaciones;
       }
     }
 
-    // Guardar los cambios en la base de datos
-    const updatedPropiedad = await this.propiedadRepository.save(propiedadToUpdate);
+    if ((updatePropiedadDto as any).inmobiliaria_id !== undefined) {
+        const inmobiliaria = await this.inmobiliariaRepository.findOne({ where: { id: (updatePropiedadDto as any).inmobiliaria_id } });
+        if (!inmobiliaria) throw new NotFoundException(`Inmobiliaria con id ${(updatePropiedadDto as any).inmobiliaria_id} no existe`);
+        oldPropiedad.inmobiliaria = inmobiliaria;
+    }
 
-    // Emitir evento si hubo cambios relevantes
-    
+    const updatedPropiedad = await this.propiedadRepository.save(oldPropiedad);
+
+    // Emitir evento si hubo cambios relevantes para la notificación
     if (cambios.length > 0) {
       this.eventEmitter.emit('propiedad.actualizada', {
         propiedadId: id,
-        cambios: cambios.join(', '),
-        
-      });    }
+        cambios: cambios.join('<br>'), // Unir los cambios con saltos de línea para HTML
+        oldNombre: oldNombre, // Enviamos el nombre antiguo
+        newNombre: updatedPropiedad.nombre // Enviamos el nuevo nombre
+      });
+    }
 
     return updatedPropiedad;
   }

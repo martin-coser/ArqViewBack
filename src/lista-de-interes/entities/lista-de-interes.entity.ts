@@ -10,7 +10,7 @@ export class ListaDeInteres {
     @PrimaryGeneratedColumn()
     id: number;
     
-    @OneToOne(() => Cliente, cliente => cliente.listaDeInteres, { onDelete: 'CASCADE' })
+    @OneToOne(() => Cliente, cliente => cliente.listaDeInteres)
     @JoinColumn({ name: 'cliente_id', referencedColumnName: 'id' })
     cliente: Cliente;
 

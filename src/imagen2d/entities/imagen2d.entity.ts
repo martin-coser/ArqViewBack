@@ -13,7 +13,7 @@ export class Imagen2d {
   descripcion: string;
 
   //muchas imagenes pertecen a una propiedad
-  @ManyToOne(() => Propiedad, {eager: true})
+  @ManyToOne(() => Propiedad, {eager: true,onDelete: 'CASCADE'})
   @JoinColumn({ name: 'propiedad_id' })
   propiedad: Propiedad
 }
