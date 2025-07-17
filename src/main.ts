@@ -7,7 +7,7 @@ import { join } from 'path'; // Necesario para construir la ruta
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create<NestExpressApplication>(AppModule); // Tipamos como NestExpressApplication
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false }); // Tipamos como NestExpressApplication
 
   // Configurar archivos estáticos para la carpeta imagenes2d
   app.useStaticAssets(join(__dirname, '..', 'imagenes2d'), { prefix: '/imagenes2d/' });
