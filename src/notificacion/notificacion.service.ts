@@ -131,4 +131,42 @@ async nuevoMensaje(payload: { contenido: string; fechaCreacion: Date; remitente:
     throw new Error('No se pudo enviar el correo');
   }
 }
+
+async findByCliente(id: number) : Promise<Notificacion[]> {
+  const notificaciones = await this.notificacionRepository.find({
+    where: { cliente: { id } },
+  });
+  if (!notificaciones || notificaciones.length === 0) {
+    throw new NotFoundException(`No se encontraron notificaciones para el cliente con id ${id}`);
+  }
+  return notificaciones;
+}
+
+async marcarLeida(id: number) : Promise<Notificacion> {
+  const notificacion = await this.notificacionRepository.findOne({ where: { id } });
+  if (!notificacion) {
+    throw new NotFoundException(`No se encontró la notificación con id ${id}`);
+  }
+  notificacion.leida = true;
+  return await this.notificacionRepository.save(notificacion);
+}
+
+async getMensajesByEmail(email: string): Promise<NotificacionMensaje[]> {
+  const notificaciones = await this.notificacionMensajeRepository.find({
+    where: { receptor: email },
+  });
+  if (!notificaciones || notificaciones.length === 0) {
+    throw new NotFoundException(`No se encontró una notificación para el email ${email}`);
+  }
+  return notificaciones;
+}
+
+async marcarMensajeLeido(id: number): Promise<NotificacionMensaje> {
+  const notificacionMensaje = await this.notificacionMensajeRepository.findOne({ where: { id } });
+  if (!notificacionMensaje) {
+    throw new NotFoundException(`No se encontró la notificación de mensaje con id ${id}`);
+  }
+  notificacionMensaje.leida = true;
+  return await this.notificacionMensajeRepository.save(notificacionMensaje);
+}
 }

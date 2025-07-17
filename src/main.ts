@@ -2,42 +2,52 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { NestExpressApplication } from '@nestjs/platform-express'; // Necesario para useStaticAssets
-import { join } from 'path'; // Necesario para construir la ruta
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false }); // Tipamos como NestExpressApplication
+  logger.log('Iniciando la aplicación...');
 
-  // Configurar archivos estáticos para la carpeta imagenes2d
-  app.useStaticAssets(join(__dirname, '..', 'imagenes2d'), { prefix: '/imagenes2d/' });
-
-  // Habilitar CORS para permitir el frontend en http://localhost:4000
-  app.enableCors({
-    origin: 'http://localhost:4000',
-    methods: 'GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH',
-    credentials: true,
-  });
-
-  // Habilitar validaciones globales
-  app.useGlobalPipes(new ValidationPipe());
-
-  // Iniciar el servidor
-  const port = process.env.PORT ?? 3000;
-  await app.listen(port);
-  logger.log(`🚀 Servidor corriendo en http://localhost:${port}`);
-
-  // === Verificar conexión a la base de datos usando TypeORM de forma segura ===
   try {
-    const dataSource = app.get(DataSource); // Obtener la instancia de DataSource inyectada por TypeORM
+    logger.log('Creando la aplicación NestJS...');
+    const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+      logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+    });
+    logger.log('Aplicación creada con éxito.');
+
+    app.useStaticAssets(join(__dirname, '..', 'imagenes2d'), { prefix: '/imagenes2d/' });
+    logger.log('Archivos estáticos configurados.');
+
+    app.enableCors({
+      origin: 'http://localhost:4000',
+      methods: 'GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH',
+      credentials: true,
+    });
+    logger.log('CORS habilitado.');
+
+    app.useGlobalPipes(new ValidationPipe());
+    logger.log('ValidationPipe configurado.');
+
+    const port = process.env.PORT ?? 3000; // O 3001 si cambiaste el puerto
+    logger.log(`Intentando iniciar el servidor en el puerto ${port}...`);
+    await app.listen(port);
+    logger.log(`🚀 Servidor corriendo en http://localhost:${port}`);
+
+    logger.log('Verificando conexión a la base de datos...');
+    const dataSource = app.get(DataSource);
     if (dataSource.isInitialized) {
       logger.log('✅ Conexión a la base de datos establecida con éxito.');
     } else {
-      logger.error('❌ La base de datos NO se ha inicializado. Revise la configuración de TypeOrmModule.');
+      logger.error('❌ La base de datos NO se ha inicializado.');
     }
   } catch (error) {
-    logger.error(`❌ Error al verificar el estado de la conexión a la base de datos: ${error.message}`);
+    logger.error(`❌ Error durante la inicialización: ${error.message}`, error.stack);
   }
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  const logger = new Logger('Bootstrap');
+  logger.error(`❌ Error en bootstrap: ${error.message}`, error.stack);
+  process.exit(1);
+});

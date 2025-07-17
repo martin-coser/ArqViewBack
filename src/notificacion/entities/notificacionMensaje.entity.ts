@@ -18,6 +18,9 @@ export class NotificacionMensaje {
     @Column({ type: 'varchar', length: 255 })
     receptor: string;
 
+    @Column({ default: false })
+    leida: boolean;
+
     @OneToOne(() => Mensaje, mensaje => mensaje.id)
     @JoinColumn({ name: 'mensaje_id' })
     mensaje: Mensaje;
