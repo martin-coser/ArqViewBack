@@ -67,17 +67,32 @@ export class MensajeService {
 
     const result = await this.repositorioMensajes.save(mensaje);
 
+    // Cargar las relaciones después de guardar
+    const mensajeConRelaciones = await this.repositorioMensajes.findOne({
+      where: { id: result.id },
+      relations: [
+        'remitenteCliente',
+        'receptorCliente',
+        'remitenteInmobiliaria',
+        'receptorInmobiliaria',
+      ],
+    });
+
+    if (!mensajeConRelaciones) {
+      throw new Error('No se pudo cargar el mensaje con relaciones');
+    }
+
     if (result) {
       this.eventEmitter.emit('nuevo.mensaje', {
         contenido: mensaje.contenido,
         fechaCreacion: mensaje.fechaCreacion,
         remitente: remitente.cuenta.nombreUsuario,
-        receptor: receptor.cuenta.email, // Cambiar a email en lugar de nombreUsuario
+        receptor: receptor.cuenta.email,
         mensajeId: mensaje.id,
       });
     }
 
-    return result;
+    return mensajeConRelaciones;
   }
 
   async findMessagesByTypeAndId(type: string, id: number): Promise<Mensaje[]> {

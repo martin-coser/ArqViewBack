@@ -8,9 +8,9 @@ import { MensajeResponseDto } from './dto/mensaje-response.dto';
 export class MensajeController {
   constructor(private readonly mensajeService: MensajeService) {}
 
-  @Post()
+@Post()
   async enviarMensaje(@Body() crearMensajeDto: CrearMensajeDto): Promise<MensajeResponseDto> {
-    const mensaje: Mensaje = await this.mensajeService.enviarMensaje(crearMensajeDto);
+    const mensaje = await this.mensajeService.enviarMensaje(crearMensajeDto);
 
     // Transformar la respuesta al formato deseado
     const response: MensajeResponseDto = {
@@ -28,6 +28,19 @@ export class MensajeController {
         ? {
             id: mensaje.receptorInmobiliaria.id,
             nombre: mensaje.receptorInmobiliaria.nombre,
+          }
+        : undefined,
+      remitenteInmobiliaria: mensaje.remitenteInmobiliaria
+        ? {
+            id: mensaje.remitenteInmobiliaria.id,
+            nombre: mensaje.remitenteInmobiliaria.nombre,
+          }
+        : undefined,
+      receptorCliente: mensaje.receptorCliente
+        ? {
+            id: mensaje.receptorCliente.id,
+            nombre: mensaje.receptorCliente.nombre,
+            apellido: mensaje.receptorCliente.apellido,
           }
         : undefined,
     };

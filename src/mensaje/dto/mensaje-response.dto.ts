@@ -22,4 +22,17 @@ export class MensajeResponseDto {
     id: number;
     nombre: string;
   };
+
+  @IsOptional()
+  remitenteInmobiliaria?: {
+    id: number;
+    nombre: string;
+  };
+
+  @IsOptional()
+  receptorCliente?: {
+    id: number;
+    nombre: string;
+    apellido: string;
+  };
 }
