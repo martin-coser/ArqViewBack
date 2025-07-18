@@ -17,7 +17,7 @@ export class Propiedad {
     @Column({ type: 'varchar', length: 255 })
     nombre: string
 
-    @Column({ type: 'varchar', length: 255 })
+    @Column({ type: 'varchar' })
     descripcion:string
 
     @Column({unique: true, type: 'varchar', length: 255 })

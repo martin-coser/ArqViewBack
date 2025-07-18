@@ -7,6 +7,7 @@ import { Localidad } from 'src/localidad/entities/localidad.entity';
 import { TipoDePropiedad } from 'src/tipo-de-propiedad/entities/tipo-de-propiedad.entity';
 import { EstiloArquitectonico } from 'src/estilo-arquitectonico/entities/estilo-arquitectonico.entity';
 import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-visualizacion.entity';
+import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-
     Localidad,
     TipoDePropiedad,
     EstiloArquitectonico,
-    TipoDeVisualizacion
+    TipoDeVisualizacion,
+    Inmobiliaria
   ])
 ],
   controllers: [PropiedadController],

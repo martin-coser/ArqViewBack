@@ -25,16 +25,17 @@ export class NotificacionService {
     private notificacionMensajeRepository: Repository<NotificacionMensaje>,
     @InjectRepository(Mensaje)
     private mensajeRepository: Repository<Mensaje>,
-    private readonly mailerService: MailerService, // Inyectar MailerService
+    private readonly mailerService: MailerService, 
   ) {}
 
   @OnEvent('propiedad.actualizada')
-  async handlePropiedadUpdated(payload: { propiedadId: number; cambios: string }) {
+  async handlePropiedadUpdated(payload: { propiedadId: number; cambios: string; oldNombre?: string; newNombre?: string }) {
     console.log(`Notificación de propiedad actualizada: ${payload.propiedadId}, Cambios: ${payload.cambios}`);
     const listas = await this.listaDeInteresRepository
       .createQueryBuilder('lista')
       .innerJoin('lista.propiedades', 'propiedad', 'propiedad.id = :propiedadId', { propiedadId: payload.propiedadId })
       .leftJoinAndSelect('lista.cliente', 'cliente')
+      .leftJoinAndSelect('cliente.cuenta', 'cuenta') 
       .getMany();
 
     const propiedad = await this.propiedadRepository.findOne({ where: { id: payload.propiedadId } });
@@ -43,11 +44,24 @@ export class NotificacionService {
       return;
     }
 
-    for (const lista of listas) {
-      if (!lista.cliente) continue;
+    let emailSubject: string;
+    let emailTitle: string;
 
+    // Si el nombre antiguo y el nuevo existen y son diferentes, usamos el formato "viejo" a "nuevo"
+    if (payload.oldNombre && payload.newNombre && payload.oldNombre !== payload.newNombre) {
+      emailSubject = `Actualización De Propiedad"`;
+    } else {
+      // Si el nombre no cambió o no se proporcionó, usamos el formato general con el nombre actual de la propiedad
+      emailSubject = `Actualización en la propiedad "${propiedad.nombre}" en tu lista de interés`;
+      emailTitle = `Actualización en la propiedad "${propiedad.nombre}"`;
+    }
+
+
+
+    for (const lista of listas) {
+      // Crear y guardar la notificación en la base de datos
       const notificacion = this.notificacionRepository.create({
-        mensaje: `Cambios en la Propiedad "${propiedad.nombre}" en tu lista de interés`,
+        mensaje: `Cambios en la Propiedad "${propiedad.nombre}" en tu lista de interés`, 
         tipo: 'PROPIEDAD_ACTUALIZADA',
         cliente: lista.cliente,
         propiedad,
@@ -56,6 +70,27 @@ export class NotificacionService {
       });
 
       await this.notificacionRepository.save(notificacion);
+
+      try {
+        await this.mailerService.sendMail({
+          to: lista.cliente.cuenta.email, 
+          from: 'grupo8albasoft@gmail.com', 
+          subject: emailSubject, 
+          html: `
+            <p>Hola ${lista.cliente.nombre || 'cliente'},</p>
+            <p>Queremos informarte que ha habido cambios en una de las propiedades que tienes en tu lista de interés.</p>
+            <p>Detalles de los cambios:</p>
+            <p>${payload.cambios}</p> 
+            <p>Puedes revisar los detalles de la propiedad en nuestra plataforma.</p>
+            <p>¡Gracias por usar nuestros servicios!</p>
+            <p>Atentamente,</p>
+            <p>El equipo de Arqview </p>
+          `,
+        });
+        console.log(`  Correo de notificación enviado a ${lista.cliente.cuenta.email} por cambios en la propiedad ${propiedad.nombre}`);
+      } catch (error) {
+        console.error(`  Error al enviar correo a ${lista.cliente.cuenta.email} sobre la propiedad ${propiedad.nombre}:`, error);
+      }
     }
   }
 
@@ -95,5 +130,43 @@ async nuevoMensaje(payload: { contenido: string; fechaCreacion: Date; remitente:
     console.error(`Error al enviar correo a ${payload.receptor}:`, error);
     throw new Error('No se pudo enviar el correo');
   }
+}
+
+async findByCliente(id: number) : Promise<Notificacion[]> {
+  const notificaciones = await this.notificacionRepository.find({
+    where: { cliente: { id } },
+  });
+  if (!notificaciones || notificaciones.length === 0) {
+    throw new NotFoundException(`No se encontraron notificaciones para el cliente con id ${id}`);
+  }
+  return notificaciones;
+}
+
+async marcarLeida(id: number) : Promise<Notificacion> {
+  const notificacion = await this.notificacionRepository.findOne({ where: { id } });
+  if (!notificacion) {
+    throw new NotFoundException(`No se encontró la notificación con id ${id}`);
+  }
+  notificacion.leida = true;
+  return await this.notificacionRepository.save(notificacion);
+}
+
+async getMensajesByEmail(email: string): Promise<NotificacionMensaje[]> {
+  const notificaciones = await this.notificacionMensajeRepository.find({
+    where: { receptor: email },
+  });
+  if (!notificaciones || notificaciones.length === 0) {
+    throw new NotFoundException(`No se encontró una notificación para el email ${email}`);
+  }
+  return notificaciones;
+}
+
+async marcarMensajeLeido(id: number): Promise<NotificacionMensaje> {
+  const notificacionMensaje = await this.notificacionMensajeRepository.findOne({ where: { id } });
+  if (!notificacionMensaje) {
+    throw new NotFoundException(`No se encontró la notificación de mensaje con id ${id}`);
+  }
+  notificacionMensaje.leida = true;
+  return await this.notificacionMensajeRepository.save(notificacionMensaje);
 }
 }

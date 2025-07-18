@@ -1,6 +1,6 @@
 import { PartialType } from "@nestjs/mapped-types";
 import { RegisterCuentaDto } from "./register-cuenta.dto";
-import { IsNotEmpty, IsString, Matches, maxLength, MinLength } from "class-validator";
+import { IsNotEmpty, IsString, Matches, MinLength } from "class-validator";
 
 export class LoginCuentaDto extends PartialType(RegisterCuentaDto){
 
