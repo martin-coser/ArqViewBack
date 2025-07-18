@@ -23,7 +23,7 @@ export class Notificacion {
   @JoinColumn({ name: 'cliente_id' })
   cliente: Cliente;
 
-  @ManyToOne(() => Propiedad, { nullable: true })
+  @ManyToOne(() => Propiedad, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'propiedad_id' })
   propiedad: Propiedad;
 }
