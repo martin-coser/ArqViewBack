@@ -87,9 +87,8 @@ export class NotificacionService {
             <p>El equipo de Arqview </p>
           `,
         });
-        console.log(`  Correo de notificación enviado a ${lista.cliente.cuenta.email} por cambios en la propiedad ${propiedad.nombre}`);
       } catch (error) {
-        console.error(`  Error al enviar correo a ${lista.cliente.cuenta.email} sobre la propiedad ${propiedad.nombre}:`, error);
+        new NotFoundException(`No se pudo enviar el correo a ${lista.cliente.cuenta.email}`);
       }
     }
   }
