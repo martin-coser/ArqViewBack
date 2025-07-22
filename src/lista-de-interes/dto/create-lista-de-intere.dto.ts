@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsInt, IsNumber, IsOptional, IsString } from "class-validator";
+import { ArrayMinSize, IsArray, IsInt, IsNumber, IsOptional } from "class-validator";
 
 export class CreateListaDeInteresDto {
 

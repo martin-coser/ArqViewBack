@@ -5,6 +5,7 @@ import { UpdateTipoDeVisualizacionDto } from './dto/update-tipo-de-visualizacion
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/decoradores/roles.decorator';
+import { TipoDeVisualizacion } from './entities/tipo-de-visualizacion.entity';
 
 @Controller('tipoDeVisualizacion')
 export class TipoDeVisualizacionController {
@@ -14,13 +15,13 @@ export class TipoDeVisualizacionController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
-  async create(@Body() createTipoDeVisualizacionDto: CreateTipoDeVisualizacionDto) {
+  async create(@Body() createTipoDeVisualizacionDto: CreateTipoDeVisualizacionDto): Promise<TipoDeVisualizacion> {
     return await this.tipoDeVisualizacionService.create(createTipoDeVisualizacionDto);
   }
 
   @Get('/findAll')
   @HttpCode(HttpStatus.OK)
-  async findAll() {
+  async findAll() : Promise<TipoDeVisualizacion[]> {
     return await this.tipoDeVisualizacionService.findAll();
   }
 
@@ -28,7 +29,7 @@ export class TipoDeVisualizacionController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN','INMOBILIARIA')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) : Promise<TipoDeVisualizacion> {
     return await this.tipoDeVisualizacionService.findOne(+id);
   }
 
@@ -36,7 +37,7 @@ export class TipoDeVisualizacionController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
-  async update(@Param('id') id: string, @Body() updateTipoDeVisualizacionDto: UpdateTipoDeVisualizacionDto) {
+  async update(@Param('id') id: string, @Body() updateTipoDeVisualizacionDto: UpdateTipoDeVisualizacionDto) : Promise<TipoDeVisualizacion> {
     return await this.tipoDeVisualizacionService.update(+id, updateTipoDeVisualizacionDto);
   }
 
@@ -44,7 +45,7 @@ export class TipoDeVisualizacionController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) : Promise<void> {
     return await this.tipoDeVisualizacionService.remove(+id);
   }
 }

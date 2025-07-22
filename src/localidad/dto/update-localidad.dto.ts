@@ -15,11 +15,11 @@ export class UpdateLocalidadDto extends PartialType(CreateLocalidadDto) {
     @IsInt()
     @IsNotEmpty()
     @IsOptional()
-    codigoPostal?: number; // Se mantiene como opcional para permitir actualizaciones parciales.
+    codigoPostal?: number; 
     
     @IsNotEmpty()
     @IsOptional()
     @Type(() => Number)
-    provincia?: Provincia; // Clave foránea a provincia, se mantiene opcional para permitir actualizaciones parciales.
+    provincia?: Provincia; 
 
 }

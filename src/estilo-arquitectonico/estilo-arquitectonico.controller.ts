@@ -5,6 +5,7 @@ import { UpdateEstiloArquitectonicoDto } from './dto/update-estilo-arquitectonic
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/decoradores/roles.decorator';
+import { EstiloArquitectonico } from './entities/estilo-arquitectonico.entity';
 
 @Controller('estiloArquitectonico')
 export class EstiloArquitectonicoController {
@@ -14,19 +15,19 @@ export class EstiloArquitectonicoController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
-  async create(@Body() createEstiloArquitectonicoDto: CreateEstiloArquitectonicoDto) {
+  async create(@Body() createEstiloArquitectonicoDto: CreateEstiloArquitectonicoDto) : Promise<EstiloArquitectonico> {
     return await this.estiloArquitectonicoService.create(createEstiloArquitectonicoDto);
   }
 
   @Get('/findAll')
   @HttpCode(HttpStatus.OK)
-  async findAll() {
+  async findAll(): Promise<EstiloArquitectonico[]> {
     return await this.estiloArquitectonicoService.findAll();
   }
 
   @Get('/findOne/:id')
   @HttpCode(HttpStatus.OK)
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string): Promise<EstiloArquitectonico> {
     return await this.estiloArquitectonicoService.findOne(+id);
   }
 
@@ -34,7 +35,7 @@ export class EstiloArquitectonicoController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
-  async update(@Param('id') id: string, @Body() updateEstiloArquitectonicoDto: UpdateEstiloArquitectonicoDto) {
+  async update(@Param('id') id: string, @Body() updateEstiloArquitectonicoDto: UpdateEstiloArquitectonicoDto) : Promise<EstiloArquitectonico> {
     return await this.estiloArquitectonicoService.update(+id, updateEstiloArquitectonicoDto);
   }
 
@@ -42,7 +43,7 @@ export class EstiloArquitectonicoController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) : Promise<void> {
     return await this.estiloArquitectonicoService.remove(+id);
   }
 }

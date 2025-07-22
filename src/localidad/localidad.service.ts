@@ -13,7 +13,6 @@ export class LocalidadService {
     private localidadRepository: Repository<Localidad>,
   ) {}
 
-
   async create(createLocalidadDto: CreateLocalidadDto): Promise<Localidad> {
         const { nombre } = createLocalidadDto;
         const localidadExistente = await this.localidadRepository.findOneBy({ nombre });
@@ -24,7 +23,6 @@ export class LocalidadService {
         return await this.localidadRepository.save(localidad);
   }
 
-  
   async findAll() : Promise<Localidad[]> {
     const localidades = await this.localidadRepository.find();
     if (!localidades || localidades.length === 0) {

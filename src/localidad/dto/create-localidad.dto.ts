@@ -15,5 +15,5 @@ export class CreateLocalidadDto {
     @IsInt()
     @IsOptional()
     @Type(() => Number)
-    provincia?: Provincia; // clave foranea a provincia.
+    provincia?: Provincia; 
 }

@@ -15,6 +15,6 @@ export class Localidad {
 
     @ManyToOne(() => Provincia , { eager: true })
     @JoinColumn({name: 'provincia_id'})
-    provincia: Provincia; // clave foranea a provincia.
+    provincia: Provincia; 
 
 }

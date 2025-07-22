@@ -5,6 +5,7 @@ import { LoginCuentaDto } from './dto/login-cuenta.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from './guards/roles.guard';
 import { Roles } from 'src/decoradores/roles.decorator';
+import { Cuenta } from './entities/cuenta.entity';
 
 
 @Controller('auth')
@@ -12,7 +13,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  async register(@Body() registerCuentaDto: RegisterCuentaDto) {
+  async register(@Body() registerCuentaDto: RegisterCuentaDto) : Promise<Cuenta> {
     return this.authService.register(registerCuentaDto);
   }
 
@@ -25,7 +26,7 @@ export class AuthController {
   @Get('findAll')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
-  async findAll(){
+  async findAll(): Promise<RegisterCuentaDto[]> {
     return await this.authService.findAll()
   }
 }

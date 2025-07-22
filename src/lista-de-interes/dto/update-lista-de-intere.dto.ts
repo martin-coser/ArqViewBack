@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateListaDeInteresDto } from './create-lista-de-intere.dto';
-import { IsArray, IsInt, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsInt, IsNumber, IsOptional} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UpdateListaDeInteresDto extends PartialType(CreateListaDeInteresDto) {

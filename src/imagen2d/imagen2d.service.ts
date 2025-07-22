@@ -43,18 +43,13 @@ export class Imagen2dService {
   async remove(id: number): Promise<void> {
     const imagen = await this.imagen2dRepository.findOneBy({ id });
 
-    console.log(`filepath desde el servicio ${imagen?.filePath}`)
-
     if (!imagen) {
       throw new NotFoundException(`Imagen con ID ${id} no encontrada.`);
     }
 
     // Construir la ruta absoluta del archivo
     const imagePath = path.join(process.cwd(), imagen.filePath); // process.cwd() obtiene el directorio de trabajo actual
-
-    console.log(`ruta absoluta de la imagen ${imagePath}`)
-
-
+    
     // Eliminar el archivo del sistema de archivos
     try {
       if (fs.existsSync(imagePath)) { // Verificar si el archivo existe antes de intentar eliminarlo

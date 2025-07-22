@@ -2,7 +2,6 @@
 import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Column, Unique, OneToOne, ManyToMany, JoinTable } from 'typeorm';
 import { Cliente } from '../../cliente/entities/cliente.entity';
 import { Propiedad } from '../../propiedad/entities/propiedad.entity'; 
-import { IsString } from 'class-validator';
 
 @Entity()
 export class ListaDeInteres {

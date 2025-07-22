@@ -5,6 +5,7 @@ import { UpdateTipoDePropiedadDto } from './dto/update-tipo-de-propiedad.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/decoradores/roles.decorator';
+import { TipoDePropiedad } from './entities/tipo-de-propiedad.entity';
 
 @Controller('tipoDePropiedad')
 export class TipoDePropiedadController {
@@ -14,13 +15,13 @@ export class TipoDePropiedadController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createTipoDePropiedadDto: CreateTipoDePropiedadDto) {
+  async create(@Body() createTipoDePropiedadDto: CreateTipoDePropiedadDto) : Promise<TipoDePropiedad> {
     return await this.tipoDePropiedadService.create(createTipoDePropiedadDto);
   }
 
   @Get('/findAll')
   @HttpCode(HttpStatus.OK)
-  async findAll() {
+  async findAll() : Promise<TipoDePropiedad[]> {
     return await this.tipoDePropiedadService.findAll();
   }
 
@@ -28,7 +29,7 @@ export class TipoDePropiedadController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN','INMOBILIARIA')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(@Param('id', ParseIntPipe) id: number) : Promise<TipoDePropiedad> {
     return await this.tipoDePropiedadService.findOne(id);
   }
 
@@ -36,7 +37,7 @@ export class TipoDePropiedadController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
-  async update(@Param('id',ParseIntPipe) id: number, @Body() updateTipoDePropiedadDto: UpdateTipoDePropiedadDto) {
+  async update(@Param('id',ParseIntPipe) id: number, @Body() updateTipoDePropiedadDto: UpdateTipoDePropiedadDto): Promise<TipoDePropiedad> {
     return await this.tipoDePropiedadService.update(id, updateTipoDePropiedadDto);
   }
 
@@ -44,7 +45,7 @@ export class TipoDePropiedadController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
-  async remove(@Param('id', ParseIntPipe) id: number) {
+  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return await this.tipoDePropiedadService.remove(id);
   }
 }
