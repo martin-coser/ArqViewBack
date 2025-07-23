@@ -20,6 +20,6 @@ export class Inmobiliaria {
 
     @ManyToOne( () => Cuenta, {eager:true})
     @JoinColumn({name: 'cuenta_id'})
-    cuenta:number // clave foranea.
+    cuenta:Cuenta // clave foranea.
 
 }

@@ -4,12 +4,14 @@ import { InmobiliariaController } from './inmobiliaria.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Inmobiliaria } from './entities/inmobiliaria.entity';
 import { Localidad } from 'src/localidad/entities/localidad.entity';
+import { Cuenta } from 'src/auth/entities/cuenta.entity';
 
 @Module({
   imports:[
     TypeOrmModule.forFeature([
       Inmobiliaria,
-      Localidad
+      Localidad,
+      Cuenta
     ])
   ],
   controllers: [InmobiliariaController],

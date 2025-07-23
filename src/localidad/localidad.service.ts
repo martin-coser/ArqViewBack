@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateLocalidadDto } from './dto/create-localidad.dto';
 import { UpdateLocalidadDto } from './dto/update-localidad.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Localidad } from './entities/localidad.entity';
 import { Repository } from 'typeorm';
+import { Provincia } from 'src/provincia/entities/provincia.entity';
 
 @Injectable()
 export class LocalidadService {
@@ -11,15 +12,35 @@ export class LocalidadService {
   constructor(
     @InjectRepository(Localidad)
     private localidadRepository: Repository<Localidad>,
+    @InjectRepository(Provincia)
+    private ProvinciaRepository: Repository<Provincia>,
   ) {}
 
   async create(createLocalidadDto: CreateLocalidadDto): Promise<Localidad> {
-        const { nombre } = createLocalidadDto;
+        const { nombre, codigoPostal, provincia: provinciaId} = createLocalidadDto;
         const localidadExistente = await this.localidadRepository.findOneBy({ nombre });
         if (localidadExistente) {
-          throw new NotFoundException('La localidad ya existe');
+          throw new ConflictException('La localidad ya existe');
         } 
-        const localidad = this.localidadRepository.create(createLocalidadDto);
+        // Verificar que la provincia exista
+
+        const codigoPostalExistente = await this.localidadRepository.findOneBy({ codigoPostal });
+        if (codigoPostalExistente) {
+          throw new ConflictException('El código postal ya está en uso');
+        }
+        
+        const provincia= await this.ProvinciaRepository.findOneBy({ id: provinciaId });
+        if (!provincia) {
+          throw new NotFoundException(`Provincia con id ${provinciaId} no existe`);
+        }
+        // Crear la entidad Localidad
+        const localidad = this.localidadRepository.create(
+          {
+            nombre,
+            codigoPostal,
+            provincia
+          }
+        );
         return await this.localidadRepository.save(localidad);
   }
 

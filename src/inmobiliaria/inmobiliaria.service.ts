@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Inmobiliaria } from './entities/inmobiliaria.entity';
 import { Repository } from 'typeorm';
 import { Localidad } from 'src/localidad/entities/localidad.entity';
+import { Cuenta } from 'src/auth/entities/cuenta.entity';
 
 @Injectable()
 export class InmobiliariaService {
@@ -13,6 +14,8 @@ export class InmobiliariaService {
     private inmobiliariaRepository: Repository<Inmobiliaria>,
     @InjectRepository(Localidad)
     private localidadRepository: Repository<Localidad>,
+    @InjectRepository(Cuenta)
+    private cuentaRepository: Repository<Cuenta>,
   ){}
 
   async create(createInmobiliariaDto: CreateInmobiliariaDto):Promise<Inmobiliaria> {
@@ -20,7 +23,7 @@ export class InmobiliariaService {
       nombre,
       direccion,
       localidad: localidadId,
-      cuenta // recordar que es una clave foranea
+      cuenta: cuentaID // recordar que es una clave foranea
     } = createInmobiliariaDto
 
     // Verifica si la dirección ya existe
@@ -32,6 +35,9 @@ export class InmobiliariaService {
     // Busca los objetos relacionados
     const localidad = await this.localidadRepository.findOne({ where: { id: localidadId } });
     if (!localidad) throw new NotFoundException(`Localidad con id ${localidadId} no existe`);
+
+    const cuenta = await this.cuentaRepository.findOne({ where: { id: cuentaID } });
+    if (!cuenta) throw new NotFoundException(`Cuenta con id ${cuentaID} no existe`);
     
     //crear entidad
     const inmobiliaria = this.inmobiliariaRepository.create(

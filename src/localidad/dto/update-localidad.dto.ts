@@ -1,8 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateLocalidadDto } from './create-localidad.dto';
 import { IsInt, IsNotEmpty, IsString, IsOptional } from 'class-validator';
-import { Provider } from '@nestjs/common';
-import { Provincia } from 'src/provincia/entities/provincia.entity';
 import { Type } from 'class-transformer';
 
 export class UpdateLocalidadDto extends PartialType(CreateLocalidadDto) {
@@ -20,6 +18,6 @@ export class UpdateLocalidadDto extends PartialType(CreateLocalidadDto) {
     @IsNotEmpty()
     @IsOptional()
     @Type(() => Number)
-    provincia?: Provincia; 
+    provincia?: number; 
 
 }

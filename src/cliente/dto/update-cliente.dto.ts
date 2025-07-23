@@ -23,11 +23,11 @@ export class UpdateClienteDto extends PartialType(CreateClienteDto) {
 
     @IsNumber()
     @IsNotEmpty()
-    cuenta?: Cuenta;
+    cuenta?: number;
     
     @IsNumber()
     @IsNotEmpty()
-    localidad?: Localidad; // Clave foránea a localidad, se mantiene opcional para permitir
+    localidad?: number; // Clave foránea a localidad, se mantiene opcional para permitir
     
 
 }

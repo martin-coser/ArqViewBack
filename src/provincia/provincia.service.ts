@@ -18,7 +18,7 @@ export class ProvinciaService {
     // Verifico que no exista una provincia con el mismo nombre antes de crear. 
     const provinciaExistente = await this.provinciaRepository.findOneBy({ nombre });
     if (provinciaExistente) {
-      throw new Error('La provincia ya existe');
+      throw new NotFoundException('La provincia ya existe');
     }
     const provincia = this.provinciaRepository.create(createProvinciaDto);
     return await this.provinciaRepository.save(provincia);
