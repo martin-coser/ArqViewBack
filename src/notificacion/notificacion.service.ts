@@ -30,7 +30,6 @@ export class NotificacionService {
 
   @OnEvent('propiedad.actualizada')
   async handlePropiedadUpdated(payload: { propiedadId: number; cambios: string; oldNombre?: string; newNombre?: string }) {
-    console.log(`Notificación de propiedad actualizada: ${payload.propiedadId}, Cambios: ${payload.cambios}`);
     const listas = await this.listaDeInteresRepository
       .createQueryBuilder('lista')
       .innerJoin('lista.propiedades', 'propiedad', 'propiedad.id = :propiedadId', { propiedadId: payload.propiedadId })
@@ -124,7 +123,6 @@ async nuevoMensaje(payload: { contenido: string; fechaCreacion: Date; remitente:
       subject: 'Nuevo mensaje recibido',
       text: `Has recibido un nuevo mensaje de ${payload.remitente}:\n\n${payload.contenido}`,
     });
-    console.log(`Correo enviado a ${payload.receptor}`);
   } catch (error) {
     console.error(`Error al enviar correo a ${payload.receptor}:`, error);
     throw new Error('No se pudo enviar el correo');
