@@ -34,15 +34,14 @@ export class NotificacionService {
       .createQueryBuilder('lista')
       .innerJoin('lista.propiedades', 'propiedad', 'propiedad.id = :propiedadId', { propiedadId: payload.propiedadId })
       .leftJoinAndSelect('lista.cliente', 'cliente')
-      .leftJoinAndSelect('cliente.cuenta', 'cuenta') 
+      .leftJoinAndSelect('cliente.cuenta', 'cuenta')
+      .leftJoinAndSelect('cliente.localidad', 'localidad')
+      .leftJoinAndSelect('lista.propiedades', 'propiedades')
       .getMany()
 
-      const listaNueva = await this.listaDeInteresRepository.find ({
-        where: { propiedades: { id: payload.propiedadId } },
-        relations: ['cliente', 'cliente.cuenta'],
-      });
+    
       console.log('Listas:', listas);
-      console.log('Lista Nueva:', listaNueva);
+
 
     const propiedad = await this.propiedadRepository.findOne({ where: { id: payload.propiedadId } });
     if (!propiedad) {
