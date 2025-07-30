@@ -30,13 +30,19 @@ export class NotificacionService {
 
   @OnEvent('propiedad.actualizada')
   async handlePropiedadUpdated(payload: { propiedadId: number; cambios: string; oldNombre?: string; newNombre?: string }) {
-    console.log(`Notificación de propiedad actualizada: ${payload.propiedadId}, Cambios: ${payload.cambios}`);
     const listas = await this.listaDeInteresRepository
       .createQueryBuilder('lista')
       .innerJoin('lista.propiedades', 'propiedad', 'propiedad.id = :propiedadId', { propiedadId: payload.propiedadId })
       .leftJoinAndSelect('lista.cliente', 'cliente')
       .leftJoinAndSelect('cliente.cuenta', 'cuenta') 
-      .getMany();
+      .getMany()
+
+      const listaNueva = await this.listaDeInteresRepository.find ({
+        where: { propiedades: { id: payload.propiedadId } },
+        relations: ['cliente', 'cliente.cuenta'],
+      });
+      console.log('Listas:', listas);
+      console.log('Lista Nueva:', listaNueva);
 
     const propiedad = await this.propiedadRepository.findOne({ where: { id: payload.propiedadId } });
     if (!propiedad) {
@@ -87,9 +93,8 @@ export class NotificacionService {
             <p>El equipo de Arqview </p>
           `,
         });
-        console.log(`  Correo de notificación enviado a ${lista.cliente.cuenta.email} por cambios en la propiedad ${propiedad.nombre}`);
       } catch (error) {
-        console.error(`  Error al enviar correo a ${lista.cliente.cuenta.email} sobre la propiedad ${propiedad.nombre}:`, error);
+        new NotFoundException(`No se pudo enviar el correo a ${lista.cliente.cuenta.email}`);
       }
     }
   }
@@ -98,7 +103,7 @@ export class NotificacionService {
 async nuevoMensaje(payload: { contenido: string; fechaCreacion: Date; remitente: string; receptor: string; mensajeId: number }) {
   const mensaje = await this.mensajeRepository.findOne({ where: { id: payload.mensajeId } });
   if (!mensaje) {
-    console.error(`Mensaje con ID ${payload.mensajeId} no encontrado`);
+
     throw new NotFoundException(`Mensaje con ID ${payload.mensajeId} no encontrado`);
   }
 
@@ -125,7 +130,6 @@ async nuevoMensaje(payload: { contenido: string; fechaCreacion: Date; remitente:
       subject: 'Nuevo mensaje recibido',
       text: `Has recibido un nuevo mensaje de ${payload.remitente}:\n\n${payload.contenido}`,
     });
-    console.log(`Correo enviado a ${payload.receptor}`);
   } catch (error) {
     console.error(`Error al enviar correo a ${payload.receptor}:`, error);
     throw new Error('No se pudo enviar el correo');

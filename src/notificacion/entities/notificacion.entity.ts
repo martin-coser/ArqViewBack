@@ -19,11 +19,11 @@ export class Notificacion {
   @Column({ default: false })
   leida: boolean;
 
-  @ManyToOne(() => Cliente, cliente => cliente.notificaciones)
+  @ManyToOne(() => Cliente)
   @JoinColumn({ name: 'cliente_id' })
   cliente: Cliente;
 
-  @ManyToOne(() => Propiedad, { nullable: true })
+  @ManyToOne(() => Propiedad, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'propiedad_id' })
   propiedad: Propiedad;
 }

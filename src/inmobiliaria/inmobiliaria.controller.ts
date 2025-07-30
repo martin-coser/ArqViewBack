@@ -5,6 +5,7 @@ import { UpdateInmobiliariaDto } from './dto/update-inmobiliaria.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/decoradores/roles.decorator';
+import { Inmobiliaria } from './entities/inmobiliaria.entity';
 
 @Controller('inmobiliaria')
 export class InmobiliariaController {
@@ -12,19 +13,19 @@ export class InmobiliariaController {
 
   @Post('/create')
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createInmobiliariaDto: CreateInmobiliariaDto) {
+  create(@Body() createInmobiliariaDto: CreateInmobiliariaDto): Promise<Inmobiliaria> {
     return this.inmobiliariaService.create(createInmobiliariaDto);
   }
 
   @Get('/findAll')
   @HttpCode(HttpStatus.OK)
-  findAll() {
+  findAll() : Promise<Inmobiliaria[]> {
     return this.inmobiliariaService.findAll();
   }
 
   @Get('/findOne/:id')
   @HttpCode(HttpStatus.OK)
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string): Promise<Inmobiliaria> {
     return this.inmobiliariaService.findOne(+id);
   }
 
@@ -32,7 +33,7 @@ export class InmobiliariaController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('INMOBILIARIA')
-  update(@Param('id', ParseIntPipe) id: number, @Body() updateInmobiliariaDto: UpdateInmobiliariaDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateInmobiliariaDto: UpdateInmobiliariaDto) : Promise<Inmobiliaria> {
     return this.inmobiliariaService.update(id, updateInmobiliariaDto);
   }
 
@@ -40,7 +41,7 @@ export class InmobiliariaController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN','INMOBILIARIA')
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string) : Promise<void> {
     return this.inmobiliariaService.remove(+id);
   }
 }

@@ -30,7 +30,7 @@ export class EstiloArquitectonicoService {
     return await this.estiloArquitectonicoRepository.find()
   }
 
-  async findOne(id: number) {
+  async findOne(id: number) : Promise<EstiloArquitectonico> {
     const estiloArquitectonico = await this.estiloArquitectonicoRepository.findOneBy({ id })
     if(!estiloArquitectonico){
       throw new NotFoundException(`El estilo arquitectonico con el id ${id} no existe`)
@@ -38,7 +38,7 @@ export class EstiloArquitectonicoService {
     return estiloArquitectonico
   }
 
-  async update(id: number, updateEstiloArquitectonicoDto: UpdateEstiloArquitectonicoDto) {
+  async update(id: number, updateEstiloArquitectonicoDto: UpdateEstiloArquitectonicoDto) : Promise<EstiloArquitectonico> {
     const estiloArquitectonico = await this.findOne(id)
     // Comprueba si el DTO incluye un nuevo nombre y si es diferente al nombre actual del estilo arquitectonico
     if (updateEstiloArquitectonicoDto.nombre && updateEstiloArquitectonicoDto.nombre !== estiloArquitectonico.nombre) {

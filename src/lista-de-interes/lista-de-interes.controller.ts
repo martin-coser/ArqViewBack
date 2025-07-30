@@ -28,7 +28,7 @@ export class ListaDeInteresController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('jwt'), RolesGuard)  
   @Roles('CLIENTE')
-  async findAll() {
+  async findAll() : Promise<ListaDeInteres[]> {
     return await this.listaDeInteresService.findAll();
   }
 
@@ -52,7 +52,7 @@ export class ListaDeInteresController {
   @HttpCode(HttpStatus.NO_CONTENT)  
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('CLIENTE')
-  remove(@Param('id', ParseIntPipe ) id: number) {
+  remove(@Param('id', ParseIntPipe ) id: number) : Promise<void> {
     return this.listaDeInteresService.remove(id);
   }
 }

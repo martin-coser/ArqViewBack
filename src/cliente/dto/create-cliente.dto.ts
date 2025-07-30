@@ -23,11 +23,11 @@ export class CreateClienteDto {
     @IsNotEmpty()
     @IsNumber()
     @Type(() => Number)
-    cuenta : Cuenta;   // clave foranea a cuenta. 
+    cuenta : number;   // clave foranea a cuenta. 
 
     @IsNumber()
     @IsNotEmpty()
     @Type(() => Number)
-    localidad: Localidad; // clave foranea a localidad.
+    localidad: number; // clave foranea a localidad.
 
 }

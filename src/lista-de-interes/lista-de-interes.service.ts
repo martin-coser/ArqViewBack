@@ -34,8 +34,11 @@ export class ListaDeInteresService {
     throw new BadRequestException(`El cliente no tiene una cuenta asociada`);
   }
 
+  
   // Verificar si el cliente ya tiene una lista de interés
-  if (cliente.listaDeInteres) {
+  const existeListaDeInteres = await this.listaDeInteresRepository.findOne({where: { cliente: { id: cliente.id } }});
+  
+  if (existeListaDeInteres) {
     throw new BadRequestException(`El cliente con ID ${cliente.id} ya tiene una lista de interés`);
   }
 
@@ -57,11 +60,7 @@ export class ListaDeInteresService {
 
   // Guardar la lista de interés
   const savedLista = await this.listaDeInteresRepository.save(listaDeInteres);
-
-  // Actualizar el cliente para reflejar la relación inversa
-  cliente.listaDeInteres = savedLista;
-  await this.clienteRepository.save(cliente);
-
+  
   // Recargar la lista con todas las relaciones para la respuesta
   const listaConRelaciones = await this.listaDeInteresRepository.findOne({
     where: { id: savedLista.id },
@@ -75,18 +74,19 @@ export class ListaDeInteresService {
   return listaConRelaciones;
 }
 
+// busca una lista de interés por el cliente asociado a la cuenta
   async findByClient(cuentaId: number): Promise<ListaDeInteres> {
     const cliente = await this.clienteRepository.findOne({
       where: { cuenta: { id: cuentaId } },
       relations: ['listaDeInteres'],
     });
-
-    if (!cliente || !cliente.listaDeInteres) {
-      throw new NotFoundException(`Lista de interés no encontrada para la cuenta con ID ${cuentaId}`);
+    
+    if (!cliente) {
+      throw new NotFoundException(`No se encontró un cliente asociado a la cuenta con ID ${cuentaId}`);
     }
 
     const lista = await this.listaDeInteresRepository.findOne({
-      where: { id: cliente.listaDeInteres.id },
+      where: { cliente: { id: cliente.id } },
       relations: ['cliente', 'propiedades'],
     });
 
