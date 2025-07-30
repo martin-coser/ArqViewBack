@@ -23,7 +23,7 @@ export class ListaDeInteresService {
   // Buscar el cliente asociado a la cuenta
   const cliente = await this.clienteRepository.findOne({
     where: { cuenta: { id: cuentaId } },
-    relations: ['cuenta', 'listaDeInteres'],
+    relations: ['cuenta'],
   });
 
   if (!cliente) {
