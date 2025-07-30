@@ -35,7 +35,14 @@ export class NotificacionService {
       .innerJoin('lista.propiedades', 'propiedad', 'propiedad.id = :propiedadId', { propiedadId: payload.propiedadId })
       .leftJoinAndSelect('lista.cliente', 'cliente')
       .leftJoinAndSelect('cliente.cuenta', 'cuenta') 
-      .getMany();
+      .getMany()
+
+      const listaNueva = await this.listaDeInteresRepository.find ({
+        where: { propiedades: { id: payload.propiedadId } },
+        relations: ['cliente', 'cliente.cuenta'],
+      });
+      console.log('Listas:', listas);
+      console.log('Lista Nueva:', listaNueva);
 
     const propiedad = await this.propiedadRepository.findOne({ where: { id: payload.propiedadId } });
     if (!propiedad) {
@@ -96,7 +103,7 @@ export class NotificacionService {
 async nuevoMensaje(payload: { contenido: string; fechaCreacion: Date; remitente: string; receptor: string; mensajeId: number }) {
   const mensaje = await this.mensajeRepository.findOne({ where: { id: payload.mensajeId } });
   if (!mensaje) {
-    console.error(`Mensaje con ID ${payload.mensajeId} no encontrado`);
+
     throw new NotFoundException(`Mensaje con ID ${payload.mensajeId} no encontrado`);
   }
 

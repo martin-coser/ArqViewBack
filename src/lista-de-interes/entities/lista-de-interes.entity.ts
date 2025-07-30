@@ -9,11 +9,11 @@ export class ListaDeInteres {
     @PrimaryGeneratedColumn()
     id: number;
     
-    @OneToOne(() => Cliente, cliente => cliente.listaDeInteres)
+    @OneToOne(() => Cliente, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'cliente_id', referencedColumnName: 'id' })
     cliente: Cliente;
-
-    @ManyToMany(() => Propiedad, propiedad => propiedad.listasDeInteres)
+  
+    @ManyToMany(() => Propiedad)
     @JoinTable({
     name: 'lista_de_interes_propiedades',
     joinColumn: { name: 'listaDeInteres_id', referencedColumnName: 'id' },

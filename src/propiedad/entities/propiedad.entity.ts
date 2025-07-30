@@ -74,6 +74,5 @@ export class Propiedad {
     @JoinColumn({ name: 'inmobiliaria_id' })
     inmobiliaria:Inmobiliaria 
 
-    @ManyToMany(() => ListaDeInteres, listaDeInteres => listaDeInteres.propiedades)
-    listasDeInteres: ListaDeInteres[];
+    
 }

@@ -28,6 +28,4 @@ export class Cuenta {
   @Column({ type: 'timestamp', nullable: true })
   logout: Date;
 
-  @OneToOne(() => Cliente, cliente => cliente.cuenta) 
-  cliente: Cliente;
 }

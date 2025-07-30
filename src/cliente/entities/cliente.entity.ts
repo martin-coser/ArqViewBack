@@ -22,20 +22,13 @@ export class Cliente {
     @Column({ type : 'varchar', length: 255 })
     direccion: string;
     
-    @OneToOne(() => Cuenta, cuenta => cuenta.cliente, { onDelete: 'CASCADE' }) 
+    @OneToOne(() => Cuenta, { onDelete: 'CASCADE' }) 
     @JoinColumn({name: 'cuenta_id'})
     cuenta: Cuenta;  
     
     @ManyToOne(() => Localidad , { eager: true })
     @JoinColumn({name: 'localidad_id'})
     localidad: Localidad; // clave foranea a localidad.
-
-    @OneToOne(() => ListaDeInteres, listaDeInteres => listaDeInteres.cliente, { cascade: ['insert', 'update'], onDelete: 'SET NULL', nullable: true })
-    @JoinColumn({name: 'listaDeInteres_id'})
-    listaDeInteres: ListaDeInteres;
     
-    @OneToMany(() => Notificacion, notificacion => notificacion.cliente)
-    @JoinColumn({name: 'notificacion_id'})
-    notificaciones: Notificacion[];
 }
 
