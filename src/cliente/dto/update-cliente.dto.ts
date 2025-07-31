@@ -13,9 +13,9 @@ export class UpdateClienteDto extends PartialType(CreateClienteDto) {
     @IsNotEmpty()
     apellido?: string;
     
-    @IsDate()
     @IsNotEmpty()
-    fechaNacimiento?: Date;
+    @IsString()
+    fechaNacimiento: Date;
 
     @IsString()
     @IsNotEmpty()
