@@ -39,10 +39,6 @@ export class NotificacionService {
       .leftJoinAndSelect('lista.propiedades', 'propiedades')
       .getMany()
 
-    
-      console.log('Listas:', listas);
-
-
     const propiedad = await this.propiedadRepository.findOne({ where: { id: payload.propiedadId } });
     if (!propiedad) {
       console.error(`Propiedad con ID ${payload.propiedadId} no encontrada`);
