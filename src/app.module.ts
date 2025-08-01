@@ -17,6 +17,7 @@ import { ListaDeInteresModule } from './lista-de-interes/lista-de-interes.module
 import { MensajeModule } from './mensaje/mensaje.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificacionModule } from './notificacion/notificacion.module'; 
+import { ActividadClienteModule } from './actividad-cliente/actividad-cliente.module';
 
 
 @Module({
@@ -51,6 +52,7 @@ import { NotificacionModule } from './notificacion/notificacion.module';
     ListaDeInteresModule,
     MensajeModule,
     NotificacionModule,
+    ActividadClienteModule,
   ],
   controllers: [AppController],
   providers: [AppService],
