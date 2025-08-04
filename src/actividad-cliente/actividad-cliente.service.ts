@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateActividadClienteDto } from './dto/create-actividad-cliente.dto';
-import { UpdateActividadClienteDto } from './dto/update-actividad-cliente.dto';
 import { ActividadCliente } from './entities/actividad-cliente.entity';
 import { In, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,7 +18,7 @@ export class ActividadClienteService {
     private readonly clienteRepository: Repository<Cliente>,
     @InjectRepository(ListaDeInteres)
     private readonly listaDeInteresRepository: Repository<ListaDeInteres>,
-  ) {}
+  ) { }
 
   async create(createActividadClienteDto: CreateActividadClienteDto, cuentaId: number) {
     //Busco la propiedad asociada al ID proporcionado
@@ -43,7 +42,7 @@ export class ActividadClienteService {
     }
 
     //Osea cuando se intente crear una actividad cliente de tipo consulta, debo verificar que no exista ningun mensaje anterior. De lo contrario, no se creara.
-    if( createActividadClienteDto.tipoDeActividad === 'VISUALIZACION' ) {
+    if (createActividadClienteDto.tipoDeActividad === 'VISUALIZACION') {
       const actividadCliente = this.actividadClienteRepository.create({
         tipoDeActividad: createActividadClienteDto.tipoDeActividad,
         propiedad,
@@ -51,9 +50,7 @@ export class ActividadClienteService {
       });
       console.log('ActividadCliente a guardar:', actividadCliente);
       this.actividadClienteRepository.save(actividadCliente);
-    }
-    else if( createActividadClienteDto.tipoDeActividad === 'CONSULTA' ) {
-
+    } else if (createActividadClienteDto.tipoDeActividad === 'CONSULTA') {
       //Busco mensajes previos relacionados con la propiedad y el cliente
       //Si existe un mensaje previo, no se creará la actividad cliente
       //Esto es para evitar duplicados de consultas
@@ -65,7 +62,7 @@ export class ActividadClienteService {
         },
       });
 
-      if( mensajesPrevios.length === 0 ) {
+      if (mensajesPrevios.length === 0) {
         const actividadCliente = this.actividadClienteRepository.create({
           tipoDeActividad: createActividadClienteDto.tipoDeActividad,
           propiedad,
@@ -74,7 +71,7 @@ export class ActividadClienteService {
         console.log('ActividadCliente a guardar:', actividadCliente);
         this.actividadClienteRepository.save(actividadCliente);
       }
-    }else if (createActividadClienteDto.tipoDeActividad === 'LISTADEINTERES') {
+    } else if (createActividadClienteDto.tipoDeActividad === 'LISTADEINTERES') {
       const listaCliente = await this.listaDeInteresRepository.findOne({
         where: {
           cliente: { id: cliente.id },
@@ -119,7 +116,7 @@ export class ActividadClienteService {
         await this.actividadClienteRepository.save(actividadCliente);
       }
     }
-    
+
   }
 
 }
