@@ -5,17 +5,23 @@ import { UpdatePropiedadDto } from './dto/update-propiedad.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/decoradores/roles.decorator';
+import { RecomendacionService } from 'src/recomendacion/recomendacion.service';
 
 @Controller('propiedad')
 export class PropiedadController {
-  constructor(private readonly propiedadService: PropiedadService) {}
+  constructor(
+    private readonly propiedadService: PropiedadService,
+    private readonly recomendacionService: RecomendacionService,
+  ) {}
 
   @Post('/create')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('INMOBILIARIA')
   async create(@Body() createPropiedadDto: CreatePropiedadDto) {
-    return await this.propiedadService.create(createPropiedadDto);
+    const propiedad = await this.propiedadService.create(createPropiedadDto);
+    await this.recomendacionService.notificarNuevaPropiedad(propiedad.id);
+    return propiedad;
   }
 
   @Get('/findAll')
