@@ -18,6 +18,7 @@ import { MensajeModule } from './mensaje/mensaje.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificacionModule } from './notificacion/notificacion.module'; 
 import { ActividadClienteModule } from './actividad-cliente/actividad-cliente.module';
+import { EstadisticaPropiedadModule } from './estadistica-propiedad/estadistica-propiedad.module';
 import { RecomendacionModule } from './recomendacion/recomendacion.module';
 
 
@@ -54,6 +55,7 @@ import { RecomendacionModule } from './recomendacion/recomendacion.module';
     MensajeModule,
     NotificacionModule,
     ActividadClienteModule,
+    EstadisticaPropiedadModule,
     RecomendacionModule,
   ],
   controllers: [AppController],
