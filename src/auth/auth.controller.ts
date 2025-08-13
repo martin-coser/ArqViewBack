@@ -30,17 +30,17 @@ export class AuthController {
     return await this.authService.findAll()
   }
 
-  @Get('/findPass/:id')
+  @Post('verificarPass/:id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('CLIENTE', 'INMOBILIARIA') 
-  async findPass(@Param('id', ParseIntPipe) id: number) {
-    return await this.authService.findPass(id);
+  async verificarPass(@Param('id', ParseIntPipe) id: number, @Body() body: { oldPassword: string }) {
+    return await this.authService.verificarPass(id, body);
   }
 
   @Patch('/updatePass/:id')
   @UseGuards(AuthGuard('jwt'))
   @Roles('CLIENTE', 'INMOBILIARIA')
-  async updatePass(@Param('id', ParseIntPipe) id: number, @Body() updatePassDto: { newPassword: string }) {
-    return await this.authService.updatePass(id, updatePassDto);
+  async updatePass(@Param('id', ParseIntPipe) id: number, @Body() body: { newPassword: string }) {
+    return await this.authService.updatePass(id, body);
   }
 }
