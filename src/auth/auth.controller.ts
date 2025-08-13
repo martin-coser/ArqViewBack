@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterCuentaDto } from './dto/register-cuenta.dto';
 import { LoginCuentaDto } from './dto/login-cuenta.dto';
@@ -28,5 +28,12 @@ export class AuthController {
   @Roles('ADMIN')
   async findAll(): Promise<RegisterCuentaDto[]> {
     return await this.authService.findAll()
+  }
+
+  @Patch('/updatePass/:id')
+  @UseGuards(AuthGuard('jwt'))
+  @Roles('CLIENTE', 'INMOBILIARIA')
+  async updatePass(@Param('id', ParseIntPipe) id: number, @Body() updatePassDto: { newPassword: string }) {
+    return await this.authService.updatePass(id, updatePassDto);
   }
 }

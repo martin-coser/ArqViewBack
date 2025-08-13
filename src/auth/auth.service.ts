@@ -83,4 +83,17 @@ export class AuthService {
     return cuentas;
   }
 
+  async updatePass(id: number, updatePassDto: { newPassword: string }): Promise<string> {
+    const cuenta = await this.cuentaRepository.findOne({ where: { id : id  } }); 
+    if (!cuenta) {
+      throw new NotFoundException('Cuenta no encontrada');
+    }
+
+    const passwordEncriptada = await bcrypt.hash(updatePassDto.newPassword, 10);
+    cuenta.password = passwordEncriptada;
+    await this.cuentaRepository.save(cuenta);
+
+    return 'Contraseña actualizada correctamente';
+  }
+
 }
