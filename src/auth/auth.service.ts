@@ -83,6 +83,15 @@ export class AuthService {
     return cuentas;
   }
 
+  async findPass(id: number): Promise<string> {
+    const cuenta = await this.cuentaRepository.findOne({ where: { id } });
+    if (!cuenta) {
+      throw new NotFoundException('Cuenta no encontrada');
+    }
+    
+    return cuenta.password;
+}
+
   async updatePass(id: number, updatePassDto: { newPassword: string }): Promise<string> {
     const cuenta = await this.cuentaRepository.findOne({ where: { id : id  } }); 
     if (!cuenta) {

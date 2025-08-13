@@ -30,6 +30,13 @@ export class AuthController {
     return await this.authService.findAll()
   }
 
+  @Get('/findPass/:id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('CLIENTE', 'INMOBILIARIA') 
+  async findPass(@Param('id', ParseIntPipe) id: number) {
+    return await this.authService.findPass(id);
+  }
+
   @Patch('/updatePass/:id')
   @UseGuards(AuthGuard('jwt'))
   @Roles('CLIENTE', 'INMOBILIARIA')
