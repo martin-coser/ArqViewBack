@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Body, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cuenta } from './entities/cuenta.entity';
 import { Repository } from 'typeorm';
@@ -83,22 +83,28 @@ export class AuthService {
     return cuentas;
   }
 
-  async findPass(id: number): Promise<string> {
+  async verificarPass(id: number, body: {oldPassword: string}): Promise<string> {
     const cuenta = await this.cuentaRepository.findOne({ where: { id } });
     if (!cuenta) {
       throw new NotFoundException('Cuenta no encontrada');
     }
-    
-    return cuenta.password;
-}
 
-  async updatePass(id: number, updatePassDto: { newPassword: string }): Promise<string> {
+    const esContraseñaValida = await bcrypt.compare(body.oldPassword, cuenta.password);
+
+    if (!esContraseñaValida) {
+      throw new NotFoundException('Contraseña incorrecta');
+    }
+
+    return 'Contraseña verificada correctamente';
+  }   
+
+  async updatePass(id: number, body: { newPassword: string }): Promise<string> {
     const cuenta = await this.cuentaRepository.findOne({ where: { id : id  } }); 
     if (!cuenta) {
       throw new NotFoundException('Cuenta no encontrada');
     }
 
-    const passwordEncriptada = await bcrypt.hash(updatePassDto.newPassword, 10);
+    const passwordEncriptada = await bcrypt.hash(body.newPassword, 10);
     cuenta.password = passwordEncriptada;
     await this.cuentaRepository.save(cuenta);
 
