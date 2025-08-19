@@ -8,6 +8,7 @@ import { TipoDePropiedad } from 'src/tipo-de-propiedad/entities/tipo-de-propieda
 import { EstiloArquitectonico } from 'src/estilo-arquitectonico/entities/estilo-arquitectonico.entity';
 import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-visualizacion.entity';
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
+import { RecomendacionModule } from 'src/recomendacion/recomendacion.module';
 
 @Module({
   imports: [
@@ -18,7 +19,8 @@ import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
     EstiloArquitectonico,
     TipoDeVisualizacion,
     Inmobiliaria
-  ])
+  ]),
+  RecomendacionModule,
 ],
   controllers: [PropiedadController],
   providers: [PropiedadService],
