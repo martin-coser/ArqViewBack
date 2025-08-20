@@ -1,23 +1,22 @@
-import { Type } from "class-transformer"
-import { IsNotEmpty, IsNumber, IsString } from "class-validator"
+import { Type } from 'class-transformer';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateInmobiliariaDto {
-    
-    @IsString()
-    @IsNotEmpty()
-    nombre: string
+  @IsString()
+  @IsNotEmpty()
+  nombre: string;
 
-    @IsString()
-    @IsNotEmpty()
-    direccion: string 
+  @IsString()
+  @IsNotEmpty()
+  direccion: string;
 
-    @IsNumber()
-    @IsNotEmpty()
-    @Type(() => Number)
-    localidad:number // foranea
+  @IsNumber()
+  @IsNotEmpty()
+  @Type(() => Number)
+  localidad: number; // ID de la localidad
 
-    @IsNumber()
-    @IsNotEmpty()
-    @Type(() => Number)
-    cuenta:number
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  cuenta?: number; // ID de la cuenta
 }
