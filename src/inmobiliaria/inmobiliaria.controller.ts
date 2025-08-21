@@ -6,6 +6,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/decoradores/roles.decorator';
 import { Inmobiliaria } from './entities/inmobiliaria.entity';
+import { RegisterCuentaDto } from 'src/auth/dto/register-cuenta.dto';
 
 @Controller('inmobiliaria')
 export class InmobiliariaController {
@@ -13,8 +14,8 @@ export class InmobiliariaController {
 
   @Post('/create')
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createInmobiliariaDto: CreateInmobiliariaDto): Promise<Inmobiliaria> {
-    return this.inmobiliariaService.create(createInmobiliariaDto);
+  async create( @Body('inmobiliaria') createInmobiliariaDto: CreateInmobiliariaDto, @Body('cuenta') registerCuentaDto: RegisterCuentaDto,): Promise<Inmobiliaria> {
+    return await this.inmobiliariaService.create(createInmobiliariaDto, registerCuentaDto);
   }
 
   @Get('/findAll')

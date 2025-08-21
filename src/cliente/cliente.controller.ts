@@ -6,18 +6,19 @@ import { Cliente } from './entities/cliente.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/decoradores/roles.decorator';
+import { RegisterCuentaDto } from 'src/auth/dto/register-cuenta.dto';
 
 @Controller('cliente')
 export class ClienteController {
   constructor(private readonly clienteService: ClienteService) {}
   
-  @Post('/create')
+  @Post('create')
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createClienteDto: CreateClienteDto) : Promise<Cliente> {
-    return await this.clienteService.create(createClienteDto);
+  async create(@Body('cliente') createClienteDto: CreateClienteDto, @Body('cuenta') registerCuentaDto: RegisterCuentaDto,): Promise<Cliente> {
+    return await this.clienteService.create(createClienteDto, registerCuentaDto);
   }
   
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.OK)  
   @Get('/findAll')
   async findAll() : Promise<Cliente[]> {
     return await this.clienteService.findAll();

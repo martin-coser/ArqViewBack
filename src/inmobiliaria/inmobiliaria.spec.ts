@@ -9,7 +9,7 @@ import { AuthService } from "src/auth/auth.service";
 import { Inmobiliaria } from "src/inmobiliaria/entities/inmobiliaria.entity";
 import { InmobiliariaService } from "src/inmobiliaria/inmobiliaria.service";
 import { CreateInmobiliariaDto } from "src/inmobiliaria/dto/create-inmobiliaria.dto";
-import { JwtService } from "@nestjs/jwt"; 
+import { JwtService } from "@nestjs/jwt";
 import { Localidad } from "src/localidad/entities/localidad.entity";
 import { Cliente } from "src/cliente/entities/cliente.entity";
 import { ClienteService } from "src/cliente/cliente.service";
@@ -29,6 +29,7 @@ describe('test de integracion para Inmobiliaria', () => {
   let clienteRepository: Repository<Cliente>;
   let jwtService: JwtService;
 
+  // ... (mocks de datos y DTOs)
   const mockRegisterCuentaDto: RegisterCuentaDto = {
     nombreUsuario: 'inmobiliaria',
     email: 'inmobiliaria@gmail.com',
@@ -70,18 +71,33 @@ describe('test de integracion para Inmobiliaria', () => {
     save: jest.fn().mockResolvedValue(mockCuenta),
   };
 
+  const mockLocalidadRepository = {
+    findOne: jest.fn(),
+    findOneBy: jest.fn(),
+  };
+
   const mockInmobiliariaRepository = {
+    // Los mocks findOneBy y save de este repositorio ya no son necesarios
+    // para el método create, pero se mantienen para otros métodos del servicio.
     findOneBy: jest.fn(),
     create: jest.fn().mockReturnValue(mockInmobiliaria),
     save: jest.fn().mockResolvedValue(mockInmobiliaria),
+    // Esto es lo más importante: simular la transacción de TypeORM
+    manager: {
+      transaction: jest.fn(async (cb) => {
+        // Simulamos el transactionalEntityManager que se pasa al callback
+        const transactionalEntityManager = {
+          findOne: jest.fn(),
+          create: jest.fn().mockReturnValue(mockInmobiliaria),
+          save: jest.fn().mockResolvedValue(mockInmobiliaria),
+        };
+        // Ejecutamos el callback de la transacción y devolvemos su resultado
+        return await cb(transactionalEntityManager);
+      }),
+    },
   };
 
   const mockClienteRepository = {
-    findOneBy: jest.fn(),
-  };
-  
-  const mockLocalidadRepository = {
-    findOne: jest.fn(),
     findOneBy: jest.fn(),
   };
 
@@ -115,7 +131,7 @@ describe('test de integracion para Inmobiliaria', () => {
         },
       ],
     }).compile();
-    // Obtener instancias de los servicios y repositorios
+
     authService = module.get<AuthService>(AuthService);
     inmobiliariaService = module.get<InmobiliariaService>(InmobiliariaService);
     cuentaRepository = module.get<Repository<Cuenta>>(getRepositoryToken(Cuenta));
@@ -129,6 +145,7 @@ describe('test de integracion para Inmobiliaria', () => {
     jest.clearAllMocks();
   });
 
+  // Los tests para AuthService permanecen sin cambios
   describe('Servicio de cuenta para inmobiliaria', () => {
     it('✅ Debería registrar una nueva cuenta con éxito', async () => {
       //busca una cuenta pero no la encuentra 
@@ -183,69 +200,105 @@ describe('test de integracion para Inmobiliaria', () => {
 
   describe('InmobiliariaService.create', () => {
     it('✅ Debería crear un nuevo perfil de inmobiliaria con éxito', async () => {
-      mockInmobiliariaRepository.findOneBy.mockResolvedValue(null); // Dirección no existe
-      mockLocalidadRepository.findOne.mockResolvedValue(mockLocalidad); // Localidad existe
-      mockCuentaRepository.findOne.mockResolvedValue(mockCuenta); // Cuenta existe
+      // Mock para simular un escenario exitoso dentro de la transacción
+      const mockTransactionalEntityManager = {
+        findOne: jest.fn()
+          .mockResolvedValueOnce(null) // Para la búsqueda de la inmobiliaria
+          .mockResolvedValueOnce(mockLocalidad) // Para la búsqueda de la localidad
+          .mockResolvedValueOnce(mockCuenta), // Para la búsqueda de la cuenta
+        create: jest.fn().mockReturnValue(mockInmobiliaria),
+        save: jest.fn().mockResolvedValue(mockInmobiliaria),
+      };
+      // Mockeamos la transacción completa para que ejecute nuestro mock
+      mockInmobiliariaRepository.manager.transaction.mockImplementation(async (cb) => {
+        return await cb(mockTransactionalEntityManager);
+      });
 
       const result = await inmobiliariaService.create(mockCreateInmobiliariaDto);
       
-      // Verifica que se hayan llamado los métodos correctos con los parámetros correctos
-      expect(mockInmobiliariaRepository.findOneBy).toHaveBeenCalledWith({ direccion: mockCreateInmobiliariaDto.direccion });
-      expect(mockLocalidadRepository.findOne).toHaveBeenCalledWith({ where: { id: mockCreateInmobiliariaDto.localidad } });
-      expect(mockCuentaRepository.findOne).toHaveBeenCalledWith({ where: { id: mockCreateInmobiliariaDto.cuenta } });
-      expect(mockInmobiliariaRepository.create).toHaveBeenCalledWith(expect.objectContaining({
+      // Verificaciones actualizadas para el transactionalEntityManager
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Inmobiliaria, { where: { direccion: mockCreateInmobiliariaDto.direccion } });
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Localidad, { where: { id: mockCreateInmobiliariaDto.localidad } });
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cuenta, { where: { id: mockCreateInmobiliariaDto.cuenta } });
+      expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(Inmobiliaria, expect.objectContaining({
         nombre: 'Inmobiliaria',
         direccion: 'Avenida Falsa 123',
         localidad: mockLocalidad,
         cuenta: mockCuenta,
       }));
-      expect(mockInmobiliariaRepository.save).toHaveBeenCalled();
+      expect(mockTransactionalEntityManager.save).toHaveBeenCalled();
       expect(result).toEqual(mockInmobiliaria);
     });
 
     it('❌ Debería lanzar ConflictException si ya existe una inmobiliaria con esa dirección', async () => {
-      mockInmobiliariaRepository.findOneBy.mockResolvedValue(mockInmobiliaria); // Dirección ya existe
+      // Mock para simular que la inmobiliaria ya existe
+      const mockTransactionalEntityManager = {
+        findOne: jest.fn().mockResolvedValue(mockInmobiliaria),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+      mockInmobiliariaRepository.manager.transaction.mockImplementation(async (cb) => {
+        return await cb(mockTransactionalEntityManager);
+      });
 
       await expect(inmobiliariaService.create(mockCreateInmobiliariaDto)).rejects.toThrow(
         new ConflictException('La dirección ya existe')
       );
-      expect(mockInmobiliariaRepository.findOneBy).toHaveBeenCalledWith({ direccion: mockCreateInmobiliariaDto.direccion });
-      expect(mockInmobiliariaRepository.findOneBy).toHaveBeenCalledTimes(1);
-      expect(mockLocalidadRepository.findOne).not.toHaveBeenCalled();
-      expect(mockCuentaRepository.findOne).not.toHaveBeenCalled();
-      expect(mockInmobiliariaRepository.save).not.toHaveBeenCalled();
+      // Verificaciones para el caso de fallo
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Inmobiliaria, { where: { direccion: mockCreateInmobiliariaDto.direccion } });
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledTimes(1);
+      expect(mockTransactionalEntityManager.create).not.toHaveBeenCalled();
+      expect(mockTransactionalEntityManager.save).not.toHaveBeenCalled();
     });
 
     it('❌ Debería lanzar NotFoundException si la localidad no existe', async () => {
-      mockInmobiliariaRepository.findOneBy.mockResolvedValue(null); // Dirección no existe
-      mockLocalidadRepository.findOne.mockResolvedValue(null); // Localidad no existe
+      // Mock para simular que la localidad no existe
+      const mockTransactionalEntityManager = {
+        findOne: jest.fn()
+          .mockResolvedValueOnce(null) // Inmobiliaria no existe
+          .mockResolvedValueOnce(null), // Localidad no existe
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+      mockInmobiliariaRepository.manager.transaction.mockImplementation(async (cb) => {
+        return await cb(mockTransactionalEntityManager);
+      });
 
       await expect(inmobiliariaService.create(mockCreateInmobiliariaDto)).rejects.toThrow(
         new NotFoundException(`Localidad con id ${mockCreateInmobiliariaDto.localidad} no existe`)
       );
-      expect(mockInmobiliariaRepository.findOneBy).toHaveBeenCalledWith({ direccion: mockCreateInmobiliariaDto.direccion });
-      expect(mockLocalidadRepository.findOne).toHaveBeenCalledWith({ where: { id: mockCreateInmobiliariaDto.localidad } });
-      expect(mockLocalidadRepository.findOne).toHaveBeenCalledTimes(1);
-      expect(mockCuentaRepository.findOne).not.toHaveBeenCalled();
-      expect(mockInmobiliariaRepository.create).not.toHaveBeenCalled();
-      expect(mockInmobiliariaRepository.save).not.toHaveBeenCalled();
+      // Verificaciones para el caso de fallo
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Inmobiliaria, { where: { direccion: mockCreateInmobiliariaDto.direccion } });
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Localidad, { where: { id: mockCreateInmobiliariaDto.localidad } });
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledTimes(2);
+      expect(mockTransactionalEntityManager.create).not.toHaveBeenCalled();
+      expect(mockTransactionalEntityManager.save).not.toHaveBeenCalled();
     });
 
     it('❌ Debería lanzar NotFoundException si la cuenta no existe', async () => {
-      mockInmobiliariaRepository.findOneBy.mockResolvedValue(null); // Dirección no existe
-      mockLocalidadRepository.findOne.mockResolvedValue(mockLocalidad); // Localidad existe
-      mockCuentaRepository.findOne.mockResolvedValue(null); // Cuenta no existe
-
+      // Mock para simular que la cuenta no existe
+      const mockTransactionalEntityManager = {
+        findOne: jest.fn()
+          .mockResolvedValueOnce(null) // Inmobiliaria no existe
+          .mockResolvedValueOnce(mockLocalidad) // Localidad existe
+          .mockResolvedValueOnce(null), // Cuenta no existe
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+      mockInmobiliariaRepository.manager.transaction.mockImplementation(async (cb) => {
+        return await cb(mockTransactionalEntityManager);
+      });
+      
       await expect(inmobiliariaService.create(mockCreateInmobiliariaDto)).rejects.toThrow(
         new NotFoundException(`Cuenta con id ${mockCreateInmobiliariaDto.cuenta} no existe`)
       );
-      expect(mockInmobiliariaRepository.findOneBy).toHaveBeenCalledWith({ direccion: mockCreateInmobiliariaDto.direccion });
-      expect(mockLocalidadRepository.findOne).toHaveBeenCalledWith({ where: { id: mockCreateInmobiliariaDto.localidad } });
-      expect(mockCuentaRepository.findOne).toHaveBeenCalledWith({ where: { id: mockCreateInmobiliariaDto.cuenta } });
-      expect(mockInmobiliariaRepository.findOneBy).toHaveBeenCalledTimes(1);
-      expect(mockLocalidadRepository.findOne).toHaveBeenCalledTimes(1);
-      expect(mockCuentaRepository.findOne).toHaveBeenCalledTimes(1);
-      expect(mockInmobiliariaRepository.save).not.toHaveBeenCalled();
+      // Verificaciones para el caso de fallo
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Inmobiliaria, { where: { direccion: mockCreateInmobiliariaDto.direccion } });
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Localidad, { where: { id: mockCreateInmobiliariaDto.localidad } });
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cuenta, { where: { id: mockCreateInmobiliariaDto.cuenta } });
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledTimes(3);
+      expect(mockTransactionalEntityManager.create).not.toHaveBeenCalled();
+      expect(mockTransactionalEntityManager.save).not.toHaveBeenCalled();
     });
   });
 });

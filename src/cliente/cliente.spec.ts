@@ -1,27 +1,26 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { NotFoundException, ConflictException, BadRequestException } from "@nestjs/common";
 import { getRepositoryToken } from "@nestjs/typeorm";
 import { Cuenta } from "src/auth/entities/cuenta.entity";
-import { Localidad } from "src/localidad/entities/localidad.entity";
 import { Repository } from "typeorm";
-import { Cliente } from "./entities/cliente.entity";
-import { ClienteService } from "./cliente.service";
 import { Test, TestingModule } from "@nestjs/testing";
 import * as bcrypt from 'bcrypt';
-import { CreateClienteDto } from "./dto/create-cliente.dto";
 import { RegisterCuentaDto } from "src/auth/dto/register-cuenta.dto";
 import { AuthService } from "src/auth/auth.service";
-// Importamos la entidad Inmobiliaria para poder mockear su repositorio
+import { Cliente } from './entities/cliente.entity';
+import { ClienteService } from './cliente.service';
+import { CreateClienteDto } from './dto/create-cliente.dto';
+import { UpdateClienteDto } from './dto/update-cliente.dto';
+import { Localidad } from 'src/localidad/entities/localidad.entity';
+import { JwtService } from "@nestjs/jwt";
 import { Inmobiliaria } from "src/inmobiliaria/entities/inmobiliaria.entity";
-// Asumimos que también existe un JwtService, como indica el error en la imagen
-import { JwtService } from "@nestjs/jwt"; 
 
 // Mock de la función de hash de bcrypt para evitar problemas de rendimiento
 jest.mock('bcrypt', () => ({
   hash: jest.fn().mockResolvedValue('hashed_password'),
 }));
 
-describe('test de integracion', () => {
-  let cuentaService: AuthService;
+describe('Test de Integración', () => {
+  let authService: AuthService;
   let clienteService: ClienteService;
   let cuentaRepository: Repository<Cuenta>;
   let clienteRepository: Repository<Cliente>;
@@ -29,11 +28,12 @@ describe('test de integracion', () => {
   let inmobiliariaRepository: Repository<Inmobiliaria>;
   let jwtService: JwtService;
 
+  // Mocks de datos y DTOs
   const mockRegisterCuentaDto: RegisterCuentaDto = {
     nombreUsuario: 'juanperez',
     email: 'juan@ejemplo.com',
     password: 'Password123!',
-    rol: 'CLIENTE',
+    rol: 'CLIENTE', // Asegúrate de que el DTO también use el literal correcto
   };
 
   const mockCuenta = {
@@ -41,55 +41,72 @@ describe('test de integracion', () => {
     nombreUsuario: 'juanperez',
     email: 'juan@ejemplo.com',
     password: 'hashed_password',
-    rol: 'CLIENTE',
+    rol: 'CLIENTE', // Cambiado de string genérico a literal 'CLIENTE'
     login: new Date(),
+    logout: new Date(),
   };
 
+  const mockLocalidad = { id: 1, nombre: 'Ciudad Ejemplo', codigoPostal: 12345, provincia: 1 };
+  
   const mockCreateClienteDto: CreateClienteDto = {
     nombre: 'Juan',
-    apellido: 'Pérez',
+    apellido: 'Perez',
     fechaNacimiento: new Date('1990-01-01'),
     direccion: 'Calle Falsa 123',
     localidad: 1,
-    cuenta: 1,
+    // cuenta se sobrescribirá dinámicamente
+  };
+  
+  const mockUpdateClienteDto: UpdateClienteDto = {
+    nombre: 'Juan Carlos',
+    fechaNacimiento: new Date('1990-01-01'),
   };
 
-  const mockLocalidad = { id: 1, nombre: 'Ciudad Ejemplo' };
   const mockCliente = {
     id: 1,
     nombre: 'Juan',
-    apellido: 'Pérez',
+    apellido: 'Perez',
     fechaNacimiento: new Date('1990-01-01'),
     direccion: 'Calle Falsa 123',
     localidad: mockLocalidad,
     cuenta: mockCuenta,
   };
 
-  // Mocks de repositorios y servicios que faltaban
+  // Mocks de repositorios y servicios
   const mockCuentaRepository = {
     findOne: jest.fn(),
-    findOneBy: jest.fn(),
     create: jest.fn().mockReturnValue(mockCuenta),
     save: jest.fn().mockResolvedValue(mockCuenta),
-  };
-
-  const mockClienteRepository = {
-    findOneBy: jest.fn(),
-    create: jest.fn().mockReturnValue(mockCliente),
-    save: jest.fn().mockResolvedValue(mockCliente),
+    manager: {
+      findOne: jest.fn(),
+      create: jest.fn().mockReturnValue(mockCuenta),
+      save: jest.fn().mockResolvedValue(mockCuenta),
+    },
   };
 
   const mockLocalidadRepository = {
-    findOneBy: jest.fn(),
+    findOne: jest.fn(),
   };
-
-  const mockInmobiliariaRepository = {
-
-  };
-
-  const mockJwtService = {
   
+  const mockClienteRepository = {
+    manager: {
+      transaction: jest.fn(async (cb) => {
+        const transactionalEntityManager = {
+          findOne: jest.fn(),
+          create: jest.fn(),
+          save: jest.fn(),
+        };
+        return await cb(transactionalEntityManager);
+      }),
+    },
+    findOneBy: jest.fn(),
+    find: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn(),
   };
+  
+  const mockInmobiliariaRepository = {};
+  const mockJwtService = {};
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -119,7 +136,7 @@ describe('test de integracion', () => {
       ],
     }).compile();
 
-    cuentaService = module.get<AuthService>(AuthService);
+    authService = module.get<AuthService>(AuthService);
     clienteService = module.get<ClienteService>(ClienteService);
     cuentaRepository = module.get<Repository<Cuenta>>(getRepositoryToken(Cuenta));
     clienteRepository = module.get<Repository<Cliente>>(getRepositoryToken(Cliente));
@@ -134,13 +151,12 @@ describe('test de integracion', () => {
 
   describe('AuthService.register cliente', () => {
     it('✅ Debería registrar una nueva cuenta con éxito', async () => {
-      // Preparación: simular que el usuario y el email no existen
-      mockCuentaRepository.findOne.mockResolvedValue(null);
+      // Usar mockResolvedValueOnce en cadena para simular las dos llamadas a findOne
+      mockCuentaRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
+      
+      const result = await authService.register(mockRegisterCuentaDto);
 
-      // Ejecución
-      const result = await cuentaService.register(mockRegisterCuentaDto);
-
-      // Verificación
+      // Los expect deben verificar las dos llamadas distintas
       expect(mockCuentaRepository.findOne).toHaveBeenCalledWith({ where: { nombreUsuario: 'juanperez' } });
       expect(mockCuentaRepository.findOne).toHaveBeenCalledWith({ where: { email: 'juan@ejemplo.com' } });
       expect(bcrypt.hash).toHaveBeenCalledWith('Password123!', 10);
@@ -153,142 +169,234 @@ describe('test de integracion', () => {
       expect(result).toEqual(mockCuenta);
     });
 
-    it('❌ Debería lanzar NotFoundException si el nombre de usuario ya existe', async () => {
-      // Preparación: simular que el nombre de usuario ya existe
-      mockCuentaRepository.findOne.mockResolvedValueOnce(mockCuenta);
-
-      // Ejecución y verificación
-      await expect(cuentaService.register(mockRegisterCuentaDto)).rejects.toThrow(
-        new NotFoundException('El nombre de usuario ya está en uso')
+    it('❌ Debería lanzar BadRequestException si el nombre de usuario ya existe', async () => {
+      // Solo mockeamos la primera llamada para simular el fallo
+      mockCuentaRepository.findOne.mockResolvedValueOnce(mockCuenta); 
+      
+      await expect(authService.register(mockRegisterCuentaDto)).rejects.toThrow(
+        new BadRequestException('El nombre de usuario ya está en uso')
       );
+      
       expect(mockCuentaRepository.findOne).toHaveBeenCalledWith({ where: { nombreUsuario: 'juanperez' } });
       expect(mockCuentaRepository.findOne).not.toHaveBeenCalledWith({ where: { email: 'juan@ejemplo.com' } });
       expect(mockCuentaRepository.save).not.toHaveBeenCalled();
     });
 
-    it('❌ Debería lanzar NotFoundException si el email ya existe', async () => {
-      // Preparación: simular que el nombre de usuario no existe, pero el email sí
-      mockCuentaRepository.findOne.mockResolvedValueOnce(null); // nombreUsuario no existe
-      mockCuentaRepository.findOne.mockResolvedValueOnce(mockCuenta); // email ya existe
-
-      // Ejecución y verificación
-      await expect(cuentaService.register(mockRegisterCuentaDto)).rejects.toThrow(
-        new NotFoundException('El email ya está en uso')
+    it('❌ Debería lanzar BadRequestException si el email ya existe', async () => {
+      // Mockeamos la primera llamada (nombre de usuario) para que pase, y la segunda (email) para que falle
+      mockCuentaRepository.findOne.mockResolvedValueOnce(null);
+      mockCuentaRepository.findOne.mockResolvedValueOnce(mockCuenta);
+      
+      await expect(authService.register(mockRegisterCuentaDto)).rejects.toThrow(
+        new BadRequestException('El email ya está en uso')
       );
+      
       expect(mockCuentaRepository.findOne).toHaveBeenCalledWith({ where: { nombreUsuario: 'juanperez' } });
       expect(mockCuentaRepository.findOne).toHaveBeenCalledWith({ where: { email: 'juan@ejemplo.com' } });
-      expect(mockCuentaRepository.save).not.toHaveBeenCalled();
-    });
-
-    it('❌ Debería lanzar BadRequestException si el email no tiene un formato válido', async () => {
-      // Simulamos un email inválido en el DTO
-      const invalidoDto = { ...mockRegisterCuentaDto, email: 'invalido-email' };
-      // Usamos jest.spyOn para interceptar y mockear el método "register"
-      jest.spyOn(cuentaService, 'register').mockRejectedValueOnce(
-        new BadRequestException('El email no tiene un formato válido')
-      );
-
-      await expect(cuentaService.register(invalidoDto)).rejects.toThrow(BadRequestException);
-      expect(mockCuentaRepository.findOne).not.toHaveBeenCalled();
-      expect(mockCuentaRepository.save).not.toHaveBeenCalled();
-    });
-
-    it('❌ Debería lanzar BadRequestException si la contraseña no cumple con los requisitos', async () => {
-      // Simulamos una contraseña débil en el DTO
-      const invalidoDto = { ...mockRegisterCuentaDto, password: 'short' };
-      // Usamos jest.spyOn para interceptar y mockear el método "register"
-      jest.spyOn(cuentaService, 'register').mockRejectedValueOnce(
-        new BadRequestException('La contraseña debe tener al menos 8 caracteres y contener una mayúscula, una minúscula, un número y un carácter especial')
-      );
-
-      await expect(cuentaService.register(invalidoDto)).rejects.toThrow(BadRequestException);
-      expect(mockCuentaRepository.findOne).not.toHaveBeenCalled();
       expect(mockCuentaRepository.save).not.toHaveBeenCalled();
     });
   });
 
   describe('ClienteService.create', () => {
-    it('✅ Debería crear un nuevo cliente con éxito.', async () => {
-      // preparacion de los datos
-      // Usamos un mock más preciso para reflejar la búsqueda de tu servicio
-      mockClienteRepository.findOneBy.mockResolvedValue(null);
-      mockLocalidadRepository.findOneBy.mockResolvedValue(mockLocalidad);
-      mockCuentaRepository.findOneBy.mockResolvedValue(mockCuenta);
-      mockClienteRepository.create.mockReturnValue(mockCliente);
-      mockClienteRepository.save.mockResolvedValue(mockCliente);
+    let registerSpy: jest.SpyInstance;
 
-      // ejecutamos el servicio
-      const result = await clienteService.create(mockCreateClienteDto);
+    beforeEach(() => {
+      // Corrección: El mock de la función 'register' debe devolver un objeto
+      // que cumpla con el tipo 'Cuenta' para evitar el error de tipado.
+      registerSpy = jest.spyOn(authService, 'register').mockResolvedValue(mockCuenta as Cuenta);
+    });
 
-      // vereficamos que se llamaron los métodos correctos y que el resultado es el esperado
-      expect(mockClienteRepository.findOneBy).toHaveBeenCalledWith({
-        nombre: mockCreateClienteDto.nombre,
-        apellido: mockCreateClienteDto.apellido,
-        fechaNacimiento: mockCreateClienteDto.fechaNacimiento,
-        direccion: mockCreateClienteDto.direccion,
-        localidad: { id: mockCreateClienteDto.localidad },
-        cuenta: { id: mockCreateClienteDto.cuenta },
+    afterEach(() => {
+      registerSpy.mockRestore();
+    });
+
+    it('✅ Debería crear un nuevo cliente con éxito', async () => {
+      const mockTransactionalEntityManager = {
+        findOne: jest.fn()
+          .mockResolvedValueOnce(null) // Cliente existente
+          .mockResolvedValueOnce(mockLocalidad) // Localidad
+          .mockResolvedValueOnce(mockCuenta), // Cuenta
+        create: jest.fn().mockReturnValue(mockCliente),
+        save: jest.fn().mockResolvedValue(mockCliente),
+      };
+      mockClienteRepository.manager.transaction.mockImplementation(async (cb) => {
+        return await cb(mockTransactionalEntityManager);
       });
-      expect(mockLocalidadRepository.findOneBy).toHaveBeenCalledWith({ id: mockCreateClienteDto.localidad });
-      expect(mockCuentaRepository.findOneBy).toHaveBeenCalledWith({ id: mockCreateClienteDto.cuenta });
-      expect(mockClienteRepository.create).toHaveBeenCalledWith({
-        nombre: mockCreateClienteDto.nombre,
-        apellido: mockCreateClienteDto.apellido,
-        fechaNacimiento: mockCreateClienteDto.fechaNacimiento,
-        direccion: mockCreateClienteDto.direccion,
+
+      const result = await clienteService.create(mockCreateClienteDto, mockRegisterCuentaDto);
+
+      expect(registerSpy).toHaveBeenCalledWith(mockRegisterCuentaDto, expect.any(Object));
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cliente, expect.objectContaining({
+        where: {
+          nombre: mockCreateClienteDto.nombre,
+          apellido: mockCreateClienteDto.apellido,
+          fechaNacimiento: mockCreateClienteDto.fechaNacimiento,
+          direccion: mockCreateClienteDto.direccion,
+          localidad: { id: mockCreateClienteDto.localidad },
+        },
+      }));
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Localidad, { where: { id: mockCreateClienteDto.localidad } });
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cuenta, { where: { id: mockCuenta.id } });
+      expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(Cliente, expect.objectContaining({
+        nombre: 'Juan',
+        apellido: 'Perez',
+        fechaNacimiento: new Date('1990-01-01'),
+        direccion: 'Calle Falsa 123',
         localidad: mockLocalidad,
         cuenta: mockCuenta,
-      });
-      expect(mockClienteRepository.save).toHaveBeenCalledWith(mockCliente);
+      }));
+      expect(mockTransactionalEntityManager.save).toHaveBeenCalled();
       expect(result).toEqual(mockCliente);
     });
 
-    it('❌ Debería lanzar NotFoundException si el cliente ya existe', async () => {
-      // preparacion de los datos
-      mockClienteRepository.findOneBy.mockResolvedValue(mockCliente);
+    it('❌ Debería lanzar ConflictException si el cliente ya existe', async () => {
+      const mockTransactionalEntityManager = {
+        findOne: jest.fn().mockResolvedValue(mockCliente),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+      mockClienteRepository.manager.transaction.mockImplementation(async (cb) => {
+        return await cb(mockTransactionalEntityManager);
+      });
 
-      // ejecutamos el servicio y verificamos que se lanza la excepción
-      await expect(clienteService.create(mockCreateClienteDto)).rejects.toThrow(
-        new NotFoundException('El cliente ya existe'),
+      await expect(clienteService.create(mockCreateClienteDto, mockRegisterCuentaDto)).rejects.toThrow(
+        new ConflictException('El cliente ya existe con los datos proporcionados')
       );
-      expect(mockClienteRepository.findOneBy).toHaveBeenCalled();
-      expect(mockLocalidadRepository.findOneBy).not.toHaveBeenCalled();
-      expect(mockCuentaRepository.findOneBy).not.toHaveBeenCalled();
-      expect(mockClienteRepository.create).not.toHaveBeenCalled();
-      expect(mockClienteRepository.save).not.toHaveBeenCalled();
+      expect(registerSpy).toHaveBeenCalledWith(mockRegisterCuentaDto, expect.any(Object));
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cliente, expect.any(Object));
+      expect(mockTransactionalEntityManager.create).not.toHaveBeenCalled();
+      expect(mockTransactionalEntityManager.save).not.toHaveBeenCalled();
     });
 
     it('❌ Debería lanzar NotFoundException si la localidad no existe', async () => {
-      // datos de preparacion
-      mockClienteRepository.findOneBy.mockResolvedValue(null);
-      mockLocalidadRepository.findOneBy.mockResolvedValue(null);
+      const mockTransactionalEntityManager = {
+        findOne: jest.fn()
+          .mockResolvedValueOnce(null) // Cliente existente
+          .mockResolvedValueOnce(null), // Localidad
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+      mockClienteRepository.manager.transaction.mockImplementation(async (cb) => {
+        return await cb(mockTransactionalEntityManager);
+      });
 
-      // ejecucion del servicio y verificación de la excepción
-      await expect(clienteService.create(mockCreateClienteDto)).rejects.toThrow(
-        new NotFoundException(`Localidad con id ${mockCreateClienteDto.localidad} no existe`),
+      await expect(clienteService.create(mockCreateClienteDto, mockRegisterCuentaDto)).rejects.toThrow(
+        new NotFoundException(`Localidad con id ${mockCreateClienteDto.localidad} no existe`)
       );
-      expect(mockClienteRepository.findOneBy).toHaveBeenCalled();
-      expect(mockLocalidadRepository.findOneBy).toHaveBeenCalledWith({ id: mockCreateClienteDto.localidad });
-      expect(mockCuentaRepository.findOneBy).not.toHaveBeenCalled();
-      expect(mockClienteRepository.create).not.toHaveBeenCalled();
-      expect(mockClienteRepository.save).not.toHaveBeenCalled();
+      expect(registerSpy).toHaveBeenCalledWith(mockRegisterCuentaDto, expect.any(Object));
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledTimes(2);
+      expect(mockTransactionalEntityManager.create).not.toHaveBeenCalled();
+      expect(mockTransactionalEntityManager.save).not.toHaveBeenCalled();
     });
 
     it('❌ Debería lanzar NotFoundException si la cuenta no existe', async () => {
-      // Arrange
-      mockClienteRepository.findOneBy.mockResolvedValue(null);
-      mockLocalidadRepository.findOneBy.mockResolvedValue(mockLocalidad);
-      mockCuentaRepository.findOneBy.mockResolvedValue(null);
+      const mockTransactionalEntityManager = {
+        findOne: jest.fn()
+          .mockResolvedValueOnce(null) // Cliente existente
+          .mockResolvedValueOnce(mockLocalidad) // Localidad
+          .mockResolvedValueOnce(null), // Cuenta
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+      mockClienteRepository.manager.transaction.mockImplementation(async (cb) => {
+        return await cb(mockTransactionalEntityManager);
+      });
 
-      // Act & Assert
-      await expect(clienteService.create(mockCreateClienteDto)).rejects.toThrow(
-        new NotFoundException(`Cuenta con id ${mockCreateClienteDto.cuenta} no existe`),
+      await expect(clienteService.create(mockCreateClienteDto, mockRegisterCuentaDto)).rejects.toThrow(
+        new NotFoundException(`Cuenta con id ${mockCuenta.id} no existe`)
       );
-      expect(mockClienteRepository.findOneBy).toHaveBeenCalled();
-      expect(mockLocalidadRepository.findOneBy).toHaveBeenCalled();
-      expect(mockCuentaRepository.findOneBy).toHaveBeenCalledWith({ id: mockCreateClienteDto.cuenta });
-      expect(mockClienteRepository.create).not.toHaveBeenCalled();
+      expect(registerSpy).toHaveBeenCalledWith(mockRegisterCuentaDto, expect.any(Object));
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledTimes(3);
+      expect(mockTransactionalEntityManager.create).not.toHaveBeenCalled();
+      expect(mockTransactionalEntityManager.save).not.toHaveBeenCalled();
+    });
+
+    it('❌ Debería lanzar NotFoundException si hay un error al crear el cliente', async () => {
+      const mockTransactionalEntityManager = {
+        findOne: jest.fn()
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce(mockLocalidad)
+          .mockResolvedValueOnce(mockCuenta),
+        create: jest.fn().mockReturnValue(null),
+        save: jest.fn(),
+      };
+      mockClienteRepository.manager.transaction.mockImplementation(async (cb) => {
+        return await cb(mockTransactionalEntityManager);
+      });
+
+      await expect(clienteService.create(mockCreateClienteDto, mockRegisterCuentaDto)).rejects.toThrow(
+        new NotFoundException('Error al crear el cliente')
+      );
+      expect(registerSpy).toHaveBeenCalledWith(mockRegisterCuentaDto, expect.any(Object));
+      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledTimes(3);
+      expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(Cliente, expect.any(Object));
+      expect(mockTransactionalEntityManager.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('ClienteService.findAll', () => {
+    it('✅ Debería devolver un array de clientes', async () => {
+      const mockClientes = [mockCliente];
+      mockClienteRepository.find.mockResolvedValue(mockClientes);
+      const result = await clienteService.findAll();
+      expect(mockClienteRepository.find).toHaveBeenCalledWith({ relations: ['cuenta'] });
+      expect(result).toEqual(mockClientes);
+    });
+
+    it('❌ Debería lanzar NotFoundException si no se encuentran clientes', async () => {
+      mockClienteRepository.find.mockResolvedValue([]);
+      await expect(clienteService.findAll()).rejects.toThrow(NotFoundException);
+      expect(mockClienteRepository.find).toHaveBeenCalledWith({ relations: ['cuenta'] });
+    });
+  });
+
+  describe('ClienteService.findOne', () => {
+    it('✅ Debería devolver un cliente por su ID', async () => {
+      mockClienteRepository.findOneBy.mockResolvedValue(mockCliente);
+      const result = await clienteService.findOne(1);
+      expect(mockClienteRepository.findOneBy).toHaveBeenCalledWith({ id: 1 });
+      expect(result).toEqual(mockCliente);
+    });
+
+    it('❌ Debería lanzar NotFoundException si el cliente no existe', async () => {
+      mockClienteRepository.findOneBy.mockResolvedValue(null);
+      await expect(clienteService.findOne(999)).rejects.toThrow(NotFoundException);
+      expect(mockClienteRepository.findOneBy).toHaveBeenCalledWith({ id: 999 });
+    });
+  });
+
+  describe('ClienteService.update', () => {
+    it('✅ Debería actualizar un cliente por su ID', async () => {
+      mockClienteRepository.findOneBy.mockResolvedValue(mockCliente);
+      mockClienteRepository.save.mockResolvedValue({ ...mockCliente, nombre: 'Juan Carlos', fechaNacimiento: new Date() });
+      const result = await clienteService.update(1, mockUpdateClienteDto);
+      expect(clienteRepository.findOneBy).toHaveBeenCalledWith({ id: 1 });
+      expect(clienteRepository.save).toHaveBeenCalledWith({ ...mockCliente, nombre: 'Juan Carlos', fechaNacimiento: mockUpdateClienteDto.fechaNacimiento });
+      expect(result.nombre).toEqual('Juan Carlos');
+    });
+
+    it('❌ Debería lanzar NotFoundException si el cliente a actualizar no existe', async () => {
+      mockClienteRepository.findOneBy.mockResolvedValue(null);
+      await expect(clienteService.update(999, mockUpdateClienteDto)).rejects.toThrow(NotFoundException);
+      expect(mockClienteRepository.findOneBy).toHaveBeenCalledWith({ id: 999 });
       expect(mockClienteRepository.save).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('ClienteService.remove', () => {
+    it('✅ Debería eliminar un cliente por su ID', async () => {
+      mockClienteRepository.findOneBy.mockResolvedValue(mockCliente);
+      mockClienteRepository.remove.mockResolvedValue(undefined);
+      await clienteService.remove(1);
+      expect(mockClienteRepository.findOneBy).toHaveBeenCalledWith({ id: 1 });
+      expect(mockClienteRepository.remove).toHaveBeenCalledWith(mockCliente);
+    });
+
+    it('❌ Debería lanzar NotFoundException si el cliente a eliminar no existe', async () => {
+      mockClienteRepository.findOneBy.mockResolvedValue(null);
+      await expect(clienteService.remove(999)).rejects.toThrow(NotFoundException);
+      expect(mockClienteRepository.findOneBy).toHaveBeenCalledWith({ id: 999 });
+      expect(mockClienteRepository.remove).not.toHaveBeenCalled();
     });
   });
 });

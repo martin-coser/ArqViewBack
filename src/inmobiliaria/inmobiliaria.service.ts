@@ -6,6 +6,8 @@ import { Inmobiliaria } from './entities/inmobiliaria.entity';
 import { Repository } from 'typeorm';
 import { Localidad } from 'src/localidad/entities/localidad.entity';
 import { Cuenta } from 'src/auth/entities/cuenta.entity';
+import { AuthService } from '../auth/auth.service';
+import { RegisterCuentaDto } from 'src/auth/dto/register-cuenta.dto';
 
 @Injectable()
 export class InmobiliariaService {
@@ -16,42 +18,53 @@ export class InmobiliariaService {
     private localidadRepository: Repository<Localidad>,
     @InjectRepository(Cuenta)
     private cuentaRepository: Repository<Cuenta>,
+    private readonly authService: AuthService,
   ){}
 
-  async create(createInmobiliariaDto: CreateInmobiliariaDto):Promise<Inmobiliaria> {
-    const {
-      nombre,
-      direccion,
-      localidad: localidadId,
-      cuenta: cuentaID // recordar que es una clave foranea
-    } = createInmobiliariaDto
+  async create(createInmobiliariaDto: CreateInmobiliariaDto, registerCuentaDto: RegisterCuentaDto): Promise<Inmobiliaria> {
+    return await this.inmobiliariaRepository.manager.transaction(async (transactionalEntityManager) => {
+      // Crear la cuenta dentro de la transacción
+      const cuenta = await this.authService.register(registerCuentaDto, transactionalEntityManager);
+      // Asignar el ID de la cuenta creada, sobrescribiendo o estableciendo si no existe
+      createInmobiliariaDto.cuenta = cuenta.id;
 
-    // Verifica si la dirección ya existe
-    const inmobiliariaExistente = await this.inmobiliariaRepository.findOneBy({ direccion });
-    if (inmobiliariaExistente) {
-      throw new ConflictException('La dirección ya existe');
-    }
+      const { nombre, direccion, localidad: localityId, cuenta: cuentaId } = createInmobiliariaDto;
 
-    // Busca los objetos relacionados
-    const localidad = await this.localidadRepository.findOne({ where: { id: localidadId } });
-    if (!localidad) throw new NotFoundException(`Localidad con id ${localidadId} no existe`);
+      // Verificar si la dirección ya existe
+      const inmobiliariaExistente = await transactionalEntityManager.findOne(Inmobiliaria, {
+        where: { direccion },
+      });
+      if (inmobiliariaExistente) {
+        throw new ConflictException('La dirección ya existe');
+      }
 
-    const cuenta = await this.cuentaRepository.findOne({ where: { id: cuentaID } });
-    if (!cuenta) throw new NotFoundException(`Cuenta con id ${cuentaID} no existe`);
-    
-    //crear entidad
-    const inmobiliaria = this.inmobiliariaRepository.create(
-      {
+      // Buscar la localidad
+      const localidad = await transactionalEntityManager.findOne(Localidad, {
+        where: { id: localityId },
+      });
+      if (!localidad) {
+        throw new NotFoundException(`Localidad con id ${localityId} no existe`);
+      }
+
+      // Verificar que la cuenta existe (por consistencia)
+      const cuentaExistente = await transactionalEntityManager.findOne(Cuenta, {
+        where: { id: cuentaId },
+      });
+      if (!cuentaExistente) {
+        throw new NotFoundException(`Cuenta con id ${cuentaId} no existe`);
+      }
+
+      // Crear y guardar la entidad Inmobiliaria
+      const inmobiliaria = transactionalEntityManager.create(Inmobiliaria, {
         nombre,
         direccion,
         localidad,
-        cuenta
-      }
-    )
+        cuenta: cuentaExistente,
+      });
 
-    //guardar entidad
-    return await this.inmobiliariaRepository.save(inmobiliaria)
-  }
+      return await transactionalEntityManager.save(inmobiliaria);
+    });
+  } 
 
   async findAll(): Promise<Inmobiliaria[]> {
     return await this.inmobiliariaRepository.find()
