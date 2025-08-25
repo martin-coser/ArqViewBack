@@ -18,8 +18,9 @@ import { MensajeModule } from './mensaje/mensaje.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificacionModule } from './notificacion/notificacion.module'; 
 import { ActividadClienteModule } from './actividad-cliente/actividad-cliente.module';
-import { RecomendacionModule } from './recomendacion/recomendacion.module';
 import { EstadisticaPropiedadModule } from './estadistica-propiedad/estadistica-propiedad.module';
+import { RecomendacionModule } from './recomendacion/recomendacion.module';
+import { Imagen360Module } from './imagen360/imagen360.module';
 
 
 @Module({
@@ -55,8 +56,9 @@ import { EstadisticaPropiedadModule } from './estadistica-propiedad/estadistica-
     MensajeModule,
     NotificacionModule,
     ActividadClienteModule,
-    RecomendacionModule,
     EstadisticaPropiedadModule,
+    RecomendacionModule,
+    Imagen360Module,
   ],
   controllers: [AppController],
   providers: [AppService],
