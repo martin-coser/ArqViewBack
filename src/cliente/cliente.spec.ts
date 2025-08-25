@@ -151,49 +151,50 @@ describe('Test de Integración', () => {
 
   describe('AuthService.register cliente', () => {
     it('✅ Debería registrar una nueva cuenta con éxito', async () => {
-      // Usar mockResolvedValueOnce en cadena para simular las dos llamadas a findOne
-      mockCuentaRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
-      
-      const result = await authService.register(mockRegisterCuentaDto);
+    
+    mockCuentaRepository.manager.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
 
-      // Los expect deben verificar las dos llamadas distintas
-      expect(mockCuentaRepository.findOne).toHaveBeenCalledWith({ where: { nombreUsuario: 'juanperez' } });
-      expect(mockCuentaRepository.findOne).toHaveBeenCalledWith({ where: { email: 'juan@ejemplo.com' } });
-      expect(bcrypt.hash).toHaveBeenCalledWith('Password123!', 10);
-      expect(mockCuentaRepository.create).toHaveBeenCalledWith(expect.objectContaining({
-        nombreUsuario: 'juanperez',
-        email: 'juan@ejemplo.com',
-        password: 'hashed_password',
-      }));
-      expect(mockCuentaRepository.save).toHaveBeenCalled();
+    const result = await authService.register(mockRegisterCuentaDto);
+
+    // Los expect deben verificar las dos llamadas distintas en el manager
+    expect(mockCuentaRepository.manager.findOne).toHaveBeenCalledWith(Cuenta, { where: { nombreUsuario: 'juanperez' } });
+    expect(mockCuentaRepository.manager.findOne).toHaveBeenCalledWith(Cuenta, { where: { email: 'juan@ejemplo.com' } });
+    expect(bcrypt.hash).toHaveBeenCalledWith('Password123!', 10);
+    expect(mockCuentaRepository.manager.create).toHaveBeenCalledWith(Cuenta, expect.objectContaining({
+    nombreUsuario: 'juanperez',
+    email: 'juan@ejemplo.com',
+    password: 'hashed_password',
+    }));
+      expect(mockCuentaRepository.manager.save).toHaveBeenCalled();
       expect(result).toEqual(mockCuenta);
-    });
+  });
 
     it('❌ Debería lanzar BadRequestException si el nombre de usuario ya existe', async () => {
-      // Solo mockeamos la primera llamada para simular el fallo
-      mockCuentaRepository.findOne.mockResolvedValueOnce(mockCuenta); 
+      // Solo mockeamos la primera llamada al manager.findOne para simular el fallo
+      mockCuentaRepository.manager.findOne.mockResolvedValueOnce(mockCuenta); 
       
       await expect(authService.register(mockRegisterCuentaDto)).rejects.toThrow(
         new BadRequestException('El nombre de usuario ya está en uso')
       );
+      expect(mockCuentaRepository.manager.findOne).toHaveBeenCalledWith(Cuenta, { where: { nombreUsuario: 'juanperez' } });
       
-      expect(mockCuentaRepository.findOne).toHaveBeenCalledWith({ where: { nombreUsuario: 'juanperez' } });
-      expect(mockCuentaRepository.findOne).not.toHaveBeenCalledWith({ where: { email: 'juan@ejemplo.com' } });
-      expect(mockCuentaRepository.save).not.toHaveBeenCalled();
+      expect(mockCuentaRepository.manager.findOne).not.toHaveBeenCalledWith(Cuenta, { where: { email: 'juan@ejemplo.com' } });
+ 
+      expect(mockCuentaRepository.manager.save).not.toHaveBeenCalled();
     });
 
     it('❌ Debería lanzar BadRequestException si el email ya existe', async () => {
       // Mockeamos la primera llamada (nombre de usuario) para que pase, y la segunda (email) para que falle
-      mockCuentaRepository.findOne.mockResolvedValueOnce(null);
-      mockCuentaRepository.findOne.mockResolvedValueOnce(mockCuenta);
+      mockCuentaRepository.manager.findOne.mockResolvedValueOnce(null);
+      mockCuentaRepository.manager.findOne.mockResolvedValueOnce(mockCuenta);
       
       await expect(authService.register(mockRegisterCuentaDto)).rejects.toThrow(
         new BadRequestException('El email ya está en uso')
       );
       
-      expect(mockCuentaRepository.findOne).toHaveBeenCalledWith({ where: { nombreUsuario: 'juanperez' } });
-      expect(mockCuentaRepository.findOne).toHaveBeenCalledWith({ where: { email: 'juan@ejemplo.com' } });
-      expect(mockCuentaRepository.save).not.toHaveBeenCalled();
+      expect(mockCuentaRepository.manager.findOne).toHaveBeenCalledWith(Cuenta,{ where: { nombreUsuario: 'juanperez' } });
+      expect(mockCuentaRepository.manager.findOne).toHaveBeenCalledWith(Cuenta,{ where: { email: 'juan@ejemplo.com' } });
+      expect(mockCuentaRepository.manager.save).not.toHaveBeenCalled();
     });
   });
 
