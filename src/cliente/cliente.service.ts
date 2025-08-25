@@ -37,7 +37,6 @@ export class ClienteService {
           nombre,
           apellido,
           fechaNacimiento,
-          direccion,
           localidad: { id: localidadId },
         },
       });
