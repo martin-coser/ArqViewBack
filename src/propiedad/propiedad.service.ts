@@ -221,6 +221,51 @@ constructor(
     return updatedPropiedad;
   }
 
+  async buscarPropiedades(criteriosBusqueda: any): Promise<Propiedad[]> {
+    const query = this.propiedadRepository.createQueryBuilder('propiedad');
+
+    // Aplicar los filtros estructurados
+    if (criteriosBusqueda.tipo_propiedad) {
+      query.andWhere('LOWER(propiedad.tipo) LIKE :tipo', { tipo: `%${criteriosBusqueda.tipo_propiedad.toLowerCase()}%` });
+    }
+    
+    if (criteriosBusqueda.habitaciones) {
+      query.andWhere('propiedad.cantidadDormitorios = :habitaciones', { habitaciones: criteriosBusqueda.habitaciones });
+    }
+    
+    if (criteriosBusqueda.precio_min) {
+      query.andWhere('propiedad.precio >= :precioMin', { precioMin: criteriosBusqueda.precio_min });
+    }
+    
+    if (criteriosBusqueda.precio_max) {
+      query.andWhere('propiedad.precio <= :precioMax', { precioMax: criteriosBusqueda.precio_max });
+    }
+
+    if (criteriosBusqueda.localidad) {
+      query.innerJoin('propiedad.localidad', 'localidad')
+           .andWhere('LOWER(localidad.nombre) LIKE :localidadNombre', { localidadNombre: `%${criteriosBusqueda.localidad.toLowerCase()}%` });
+    }
+    
+    // Filtro para las características subjetivas
+    if (criteriosBusqueda.caracteristicas_subjetivas && criteriosBusqueda.caracteristicas_subjetivas.length > 0) {
+      const condiciones = criteriosBusqueda.caracteristicas_subjetivas.map(palabra => `LOWER(propiedad.descripcion) LIKE :palabra_${palabra.toLowerCase()}`);
+      const parametros = criteriosBusqueda.caracteristicas_subjetivas.reduce((acc, palabra) => {
+        acc[`palabra_${palabra.toLowerCase()}`] = `%${palabra.toLowerCase()}%`;
+        return acc;
+      }, {});
+      
+      query.andWhere(condiciones.join(' AND '), parametros);
+    }
+
+    const propiedades = await query.getMany();
+
+    if (!propiedades || propiedades.length === 0) {
+      throw new NotFoundException('No se encontraron propiedades que coincidan con los criterios.');
+    }
+
+    return propiedades;
+  }
+
   async remove(id: number):Promise<void> {
     const propiedad = await this.findOne(id);
     await this.propiedadRepository.remove(propiedad);

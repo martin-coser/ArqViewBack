@@ -14,7 +14,7 @@ export class UpdateInmobiliariaDto extends PartialType(CreateInmobiliariaDto) {
 
     @IsString()
     @IsNotEmpty()
-    caracteristica?: string
+    codigoPais?: string
 
     @IsString()
     @IsNotEmpty()

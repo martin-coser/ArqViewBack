@@ -14,7 +14,7 @@ export class Inmobiliaria {
     direccion: string
 
     @Column({ type: 'varchar', length: 10, nullable: true })
-    caracteristica: string;
+    codigoPais: string;
 
     @Column({ type: 'varchar', length: 20, nullable: true })
     numeroTelefono: string;
