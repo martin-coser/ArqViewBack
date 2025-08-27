@@ -12,6 +12,14 @@ export class UpdateInmobiliariaDto extends PartialType(CreateInmobiliariaDto) {
     @IsNotEmpty()
     direccion?: string 
 
+    @IsString()
+    @IsNotEmpty()
+    caracteristica?: string
+
+    @IsString()
+    @IsNotEmpty()
+    numeroTelefono?: string
+
     @IsNumber()
     @IsNotEmpty()
     @Type(() => Number)
