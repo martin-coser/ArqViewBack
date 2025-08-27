@@ -21,6 +21,7 @@ import { ActividadClienteModule } from './actividad-cliente/actividad-cliente.mo
 import { EstadisticaPropiedadModule } from './estadistica-propiedad/estadistica-propiedad.module';
 import { RecomendacionModule } from './recomendacion/recomendacion.module';
 import { Imagen360Module } from './imagen360/imagen360.module';
+import { ChatIaModule } from './chat-ia/chat-ia.module';
 
 
 @Module({
@@ -59,6 +60,7 @@ import { Imagen360Module } from './imagen360/imagen360.module';
     EstadisticaPropiedadModule,
     RecomendacionModule,
     Imagen360Module,
+    ChatIaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

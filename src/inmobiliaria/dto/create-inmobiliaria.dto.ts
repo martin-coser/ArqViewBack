@@ -18,7 +18,7 @@ export class CreateInmobiliariaDto {
   @IsString()
   @IsNotEmpty()
   @Type(() => String)
-  caracteristica: string;
+  codigoPais: string;
 
   @IsString()
   @IsNotEmpty()
