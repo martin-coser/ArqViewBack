@@ -6,6 +6,7 @@ import { UploadImagen2dDto } from './dto/upload-imagen2d.dto';
 import * as fs from 'fs'; // Importa el módulo 'fs' para operaciones de archivos
 import * as path from 'path'; // Importa el módulo 'path' para resolver rutas
 import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
+import { ChatIaImagenService } from 'src/chat-ia-imagen/chat-ia-imagen.service';
 
 @Injectable()
 export class Imagen2dService {
@@ -14,16 +15,25 @@ export class Imagen2dService {
     private readonly imagen2dRepository: Repository<Imagen2d>,
     @InjectRepository(Propiedad)
     private readonly propiedadRepository: Repository<Propiedad>,
+
+    private readonly chatIaImagenService: ChatIaImagenService
   ) {}
 
   async upload(file: Express.Multer.File, uploadImagen2dDto?: UploadImagen2dDto): Promise<{ imageUrl: string }> {
+    
+    // Leer el archivo y convertirlo a base64
+    const imageBase64 = fs.readFileSync(file.path, { encoding: 'base64' });
+    const tags = await this.chatIaImagenService.analizarImagen(imageBase64);
     // Crear una nueva instancia de Imagen2d
     const imagen = new Imagen2d();
     imagen.filePath = `/imagenes2d/${file.filename}`; // Ruta pública de la imagen
+    imagen.tags_visuales = tags.join(','); // 3. Guardamos los tags como una cadena separada por comas
 
     const propiedad = await this.propiedadRepository.findOneBy({ id: uploadImagen2dDto?.propiedad });
 
     if (!propiedad) {
+      // Elimina el archivo si la propiedad no existe
+      fs.unlinkSync(file.path);
       throw new NotFoundException(`Propiedad con ID ${uploadImagen2dDto?.propiedad} no encontrada.`);
     }
 

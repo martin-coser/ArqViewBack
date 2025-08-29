@@ -1,8 +1,8 @@
-// src/chat-ia/chat-ia.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { PropiedadService } from 'src/propiedad/propiedad.service';
+import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 
 @Injectable()
 export class ChatIaService {
@@ -14,17 +14,16 @@ export class ChatIaService {
     private readonly propiedadService: PropiedadService,
   ) {}
 
-  /**
-   * Procesa el mensaje del usuario y devuelve una respuesta de chat.
-   * @param mensajeDeUsuario Mensaje de texto enviado por el usuario.
-   * @returns Un objeto que contiene el estado, un mensaje y los resultados de la búsqueda.
-   */
   async obtenerRespuestaChat(mensajeDeUsuario: string): Promise<any> {
     this.logger.log(`Mensaje recibido del usuario: "${mensajeDeUsuario}"`);
 
     const prompt = `
       Eres un asistente experto en bienes raíces. Tu tarea es extraer la intención de búsqueda y los parámetros de las propiedades. Los parámetros son: tipo_propiedad (ej. casa, apartamento), habitaciones, precio_min, precio_max, y localidad.
+      También, debes identificar si la búsqueda es por características visuales de las imágenes (ej. "baño grande", "cocina moderna"). Si es así, usa el parámetro 'tags_visuales'. Si no se menciona, usa 'null'.
       Devuelve la respuesta como un objeto JSON válido. Si un parámetro no se menciona, usa 'null'. No incluyas texto adicional fuera del JSON.
+
+      Ejemplo de búsqueda por tags: "muéstrame propiedades con un baño grande" -> {"tags_visuales": ["baño", "grande"]}
+      Ejemplo de búsqueda mixta: "casas con un dormitorio en el centro y con una cocina moderna" -> {"tipo_propiedad": "casa", "habitaciones": 1, "tags_visuales": ["cocina", "moderna"]}
 
       Mensaje del usuario: "${mensajeDeUsuario}"
 
@@ -48,9 +47,17 @@ export class ChatIaService {
       
       this.logger.log(`Criterios de búsqueda extraídos: ${JSON.stringify(criteriosDeBusqueda)}`);
 
-      // 3. Usa los criterios para buscar propiedades en la base de datos.
-      // Asegúrate de que este método en PropiedadService se llama 'findPropiedades'.
-      const propiedades = await this.propiedadService.buscarPropiedades(criteriosDeBusqueda);
+      let propiedades: Propiedad[] = [];
+
+      // 3. Verifica si la búsqueda es por tags visuales o por otros criterios.
+      if (criteriosDeBusqueda.tags_visuales && criteriosDeBusqueda.tags_visuales.length > 0) {
+        // Llama al nuevo método para la búsqueda visual
+        propiedades = await this.propiedadService.buscarPropiedadesPorTags(criteriosDeBusqueda.tags_visuales);
+      } else {
+        // Llama al método de búsqueda tradicional por parámetros de texto
+        propiedades = await this.propiedadService.buscarPropiedades(criteriosDeBusqueda);
+      }
+      // ---------------------------------------------
 
       // 4. Genera la respuesta final para el cliente.
       if (propiedades.length > 0) {
