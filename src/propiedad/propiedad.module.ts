@@ -9,19 +9,23 @@ import { EstiloArquitectonico } from 'src/estilo-arquitectonico/entities/estilo-
 import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-visualizacion.entity';
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 import { RecomendacionModule } from 'src/recomendacion/recomendacion.module';
+import { ChatIaImagenModule } from 'src/chat-ia-imagen/chat-ia-imagen.module';
+import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
 
 @Module({
   imports: [
-  TypeOrmModule.forFeature([
-    Propiedad,
-    Localidad,
-    TipoDePropiedad,
-    EstiloArquitectonico,
-    TipoDeVisualizacion,
-    Inmobiliaria
-  ]),
-  RecomendacionModule,
-],
+    TypeOrmModule.forFeature([
+      Propiedad,
+      Localidad,
+      TipoDePropiedad,
+      EstiloArquitectonico,
+      TipoDeVisualizacion,
+      Inmobiliaria,
+      Imagen2d, // Agregado para soportar imagen2dRepository
+    ]),
+    RecomendacionModule,
+    ChatIaImagenModule,
+  ],
   controllers: [PropiedadController],
   providers: [PropiedadService],
   exports: [PropiedadService],

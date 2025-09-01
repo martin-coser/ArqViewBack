@@ -232,7 +232,6 @@ describe('Test de Integración', () => {
           nombre: mockCreateClienteDto.nombre,
           apellido: mockCreateClienteDto.apellido,
           fechaNacimiento: mockCreateClienteDto.fechaNacimiento,
-          direccion: mockCreateClienteDto.direccion,
           localidad: { id: mockCreateClienteDto.localidad },
         },
       }));

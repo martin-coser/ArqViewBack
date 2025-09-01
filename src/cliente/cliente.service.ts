@@ -3,7 +3,7 @@ import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { Cliente } from './entities/cliente.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Localidad } from 'src/localidad/entities/localidad.entity';
 import { Cuenta } from 'src/auth/entities/cuenta.entity';
 import { AuthService } from 'src/auth/auth.service';
@@ -23,58 +23,36 @@ export class ClienteService {
     ) {}
   
   async create(createClienteDto: CreateClienteDto, registerCuentaDto: RegisterCuentaDto): Promise<Cliente> {
-    return await this.clienteRepository.manager.transaction(async (transactionalEntityManager) => {
-      // 1. Crear la cuenta dentro de la transacción
-      const cuenta = await this.authService.register(registerCuentaDto, transactionalEntityManager);
-      createClienteDto.cuenta = cuenta.id; // Asignar el ID de la cuenta creada
+  return await this.clienteRepository.manager.transaction(async (transactionalEntityManager: EntityManager) => {
+    // Crear la cuenta dentro de la transacción
+    const cuenta = await this.authService.register(registerCuentaDto, transactionalEntityManager);
 
-      // 2. Desestructurar el DTO para mayor claridad
-      const { nombre, apellido, fechaNacimiento, direccion, localidad: localidadId, cuenta: cuentaId } = createClienteDto;
-
-      // 3. Verificar si el cliente ya existe (basado en campos clave)
-      const clienteExistente = await transactionalEntityManager.findOne(Cliente, {
-        where: {
-          nombre,
-          apellido,
-          fechaNacimiento,
-          direccion,
-          localidad: { id: localidadId },
-        },
-      });
-      if (clienteExistente) {
-        throw new ConflictException('El cliente ya existe con los datos proporcionados');
-      }
-
-      // 4. Verificar que la localidad exista
-      const localidad = await transactionalEntityManager.findOne(Localidad, { where: { id: localidadId } });
-      if (!localidad) {
-        throw new NotFoundException(`Localidad con id ${localidadId} no existe`);
-      }
-
-      // 5. Verificar que la cuenta exista (por consistencia, aunque ya la creamos)
-      const cuentaExistente = await transactionalEntityManager.findOne(Cuenta, { where: { id: cuentaId } });
-      if (!cuentaExistente) {
-        throw new NotFoundException(`Cuenta con id ${cuentaId} no existe`);
-      }
-
-      // 6. Crear el nuevo cliente
-      const cliente = transactionalEntityManager.create(Cliente, {
-        nombre,
-        apellido,
-        fechaNacimiento,
-        direccion,
-        localidad,
-        cuenta: cuentaExistente,
-      });
-
-      if (!cliente) {
-        throw new NotFoundException('Error al crear el cliente');
-      }
-
-      // 7. Guardar y devolver el cliente
-      return await transactionalEntityManager.save(cliente);
+    // Asignar el ID de la cuenta creada, sobrescribiendo o estableciendo si no existe
+    const localidad = await transactionalEntityManager.findOne(Localidad, {
+      where: { id: createClienteDto.localidad },
     });
-  }
+    
+    if (!localidad) {
+    //
+      throw new NotFoundException(`La localidad con el Id ${createClienteDto.localidad} no existe.`);
+    }
+    // Crear y guardar la entidad Cliente
+    const cliente = transactionalEntityManager.create(Cliente, {
+      ...createClienteDto, 
+      localidad: localidad, 
+      cuenta: cuenta, 
+    });
+    
+    //guarda el cliente
+    const nuevoCliente = await transactionalEntityManager.save(cliente);
+
+    if (!nuevoCliente) {
+      throw new NotFoundException('Error al guardar el cliente en la bases de datos.');
+    }
+
+    return nuevoCliente;
+  });
+}
 
 
   async findAll() : Promise<Cliente[]> {

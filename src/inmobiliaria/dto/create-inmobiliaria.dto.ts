@@ -15,6 +15,17 @@ export class CreateInmobiliariaDto {
   @Type(() => Number)
   localidad: number; // ID de la localidad
 
+  @IsString()
+  @IsNotEmpty()
+  @Type(() => String)
+  codigoPais: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @Type(() => String)
+  numeroTelefono: string;
+
+
   @IsNumber()
   @IsOptional()
   @Type(() => Number)

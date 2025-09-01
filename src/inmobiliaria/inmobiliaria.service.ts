@@ -28,7 +28,7 @@ export class InmobiliariaService {
       // Asignar el ID de la cuenta creada, sobrescribiendo o estableciendo si no existe
       createInmobiliariaDto.cuenta = cuenta.id;
 
-      const { nombre, direccion, localidad: localityId, cuenta: cuentaId } = createInmobiliariaDto;
+      const { nombre, direccion,codigoPais,numeroTelefono, localidad: localityId, cuenta: cuentaId } = createInmobiliariaDto;
 
       // Verificar si la dirección ya existe
       const inmobiliariaExistente = await transactionalEntityManager.findOne(Inmobiliaria, {
@@ -59,6 +59,8 @@ export class InmobiliariaService {
         nombre,
         direccion,
         localidad,
+        codigoPais,
+        numeroTelefono,
         cuenta: cuentaExistente,
       });
 

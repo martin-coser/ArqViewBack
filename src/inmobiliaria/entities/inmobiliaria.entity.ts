@@ -11,8 +11,13 @@ export class Inmobiliaria {
     nombre: string
 
     @Column({ type: 'varchar', length: 255, unique: true })
-    direccion: string // uruguay 1340
+    direccion: string
 
+    @Column({ type: 'varchar', length: 10, nullable: true })
+    codigoPais: string;
+
+    @Column({ type: 'varchar', length: 20, nullable: true })
+    numeroTelefono: string;
 
     @ManyToOne(() => Localidad, { eager: true })
     @JoinColumn({name: 'localidad_id'})

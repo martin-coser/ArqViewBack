@@ -50,6 +50,8 @@ describe('Pruebas de integración para InmobiliariaService', () => {
   const mockCreateInmobiliariaDto: CreateInmobiliariaDto = {
     nombre: 'Inmobiliaria',
     direccion: 'Avenida Falsa 123',
+    caracteristica: '123',
+    numeroTelefono: '1234567890',
     localidad: 1,
     cuenta: 1,
   };

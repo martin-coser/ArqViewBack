@@ -18,9 +18,17 @@ import { MensajeModule } from './mensaje/mensaje.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificacionModule } from './notificacion/notificacion.module'; 
 import { ActividadClienteModule } from './actividad-cliente/actividad-cliente.module';
+<<<<<<< HEAD
 import { RecomendacionModule } from './recomendacion/recomendacion.module';
 import { EstadisticaPropiedadModule } from './estadistica-propiedad/estadistica-propiedad.module';
 import { Imagen360Module } from './imagen360/imagen360.module';
+=======
+import { EstadisticaPropiedadModule } from './estadistica-propiedad/estadistica-propiedad.module';
+import { RecomendacionModule } from './recomendacion/recomendacion.module';
+import { Imagen360Module } from './imagen360/imagen360.module';
+import { ChatIaModule } from './chat-ia/chat-ia.module';
+import { ChatIaImagenModule } from './chat-ia-imagen/chat-ia-imagen.module';
+>>>>>>> f0643746b76ef19de03d630a7b8da8341c4b84e7
 
 
 @Module({

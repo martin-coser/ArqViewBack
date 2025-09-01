@@ -11,6 +11,10 @@ export class Imagen2d {
 
   @Column({ nullable: true }) // Permitimos que sea opcional
   descripcion: string;
+  
+  // Columna para almacenar las etiquetas visuales generadas por LLaVA
+  @Column({ type: 'text', nullable: true })
+  tags_visuales: string;
 
   //muchas imagenes pertecen a una propiedad
   @ManyToOne(() => Propiedad, {eager: true,onDelete: 'CASCADE'})
