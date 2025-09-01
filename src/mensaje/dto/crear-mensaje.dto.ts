@@ -4,4 +4,5 @@ export class CrearMensajeDto {
     contenido: string; // contenido del mensaje
     tipoRemitente: 'CLIENTE' | 'INMOBILIARIA'; // tipo de remitente
     tipoReceptor: 'CLIENTE' | 'INMOBILIARIA'; // tipo de receptor
+    leido: boolean; // estado de lectura del mensaje
 }

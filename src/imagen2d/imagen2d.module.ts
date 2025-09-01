@@ -6,7 +6,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Imagen2d } from './entities/imagen2d.entity';
 import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import { PropiedadModule } from 'src/propiedad/propiedad.module';
-import { ChatIaImagenModule } from 'src/chat-ia-imagen/chat-ia-imagen.module';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 
@@ -25,7 +24,6 @@ import { extname } from 'path';
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
     forwardRef(() => PropiedadModule), // Para PropiedadService y PropiedadRepository
-    forwardRef(() => ChatIaImagenModule), // Para ChatIaImagenService
   ],
   controllers: [Imagen2dController],
   providers: [Imagen2dService],
