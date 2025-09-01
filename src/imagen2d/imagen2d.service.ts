@@ -17,13 +17,17 @@ export class Imagen2dService {
   ) {}
 
   async upload(file: Express.Multer.File, uploadImagen2dDto?: UploadImagen2dDto): Promise<{ imageUrl: string }> {
+    
     // Crear una nueva instancia de Imagen2d
     const imagen = new Imagen2d();
     imagen.filePath = `/imagenes2d/${file.filename}`; // Ruta pública de la imagen
 
+
     const propiedad = await this.propiedadRepository.findOneBy({ id: uploadImagen2dDto?.propiedad });
 
     if (!propiedad) {
+      // Elimina el archivo si la propiedad no existe
+      fs.unlinkSync(file.path);
       throw new NotFoundException(`Propiedad con ID ${uploadImagen2dDto?.propiedad} no encontrada.`);
     }
 

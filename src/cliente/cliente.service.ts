@@ -24,27 +24,30 @@ export class ClienteService {
   
   async create(createClienteDto: CreateClienteDto, registerCuentaDto: RegisterCuentaDto): Promise<Cliente> {
   return await this.clienteRepository.manager.transaction(async (transactionalEntityManager: EntityManager) => {
-
+    // Crear la cuenta dentro de la transacción
     const cuenta = await this.authService.register(registerCuentaDto, transactionalEntityManager);
 
+    // Asignar el ID de la cuenta creada, sobrescribiendo o estableciendo si no existe
     const localidad = await transactionalEntityManager.findOne(Localidad, {
       where: { id: createClienteDto.localidad },
     });
+    
     if (!localidad) {
-
-      throw new NotFoundException(`The location with ID ${createClienteDto.localidad} does not exist.`);
+    //
+      throw new NotFoundException(`La localidad con el Id ${createClienteDto.localidad} no existe.`);
     }
-
+    // Crear y guardar la entidad Cliente
     const cliente = transactionalEntityManager.create(Cliente, {
       ...createClienteDto, 
       localidad: localidad, 
       cuenta: cuenta, 
     });
-
+    
+    //guarda el cliente
     const nuevoCliente = await transactionalEntityManager.save(cliente);
 
     if (!nuevoCliente) {
-      throw new NotFoundException('Error saving the client to the database.');
+      throw new NotFoundException('Error al guardar el cliente en la bases de datos.');
     }
 
     return nuevoCliente;
