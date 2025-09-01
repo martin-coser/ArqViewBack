@@ -16,11 +16,17 @@ async function bootstrap() {
     });
     logger.log('Aplicación creada con éxito.');
 
+    app.use((req, res, next) => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      next();
+    });
+    
     app.useStaticAssets(join(__dirname, '..', 'imagenes2d'), { prefix: '/imagenes2d/' });
+    app.useStaticAssets(join(__dirname, '..', 'imagenes360'), { prefix: '/imagenes360/' });
     logger.log('Archivos estáticos configurados.');
 
     app.enableCors({
-      origin: 'http://localhost:4000',
+      origin: '*',
       methods: 'GET,HEAD,POST,PUT,DELETE,OPTIONS,PATCH',
       credentials: true,
     });

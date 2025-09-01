@@ -10,6 +10,7 @@ import { EstiloArquitectonico } from 'src/estilo-arquitectonico/entities/estilo-
 import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-visualizacion.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
+import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
 
 @Injectable()
 export class PropiedadService {
@@ -26,11 +27,15 @@ constructor(
 
   @InjectRepository(EstiloArquitectonico)
   private estiloArquitectonicoRepository: Repository<EstiloArquitectonico>,
+  
   @InjectRepository(TipoDeVisualizacion)
   private tipoDeVisualizacionRepository: Repository<TipoDeVisualizacion>,
+
   @InjectRepository(Inmobiliaria)
   private inmobiliariaRepository: Repository<Inmobiliaria>,
+
   private eventEmitter: EventEmitter2,
+
 ) {}
 
 
@@ -220,6 +225,79 @@ constructor(
 
     return updatedPropiedad;
   }
+
+  async buscarPropiedades(criteriosBusqueda: any): Promise<Propiedad[]> {
+    const query = this.propiedadRepository.createQueryBuilder('propiedad');
+
+    // Aplicar los filtros estructurados
+    if (criteriosBusqueda.tipo_propiedad) {
+      query.andWhere('LOWER(propiedad.tipo) LIKE :tipo', { tipo: `%${criteriosBusqueda.tipo_propiedad.toLowerCase()}%` });
+    }
+    
+    if (criteriosBusqueda.habitaciones) {
+      query.andWhere('propiedad.cantidadDormitorios = :habitaciones', { habitaciones: criteriosBusqueda.habitaciones });
+    }
+    
+    if (criteriosBusqueda.precio_min) {
+      query.andWhere('propiedad.precio >= :precioMin', { precioMin: criteriosBusqueda.precio_min });
+    }
+    
+    if (criteriosBusqueda.precio_max) {
+      query.andWhere('propiedad.precio <= :precioMax', { precioMax: criteriosBusqueda.precio_max });
+    }
+
+    if (criteriosBusqueda.localidad) {
+      query.innerJoin('propiedad.localidad', 'localidad')
+           .andWhere('LOWER(localidad.nombre) LIKE :localidadNombre', { localidadNombre: `%${criteriosBusqueda.localidad.toLowerCase()}%` });
+    }
+    
+    // Filtro para las características subjetivas
+    if (criteriosBusqueda.caracteristicas_subjetivas && criteriosBusqueda.caracteristicas_subjetivas.length > 0) {
+      const condiciones = criteriosBusqueda.caracteristicas_subjetivas.map(palabra => `LOWER(propiedad.descripcion) LIKE :palabra_${palabra.toLowerCase()}`);
+      const parametros = criteriosBusqueda.caracteristicas_subjetivas.reduce((acc, palabra) => {
+        acc[`palabra_${palabra.toLowerCase()}`] = `%${palabra.toLowerCase()}%`;
+        return acc;
+      }, {});
+      
+      query.andWhere(condiciones.join(' AND '), parametros);
+    }
+
+    const propiedades = await query.getMany();
+
+    if (!propiedades || propiedades.length === 0) {
+      throw new NotFoundException('No se encontraron propiedades que coincidan con los criterios.');
+    }
+
+    return propiedades;
+  }
+
+  // Método para buscar propiedades por tags visuales
+
+  async buscarPropiedadesPorTags(tags: string[]): Promise<Propiedad[]> {
+
+    // Utiliza el QueryBuilder para construir una consulta compleja
+    const query = this.propiedadRepository.createQueryBuilder('propiedad');
+
+    // Une la tabla de propiedades con la de imágenes
+    query.innerJoin(Imagen2d, 'imagen', 'imagen.propiedad_id = propiedad.id');
+
+    // Por cada tag, agrega una condición de búsqueda
+    tags.forEach((tag, index) => {
+      if (index === 0) {
+        query.where('imagen.tags_visuales LIKE :tag', { tag: `%${tag}%` });
+      } else {
+        query.andWhere('imagen.tags_visuales LIKE :tag', { tag: `%${tag}%` });
+      }
+    });
+
+    // Asegúrate de que los resultados no se repitan
+    query.distinct(true);
+
+    // Ejecuta la consulta y devuelve las propiedades
+    const propiedades = await query.getMany();
+    return propiedades;
+  }
+
 
   async remove(id: number):Promise<void> {
     const propiedad = await this.findOne(id);

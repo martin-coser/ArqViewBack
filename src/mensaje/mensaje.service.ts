@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Mensaje } from './entities/mensaje.entity';
 import { Repository } from 'typeorm';
@@ -6,6 +6,7 @@ import { Cliente } from 'src/cliente/entities/cliente.entity';
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 import { CrearMensajeDto } from './dto/crear-mensaje.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { MarcarComoLeidoDto } from './dto/marcar-como-leido.dto';
 
 @Injectable()
 export class MensajeService {
@@ -117,5 +118,37 @@ export class MensajeService {
     }
 
     return query.getMany();
+  }
+
+  async marcarComoLeido(idMensaje: number, marcarComoLeidoDto: MarcarComoLeidoDto): Promise<Mensaje> {
+    const { idReceptor, tipoReceptor } = marcarComoLeidoDto;
+
+    // 1. Buscar el mensaje por su ID y sus relaciones
+    const mensaje = await this.repositorioMensajes.findOne({
+      where: { id: idMensaje },
+      relations: ['receptorCliente', 'receptorInmobiliaria'],
+    });
+
+    if (!mensaje) {
+      throw new NotFoundException('Mensaje no encontrado');
+    }
+
+    // 2. Verificar que el usuario que intenta marcar como leído sea el receptor
+    const esReceptorValido =
+      (tipoReceptor === 'CLIENTE' && mensaje.receptorCliente && mensaje.receptorCliente.id === idReceptor) ||
+      (tipoReceptor === 'INMOBILIARIA' && mensaje.receptorInmobiliaria && mensaje.receptorInmobiliaria.id === idReceptor);
+
+    if (!esReceptorValido) {
+      throw new UnauthorizedException('No tienes permiso para marcar este mensaje como leído');
+    }
+
+    // 3. Si el mensaje ya está leído, no hacemos nada
+    if (mensaje.leido) {
+      return mensaje;
+    }
+
+    // 4. Actualizar el estado de lectura y guardar
+    mensaje.leido = true;
+    return this.repositorioMensajes.save(mensaje);
   }
 }

@@ -11,6 +11,9 @@ export class Mensaje {
     @Column()
     contenido: string;
 
+    @Column({ default: false })
+    leido: boolean;
+
     @ManyToOne(() => Cliente, cliente => cliente.id)
     remitenteCliente: Cliente;
 

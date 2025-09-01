@@ -5,14 +5,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Inmobiliaria } from './entities/inmobiliaria.entity';
 import { Localidad } from 'src/localidad/entities/localidad.entity';
 import { Cuenta } from 'src/auth/entities/cuenta.entity';
+// Importa el AuthModule en lugar de AuthService directamente
+import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports:[
+  imports: [
     TypeOrmModule.forFeature([
       Inmobiliaria,
       Localidad,
       Cuenta
-    ])
+    ]),
+    AuthModule // Importa el módulo que contiene y exporta AuthService
   ],
   controllers: [InmobiliariaController],
   providers: [InmobiliariaService],

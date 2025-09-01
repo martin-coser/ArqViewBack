@@ -1,7 +1,7 @@
 import { BadRequestException, Body, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cuenta } from './entities/cuenta.entity';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Cliente } from 'src/cliente/entities/cliente.entity';
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 import { JwtService } from '@nestjs/jwt';
@@ -22,30 +22,39 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(registerCuentaDto: RegisterCuentaDto): Promise<Cuenta> {
-    const { nombreUsuario, password, email, rol } = registerCuentaDto
+  async register(registerCuentaDto: RegisterCuentaDto, entityManager?: EntityManager): Promise<Cuenta> {
+    const { nombreUsuario, password, email, rol } = registerCuentaDto;
+
+    // Usar el entityManager si se proporciona, de lo contrario usar el repositorio
+    const manager = entityManager || this.cuentaRepository.manager;
+
     // Verificar si el nombre de usuario ya existe
-    const cuentaPorNombre = await this.cuentaRepository.findOne({ where: { nombreUsuario } });
+    const cuentaPorNombre = await manager.findOne(Cuenta, { where: { nombreUsuario }});
     if (cuentaPorNombre) {
-      throw new NotFoundException('El nombre de usuario ya está en uso');
+      throw new BadRequestException('El nombre de usuario ya está en uso');
     }
+
     // Verificar si el email ya existe
-    const cuentaPorEmail = await this.cuentaRepository.findOne({ where: { email } });
-    if (cuentaPorEmail) {
-      throw new NotFoundException('El email ya está en uso');
-    }
+    const cuentaPorEmail = await manager.findOne(Cuenta, {where: { email },});
     
-    const hashedPassword = await bcrypt.hash(password, 10)
-    const cuenta = this.cuentaRepository.create({
+    if (cuentaPorEmail) {
+      throw new BadRequestException('El email ya está en uso');
+    }
+
+    // Encriptar la contraseña
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Crear la entidad Cuenta
+    const cuenta = manager.create(Cuenta, {
       nombreUsuario,
       email,
       password: hashedPassword,
       rol,
-      login: new Date()
-    })
-    await this.cuentaRepository.save(cuenta)
+      login: new Date(),
+    });
 
-    return cuenta
+    // Guardar la cuenta (solo la instancia de la entidad)
+    return await manager.save(cuenta);
   }
 
 

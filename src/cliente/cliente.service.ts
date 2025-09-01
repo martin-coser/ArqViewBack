@@ -1,11 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { Cliente } from './entities/cliente.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { Localidad } from 'src/localidad/entities/localidad.entity';
 import { Cuenta } from 'src/auth/entities/cuenta.entity';
+import { AuthService } from 'src/auth/auth.service';
+import { RegisterCuentaDto } from 'src/auth/dto/register-cuenta.dto';
 
 @Injectable()
 export class ClienteService {
@@ -17,58 +19,40 @@ export class ClienteService {
       private localidadRepository: Repository<Localidad>,
       @InjectRepository(Cuenta)
       private cuentaRepository: Repository<Cuenta>,
+      private readonly authService: AuthService,
     ) {}
   
-  async create(createClienteDto: CreateClienteDto): Promise<Cliente> {
-    // Utilizar transacciones para asegurar la integridad de los datos
-    return await this.clienteRepository.manager.transaction(async (transactionalEntityManager) => {
-      // 1. Desestructurar el DTO para mayor claridad
-      const { nombre, apellido, fechaNacimiento, direccion, localidad: localidadId, cuenta: cuentaId } = createClienteDto;
+  async create(createClienteDto: CreateClienteDto, registerCuentaDto: RegisterCuentaDto): Promise<Cliente> {
+  return await this.clienteRepository.manager.transaction(async (transactionalEntityManager: EntityManager) => {
+    // Crear la cuenta dentro de la transacción
+    const cuenta = await this.authService.register(registerCuentaDto, transactionalEntityManager);
 
-      // 2. Verificar si el cliente ya existe
-      const clienteExistente = await transactionalEntityManager.findOne(Cliente, {
-        where: {
-          nombre,
-          apellido,
-          fechaNacimiento,
-          direccion,
-          localidad: { id: localidadId },
-          cuenta: { id: cuentaId },
-        },
-      });
-
-      if (clienteExistente) {
-        throw new NotFoundException('El cliente ya existe');
-      }
-
-      // 3. Verificar que la localidad y la cuenta existan
-      const localidad = await transactionalEntityManager.findOne(Localidad, { where: { id: localidadId } });
-      if (!localidad) {
-        throw new NotFoundException(`Localidad con id ${localidadId} no existe`);
-      }
-
-      const cuenta = await transactionalEntityManager.findOne(Cuenta, { where: { id: cuentaId } });
-      if (!cuenta) {
-        throw new NotFoundException(`Cuenta con id ${cuentaId} no existe`);
-      }
-
-      // 4. Crear el nuevo cliente y guardar
-      const cliente = transactionalEntityManager.create(Cliente, {
-        nombre,
-        apellido,
-        fechaNacimiento,
-        direccion,
-        localidad,
-        cuenta,
-      });
-
-      if (!cliente) {
-        throw new NotFoundException('Error al crear el cliente');
-      }
-
-      return await transactionalEntityManager.save(cliente);
+    // Asignar el ID de la cuenta creada, sobrescribiendo o estableciendo si no existe
+    const localidad = await transactionalEntityManager.findOne(Localidad, {
+      where: { id: createClienteDto.localidad },
     });
-  }
+    
+    if (!localidad) {
+    //
+      throw new NotFoundException(`La localidad con el Id ${createClienteDto.localidad} no existe.`);
+    }
+    // Crear y guardar la entidad Cliente
+    const cliente = transactionalEntityManager.create(Cliente, {
+      ...createClienteDto, 
+      localidad: localidad, 
+      cuenta: cuenta, 
+    });
+    
+    //guarda el cliente
+    const nuevoCliente = await transactionalEntityManager.save(cliente);
+
+    if (!nuevoCliente) {
+      throw new NotFoundException('Error al guardar el cliente en la bases de datos.');
+    }
+
+    return nuevoCliente;
+  });
+}
 
 
   async findAll() : Promise<Cliente[]> {

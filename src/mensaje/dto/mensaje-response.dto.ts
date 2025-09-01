@@ -35,4 +35,7 @@ export class MensajeResponseDto {
     nombre: string;
     apellido: string;
   };
+
+  @IsOptional()
+  leido?: boolean;
 }

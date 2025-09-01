@@ -23,6 +23,7 @@ import { RecomendacionModule } from './recomendacion/recomendacion.module';
 import { Imagen360Module } from './imagen360/imagen360.module';
 
 
+
 @Module({
   imports: [
     EventEmitterModule.forRoot(),
