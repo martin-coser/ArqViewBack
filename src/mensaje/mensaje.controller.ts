@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseIntPipe, Patch } from '@nestjs/common';
 import { MensajeService } from './mensaje.service';
 import { CrearMensajeDto } from './dto/crear-mensaje.dto';
 import { Mensaje } from './entities/mensaje.entity';
 import { MensajeResponseDto } from './dto/mensaje-response.dto';
+import { MarcarComoLeidoDto } from './dto/marcar-como-leido.dto';
 
 @Controller('mensaje')
 export class MensajeController {
@@ -54,5 +55,11 @@ export class MensajeController {
     @Param('id', ParseIntPipe) id: number
   ): Promise<Mensaje[]> {  
     return this.mensajeService.findMessagesByTypeAndId(type, id);
+  }
+
+  @Patch(':id/leido')
+  async marcarComoLeido(@Param('id') idMensaje: number, @Body() marcarComoLeidoDto: MarcarComoLeidoDto,
+  ): Promise<Mensaje> {
+    return this.mensajeService.marcarComoLeido(Number(idMensaje), marcarComoLeidoDto);
   }
 }

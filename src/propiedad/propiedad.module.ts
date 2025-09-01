@@ -9,7 +9,6 @@ import { EstiloArquitectonico } from 'src/estilo-arquitectonico/entities/estilo-
 import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-visualizacion.entity';
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 import { RecomendacionModule } from 'src/recomendacion/recomendacion.module';
-import { ChatIaImagenModule } from 'src/chat-ia-imagen/chat-ia-imagen.module';
 import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
 
 @Module({
@@ -21,10 +20,10 @@ import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
       EstiloArquitectonico,
       TipoDeVisualizacion,
       Inmobiliaria,
-      Imagen2d, // Agregado para soportar imagen2dRepository
+      Imagen2d, 
     ]),
     RecomendacionModule,
-    ChatIaImagenModule,
+
   ],
   controllers: [PropiedadController],
   providers: [PropiedadService],
