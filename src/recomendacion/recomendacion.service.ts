@@ -247,7 +247,7 @@ private calculateSimilarity(prop1: Propiedad, prop2: Propiedad, pesos: any, rang
         try {
           await this.mailerService.sendMail({
             to: cliente.cuenta.email,
-            from: 'grupo8albasoft@gmail.com',
+            from: 'arquview8@gmail.com',
             subject: 'Nueva Propiedad Recomendable',
             html: `
             <p>Hola ${cliente.nombre},</p>

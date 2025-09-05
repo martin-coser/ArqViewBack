@@ -75,7 +75,7 @@ export class NotificacionService {
       try {
         await this.mailerService.sendMail({
           to: lista.cliente.cuenta.email, 
-          from: 'grupo8albasoft@gmail.com', 
+          from: 'arqview8@gmail.com', 
           subject: emailSubject, 
           html: `
             <p>Hola ${lista.cliente.nombre || 'cliente'},</p>
@@ -121,7 +121,7 @@ async nuevoMensaje(payload: { contenido: string; fechaCreacion: Date; remitente:
   try {
     await this.mailerService.sendMail({
       to: payload.receptor,
-      from: 'grupo8albasoft@gmail.com',
+      from: 'arqview8@gmail.com',
       subject: 'Nuevo mensaje recibido',
       text: `Has recibido un nuevo mensaje de ${payload.remitente}:\n\n${payload.contenido}`,
     });
