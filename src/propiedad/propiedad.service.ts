@@ -60,7 +60,7 @@ constructor(
       } = createPropiedadDto;
 
       // Verifica si la dirección ya existe
-      const propiedadExistente = await this.propiedadRepository.findOneBy({ direccion });
+      const propiedadExistente = await this.propiedadRepository.findOneBy({ direccion, localidad: { id: localidadId }  });
       if (propiedadExistente) {
         throw new ConflictException('La dirección ya existe');
       }
