@@ -28,4 +28,11 @@ export class Cuenta {
   @Column({ type: 'timestamp', nullable: true })
   logout: Date;
 
+  // Campo para validar por correo
+  @Column({ type: 'enum', enum: ['PENDIENTE', 'ACTIVO'], default: 'PENDIENTE' })
+  estado: 'PENDIENTE' | 'ACTIVO';
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  validationToken: string | null;
+
 }
