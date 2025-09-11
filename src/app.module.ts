@@ -21,6 +21,7 @@ import { ActividadClienteModule } from './actividad-cliente/actividad-cliente.mo
 import { EstadisticaPropiedadModule } from './estadistica-propiedad/estadistica-propiedad.module';
 import { RecomendacionModule } from './recomendacion/recomendacion.module';
 import { Imagen360Module } from './imagen360/imagen360.module';
+import { Modelo3DModule } from './modelo3d/modelo3d.module';
 
 
 
@@ -60,6 +61,7 @@ import { Imagen360Module } from './imagen360/imagen360.module';
     EstadisticaPropiedadModule,
     RecomendacionModule,
     Imagen360Module,
+    Modelo3DModule,
   ],
   controllers: [AppController],
   providers: [AppService],
