@@ -6,8 +6,10 @@ import { Cliente } from 'src/cliente/entities/cliente.entity';
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterCuentaDto } from './dto/register-cuenta.dto';
-import * as bcrypt from 'bcrypt'
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { LoginCuentaDto } from './dto/login-cuenta.dto';
+import { MailerService } from '@nestjs-modules/mailer';
 
 
 @Injectable()
@@ -20,6 +22,7 @@ export class AuthService {
     @InjectRepository(Inmobiliaria)
     private inmobiliariaRepository: Repository<Inmobiliaria>,
     private jwtService: JwtService,
+    private readonly mailerService: MailerService,
   ) {}
 
   async register(registerCuentaDto: RegisterCuentaDto, entityManager?: EntityManager): Promise<Cuenta> {
@@ -43,6 +46,7 @@ export class AuthService {
 
     // Encriptar la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
+    const validationToken = crypto.randomBytes(32).toString('hex');
 
     // Crear la entidad Cuenta
     const cuenta = manager.create(Cuenta, {
@@ -51,11 +55,48 @@ export class AuthService {
       password: hashedPassword,
       rol,
       login: new Date(),
+      estado: 'PENDIENTE',
+      validationToken,
     });
 
-    // Guardar la cuenta (solo la instancia de la entidad)
-    return await manager.save(cuenta);
+    const nuevaCuenta = await manager.save(cuenta); 
+
+    //Llamar a la funcion para enviar el correo de validacion
+    await this.enviarCorreoValidacion(nuevaCuenta.email, validationToken)
+
+    // Guardar la cuenta
+    return nuevaCuenta;
   }
+
+  // Método para enviar el correo de validación
+  private async enviarCorreoValidacion(email: string, token: string): Promise<void> {
+    const validationUrl = `http://localhost:3000/auth/validate/${token}`; 
+    await this.mailerService.sendMail({
+      to: email,
+      subject: 'Validación de cuenta',
+      html: `
+        <p>¡Hola!</p>
+        <p>Gracias por registrarte. Por favor, haz clic en el siguiente enlace para validar tu cuenta:</p>
+        <a href="${validationUrl}">Validar mi cuenta</a>
+        <p>Si no te registraste, puedes ignorar este correo.</p>
+      `,
+    });
+  }
+
+  async validateAccount(validationToken: string): Promise<string> {
+    const cuenta = await this.cuentaRepository.findOne({ where: { validationToken } });
+
+    if (!cuenta) {
+      throw new NotFoundException('Token de validación inválido o expirado.');
+    }
+
+    cuenta.estado = 'ACTIVO';
+    cuenta.validationToken = null;
+    await this.cuentaRepository.save(cuenta);
+
+    return '¡Cuenta validada con éxito! Ya puedes iniciar sesión.';
+  }
+
 
 
   async validate(LoginCuentaDto: LoginCuentaDto): Promise<Omit<Cuenta, 'password'>> { // devuelvo la cuenta sin password, tambien puedo crear una interface y ponerla como lo que devuelve.
@@ -64,6 +105,10 @@ export class AuthService {
 
     if (!cuenta || !(await bcrypt.compare(password, cuenta.password))) {
       throw new UnauthorizedException('Credenciales inválidas')
+    }
+
+    if (cuenta.estado !== 'ACTIVO') {
+      throw new UnauthorizedException('Tu cuenta aún no ha sido validada. Por favor, revisa tu correo electrónico.');
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
