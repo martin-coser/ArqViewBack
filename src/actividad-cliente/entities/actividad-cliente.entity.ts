@@ -1,6 +1,6 @@
 import { Cliente } from "src/cliente/entities/cliente.entity";
 import { Propiedad } from "src/propiedad/entities/propiedad.entity";
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class ActividadCliente {
@@ -13,7 +13,7 @@ export class ActividadCliente {
     })
     tipoDeActividad: 'VISUALIZACION' | 'CONSULTA' | 'LISTADEINTERES';
 
-    @Column({type: 'timestamp'})
+    @CreateDateColumn({type: 'timestamp'})
     fechaYHoraActividad: Date;
     
 
