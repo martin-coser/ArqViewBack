@@ -125,4 +125,16 @@ export class InmobiliariaService {
     const inmobiliaria = await this.findOne(id)
     this.inmobiliariaRepository.remove(inmobiliaria)
   }
+
+  async updatePlan(idInmobiliaria: number, plan: 'BASICO' | 'PREMIUM'): Promise<Inmobiliaria> {
+    const inmobiliaria = await this.findOne(idInmobiliaria);
+
+    if (!inmobiliaria) {
+      throw new NotFoundException(`Inmobiliaria con ID ${idInmobiliaria} no encontrada`);
+    }
+
+    inmobiliaria.plan = plan;
+    const result = await this.inmobiliariaRepository.save(inmobiliaria);
+    return result;
+  }
 }
