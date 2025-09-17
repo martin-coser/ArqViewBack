@@ -13,6 +13,10 @@ export class ActividadCliente {
     })
     tipoDeActividad: 'VISUALIZACION' | 'CONSULTA' | 'LISTADEINTERES';
 
+    @Column({type: 'timestamp'})
+    fechaYHoraActividad: Date;
+    
+
     // Un cliente puede tener muchas actividades
     @ManyToOne(() => Cliente, {eager: true,onDelete: 'CASCADE'})
     @JoinColumn({ name: 'cliente_id' })
