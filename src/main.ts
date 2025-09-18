@@ -23,6 +23,7 @@ async function bootstrap() {
     
     app.useStaticAssets(join(__dirname, '..', 'imagenes2d'), { prefix: '/imagenes2d/' });
     app.useStaticAssets(join(__dirname, '..', 'imagenes360'), { prefix: '/imagenes360/' });
+    app.useStaticAssets(join(__dirname, '..', 'modelos3d'), { prefix: '/modelos3d/' });
     logger.log('Archivos estáticos configurados.');
 
     app.enableCors({
