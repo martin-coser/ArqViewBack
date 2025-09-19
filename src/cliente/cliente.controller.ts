@@ -4,8 +4,8 @@ import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { Cliente } from './entities/cliente.entity';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/decoradores/roles.decorator';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 import { RegisterCuentaDto } from 'src/auth/dto/register-cuenta.dto';
 
 @Controller('cliente')

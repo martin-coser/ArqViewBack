@@ -23,12 +23,12 @@ import { RecomendacionModule } from './recomendacion/recomendacion.module';
 import { Imagen360Module } from './imagen360/imagen360.module';
 import { Modelo3DModule } from './modelo3d/modelo3d.module';
 import { SuscripcionModule } from './suscripcion/suscripcion.module';
+import { GuardsModule } from './guards/guards.module';
 
 
 
 @Module({
   imports: [
-    EventEmitterModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.development', '.env'],
@@ -45,6 +45,8 @@ import { SuscripcionModule } from './suscripcion/suscripcion.module';
       dropSchema: false, // Recrea el esquema al iniciar
       logging: false, // Activado para depuración
     }),
+    EventEmitterModule.forRoot(),
+    GuardsModule.forRoot(),
     PropiedadModule,
     TipoDePropiedadModule,
     LocalidadModule,

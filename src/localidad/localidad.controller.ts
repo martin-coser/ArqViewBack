@@ -4,8 +4,8 @@ import { CreateLocalidadDto } from './dto/create-localidad.dto';
 import { UpdateLocalidadDto } from './dto/update-localidad.dto';
 import { Localidad } from './entities/localidad.entity';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/decoradores/roles.decorator';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 
 @Controller('localidad')
 export class LocalidadController {

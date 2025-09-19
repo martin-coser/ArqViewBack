@@ -2,8 +2,6 @@ import { BadRequestException, Body, Injectable, NotFoundException, UnauthorizedE
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cuenta } from './entities/cuenta.entity';
 import { EntityManager, Repository } from 'typeorm';
-import { Cliente } from 'src/cliente/entities/cliente.entity';
-import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterCuentaDto } from './dto/register-cuenta.dto';
 import * as bcrypt from 'bcrypt';
@@ -17,10 +15,6 @@ export class AuthService {
   constructor(
     @InjectRepository(Cuenta)
     private cuentaRepository: Repository<Cuenta>,
-    @InjectRepository(Cliente)
-    private clienteRepository: Repository<Cliente>,
-    @InjectRepository(Inmobiliaria)
-    private inmobiliariaRepository: Repository<Inmobiliaria>,
     private jwtService: JwtService,
     private readonly mailerService: MailerService,
   ) {}
@@ -100,6 +94,8 @@ export class AuthService {
 
 
   async validate(LoginCuentaDto: LoginCuentaDto): Promise<Omit<Cuenta, 'password'>> { // devuelvo la cuenta sin password, tambien puedo crear una interface y ponerla como lo que devuelve.
+    console.log('🔍 VALIDATE - Intentando login con:', LoginCuentaDto.nombreUsuario);
+
     const { nombreUsuario, password } = LoginCuentaDto;
     const cuenta = await this.cuentaRepository.findOne({ where: { nombreUsuario } })
 

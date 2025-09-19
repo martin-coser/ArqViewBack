@@ -4,9 +4,9 @@ import { CrearMensajeDto } from './dto/crear-mensaje.dto';
 import { Mensaje } from './entities/mensaje.entity';
 import { MensajeResponseDto } from './dto/mensaje-response.dto';
 import { MarcarComoLeidoDto } from './dto/marcar-como-leido.dto';
-import { Roles } from 'src/decoradores/roles.decorator';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { RolesGuard } from 'src/guards/roles.guard';
 
 @Controller('mensaje')
 export class MensajeController {

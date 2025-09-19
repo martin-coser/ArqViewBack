@@ -3,8 +3,8 @@ import { TipoDeVisualizacionService } from './tipo-de-visualizacion.service';
 import { CreateTipoDeVisualizacionDto } from './dto/create-tipo-de-visualizacion.dto';
 import { UpdateTipoDeVisualizacionDto } from './dto/update-tipo-de-visualizacion.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/decoradores/roles.decorator';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 import { TipoDeVisualizacion } from './entities/tipo-de-visualizacion.entity';
 
 @Controller('tipoDeVisualizacion')

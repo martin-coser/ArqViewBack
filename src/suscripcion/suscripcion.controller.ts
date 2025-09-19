@@ -1,8 +1,8 @@
 import { Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
 import { SuscripcionService } from './suscripcion.service';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/decoradores/roles.decorator';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 
 @Controller('suscripcion')
 export class SuscripcionController {

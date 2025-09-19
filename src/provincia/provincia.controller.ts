@@ -4,8 +4,8 @@ import { CreateProvinciaDto } from './dto/create-provincia.dto';
 import { UpdateProvinciaDto } from './dto/update-provincia.dto';
 import { Provincia } from './entities/provincia.entity';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/decoradores/roles.decorator';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 
 @Controller('provincia')
 export class ProvinciaController {

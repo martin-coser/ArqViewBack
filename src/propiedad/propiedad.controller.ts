@@ -3,8 +3,8 @@ import { PropiedadService } from './propiedad.service';
 import { CreatePropiedadDto } from './dto/create-propiedad.dto';
 import { UpdatePropiedadDto } from './dto/update-propiedad.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/decoradores/roles.decorator';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 import { RecomendacionService } from 'src/recomendacion/recomendacion.service';
 
 @Controller('propiedad')
@@ -16,7 +16,6 @@ export class PropiedadController {
 
   @Post('/create')
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('INMOBILIARIA')
   async create(@Body() createPropiedadDto: CreatePropiedadDto) {
     const propiedad = await this.propiedadService.create(createPropiedadDto);
@@ -44,7 +43,6 @@ export class PropiedadController {
 
   @Patch('/update/:id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('INMOBILIARIA')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updatePropiedadDto: UpdatePropiedadDto) {
     return await this.propiedadService.update(id, updatePropiedadDto);
@@ -52,7 +50,6 @@ export class PropiedadController {
 
   @Delete('/remove/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('INMOBILIARIA')
   remove(@Param('id') id: string) {
     return this.propiedadService.remove(+id);
