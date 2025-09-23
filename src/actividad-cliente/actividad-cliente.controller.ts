@@ -3,8 +3,8 @@ import { ActividadClienteService } from './actividad-cliente.service';
 import { CreateActividadClienteDto } from './dto/create-actividad-cliente.dto';
 import { UpdateActividadClienteDto } from './dto/update-actividad-cliente.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/decoradores/roles.decorator';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 
 @Controller('actividadCliente')
 export class ActividadClienteController {

@@ -22,13 +22,11 @@ import { EstadisticaPropiedadModule } from './estadistica-propiedad/estadistica-
 import { RecomendacionModule } from './recomendacion/recomendacion.module';
 import { Imagen360Module } from './imagen360/imagen360.module';
 import { Modelo3DModule } from './modelo3d/modelo3d.module';
-import { CalificacionResenaModule } from './calificacion-reseña/calificacion-reseña.module';
 
 
 
 @Module({
   imports: [
-    EventEmitterModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.development', '.env'],
@@ -45,6 +43,8 @@ import { CalificacionResenaModule } from './calificacion-reseña/calificacion-re
       dropSchema: false, // Recrea el esquema al iniciar
       logging: false, // Activado para depuración
     }),
+    EventEmitterModule.forRoot(),
+    GuardsModule.forRoot(),
     PropiedadModule,
     TipoDePropiedadModule,
     LocalidadModule,
@@ -63,7 +63,6 @@ import { CalificacionResenaModule } from './calificacion-reseña/calificacion-re
     RecomendacionModule,
     Imagen360Module,
     Modelo3DModule,
-    CalificacionResenaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

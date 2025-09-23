@@ -6,6 +6,9 @@ import { ActividadCliente } from 'src/actividad-cliente/entities/actividad-clien
 import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import { Cliente } from 'src/cliente/entities/cliente.entity';
 import { ListaDeInteres } from 'src/lista-de-interes/entities/lista-de-interes.entity';
+import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
+import { PlanesGuard } from 'src/guards/planes.guard';
+import { InmobiliariaModule } from 'src/inmobiliaria/inmobiliaria.module';
 
 @Module({
   imports: [
@@ -13,8 +16,10 @@ import { ListaDeInteres } from 'src/lista-de-interes/entities/lista-de-interes.e
         ActividadCliente,
         Propiedad,
         Cliente,
-        ListaDeInteres
+        ListaDeInteres,
+        Inmobiliaria
     ]),
+    InmobiliariaModule,
   ], 
   controllers: [EstadisticaPropiedadController],
   providers: [EstadisticaPropiedadService],

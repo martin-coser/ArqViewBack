@@ -1,8 +1,8 @@
 import { Controller, Get, Param, HttpCode, UseGuards, ParseIntPipe, HttpStatus, Patch } from '@nestjs/common';
 import { NotificacionService } from './notificacion.service';
 import { AuthGuard } from '@nestjs/passport';
-import { Roles } from 'src/decoradores/roles.decorator';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
+import { RolesGuard } from 'src/guards/roles.guard';
 import { Notificacion } from './entities/notificacion.entity';
 import { NotificacionMensaje } from './entities/notificacionMensaje.entity';
 

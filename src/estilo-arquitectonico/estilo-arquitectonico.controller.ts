@@ -3,8 +3,8 @@ import { EstiloArquitectonicoService } from './estilo-arquitectonico.service';
 import { CreateEstiloArquitectonicoDto } from './dto/create-estilo-arquitectonico.dto';
 import { UpdateEstiloArquitectonicoDto } from './dto/update-estilo-arquitectonico.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/decoradores/roles.decorator';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 import { EstiloArquitectonico } from './entities/estilo-arquitectonico.entity';
 
 @Controller('estiloArquitectonico')

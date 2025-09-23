@@ -3,8 +3,8 @@ import { InmobiliariaService } from './inmobiliaria.service';
 import { CreateInmobiliariaDto } from './dto/create-inmobiliaria.dto';
 import { UpdateInmobiliariaDto } from './dto/update-inmobiliaria.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/decoradores/roles.decorator';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 import { Inmobiliaria } from './entities/inmobiliaria.entity';
 import { RegisterCuentaDto } from 'src/auth/dto/register-cuenta.dto';
 

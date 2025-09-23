@@ -2,9 +2,7 @@ import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Res, UseGuards
 import { AuthService } from './auth.service';
 import { RegisterCuentaDto } from './dto/register-cuenta.dto';
 import { LoginCuentaDto } from './dto/login-cuenta.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from './guards/roles.guard';
-import { Roles } from 'src/decoradores/roles.decorator';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 import { Cuenta } from './entities/cuenta.entity';
 import { Response } from 'express';
 
@@ -25,21 +23,18 @@ export class AuthController {
   }
 
   @Get('findAll')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   async findAll(): Promise<RegisterCuentaDto[]> {
     return await this.authService.findAll()
   }
 
   @Post('verificarPass/:id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('CLIENTE', 'INMOBILIARIA') 
   async verificarPass(@Param('id', ParseIntPipe) id: number, @Body() body: { oldPassword: string }) {
     return await this.authService.verificarPass(id, body);
   }
 
   @Patch('/updatePass/:id')
-  @UseGuards(AuthGuard('jwt'))
   @Roles('CLIENTE', 'INMOBILIARIA')
   async updatePass(@Param('id', ParseIntPipe) id: number, @Body() body: { newPassword: string }) {
     return await this.authService.updatePass(id, body);

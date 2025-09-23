@@ -2,9 +2,9 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@n
 import { RecomendacionService } from './recomendacion.service';
 import { CreateRecomendacionDto } from './dto/create-recomendacion.dto';
 import { UpdateRecomendacionDto } from './dto/update-recomendacion.dto';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { RolesGuard } from 'src/guards/roles.guard';
 import { AuthGuard } from '@nestjs/passport';
-import { Roles } from 'src/decoradores/roles.decorator';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 
 @Controller('recomendacion')
 export class RecomendacionController {

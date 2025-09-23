@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/decoradores/roles.decorator';
@@ -6,28 +6,22 @@ import { EstadisticaPropiedadService } from 'src/estadistica-propiedad/estadisti
 
 @Controller('estadisticaPropiedad')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
-@Roles('INMOBILIARIA,ADMIN')
+@Roles('INMOBILIARIA')
 export class EstadisticaPropiedadController {
   constructor(private readonly estadisticaPropiedadService: EstadisticaPropiedadService) {}
 
   @Get('/vistas')
-  async getVistas(@Query('fechaInicio') fechaInicio: string, @Query('fechaFin') fechaFin: string) {
-    if ((fechaInicio && !fechaFin) || (!fechaInicio && fechaFin)) {
-      throw new BadRequestException('Debe proporcionar ambas fechas (fechaInicio y fechaFin) para filtrar por período.');
-    }
-    return this.estadisticaPropiedadService.obtenerVistasPorPropiedad(fechaInicio, fechaFin);
+  async getVistas() {
+    return this.estadisticaPropiedadService.obtenerVistasPorPropiedad();
   }
 
   @Get('/interesados')
-  async getInteresados(@Query('fechaInicio') fechaInicio: string, @Query('fechaFin') fechaFin: string) {
-    if ((fechaInicio && !fechaFin) || (!fechaInicio && fechaFin)) {
-      throw new BadRequestException('Debe proporcionar ambas fechas (fechaInicio y fechaFin) para filtrar por período.');
-    }
-    return this.estadisticaPropiedadService.obtenerInteresadosPorPropiedad(fechaInicio, fechaFin);
+  async getInteresados() {
+    return this.estadisticaPropiedadService.obtenerInteresadosPorPropiedad();
   }
 
   @Get('/consultas')
-  async getConsultas(@Query('fechaInicio') fechaInicio: string, @Query('fechaFin') fechaFin: string) {
-    return this.estadisticaPropiedadService.ObtenerConsultasPorPropiedad(fechaInicio, fechaFin);
+  async getConsultas() {
+    return this.estadisticaPropiedadService.ObtenerConsultasPorPropiedad();
   }
 }

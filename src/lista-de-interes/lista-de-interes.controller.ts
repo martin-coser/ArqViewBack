@@ -3,8 +3,8 @@ import { ListaDeInteresService } from './lista-de-interes.service';
 import { CreateListaDeInteresDto } from './dto/create-lista-de-intere.dto';
 import { UpdateListaDeInteresDto } from './dto/update-lista-de-intere.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/decoradores/roles.decorator';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 import { ListaDeInteres } from './entities/lista-de-interes.entity';
 
 

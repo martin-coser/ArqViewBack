@@ -27,4 +27,17 @@ export class Inmobiliaria {
     @JoinColumn({name: 'cuenta_id'})
     cuenta:Cuenta // clave foranea.
 
+    @Column({
+        type: 'enum',
+        enum: ['BASICO', 'PREMIUM'],
+        default: 'BASICO',
+      })
+    plan:'BASICO' | 'PREMIUM';
+
+    @Column({ type: 'timestamp', nullable: true })
+    fechaSuscripcion: Date | null; // Fecha que se suscribio o renovo y a partir de la cual se cuentan los 30 dias.
+
+    @Column({ type: 'timestamp', nullable: true })
+    fechaVencimiento: Date | null; // Fecha en la que vence la suscripcion.
+
 }
