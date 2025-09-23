@@ -1,6 +1,6 @@
 import { Cliente } from "src/cliente/entities/cliente.entity";
 import { Propiedad } from "src/propiedad/entities/propiedad.entity";
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class ActividadCliente {
@@ -12,6 +12,10 @@ export class ActividadCliente {
     enum: ['VISUALIZACION', 'CONSULTA', 'LISTADEINTERES'],
     })
     tipoDeActividad: 'VISUALIZACION' | 'CONSULTA' | 'LISTADEINTERES';
+
+    @CreateDateColumn({type: 'timestamp'})
+    fechaYHoraActividad: Date;
+    
 
     // Un cliente puede tener muchas actividades
     @ManyToOne(() => Cliente, {eager: true,onDelete: 'CASCADE'})
