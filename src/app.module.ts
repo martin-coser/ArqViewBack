@@ -18,15 +18,13 @@ import { MensajeModule } from './mensaje/mensaje.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificacionModule } from './notificacion/notificacion.module'; 
 import { ActividadClienteModule } from './actividad-cliente/actividad-cliente.module';
-import { EstadisticaPropiedadModule } from './estadistica-propiedad/estadistica-propiedad.module';
 import { RecomendacionModule } from './recomendacion/recomendacion.module';
+import { EstadisticaPropiedadModule } from './estadistica-propiedad/estadistica-propiedad.module';
 import { Imagen360Module } from './imagen360/imagen360.module';
 import { Modelo3DModule } from './modelo3d/modelo3d.module';
 import { CalificacionResenaModule } from './calificacion-reseña/calificacion-reseña.module';
 import { SuscripcionModule } from './suscripcion/suscripcion.module';
 import { GuardsModule } from './guards/guards.module';
-
-
 
 @Module({
   imports: [
@@ -62,8 +60,8 @@ import { GuardsModule } from './guards/guards.module';
     MensajeModule,
     NotificacionModule,
     ActividadClienteModule,
-    EstadisticaPropiedadModule,
     RecomendacionModule,
+    EstadisticaPropiedadModule,
     Imagen360Module,
     Modelo3DModule,
     CalificacionResenaModule,
