@@ -6,6 +6,7 @@ import { ListaDeInteres } from './entities/lista-de-interes.entity';
 import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import { Cliente } from 'src/cliente/entities/cliente.entity';
 import { Cuenta } from 'src/auth/entities/cuenta.entity';
+import { InmobiliariaModule } from 'src/inmobiliaria/inmobiliaria.module';
 
 @Module({
    imports: [
@@ -15,6 +16,7 @@ import { Cuenta } from 'src/auth/entities/cuenta.entity';
         Cliente,
         Cuenta
       ]),
+      InmobiliariaModule,
     ],
   controllers: [ListaDeInteresController],
   providers: [ListaDeInteresService,],

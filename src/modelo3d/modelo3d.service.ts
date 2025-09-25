@@ -6,6 +6,7 @@ import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import { UploadModelo3DDto } from './dto/upload-modelo3d.dto';
 import path from 'path';
 import * as fs from 'fs'; 
+import { InmobiliariaService } from 'src/inmobiliaria/inmobiliaria.service';
 
 
 @Injectable()
@@ -16,6 +17,7 @@ export class Modelo3DService {
     private readonly modelo3DRepository: Repository<Modelo3D>,
     @InjectRepository(Propiedad)
     private readonly propiedadRepository: Repository<Propiedad>,
+    private readonly inmobiliariaService: InmobiliariaService,
   ) {}
 
   async upload(file: Express.Multer.File, uploadModelo3DDto?: UploadModelo3DDto): Promise<{ imageUrl: string }> {
@@ -48,17 +50,21 @@ export class Modelo3DService {
     await this.modelo3DRepository.remove(modelo3D);
   }
 
-  async findByPropiedad(propiedadId: number): Promise<Modelo3D[]> {
-    const propiedad = await this.propiedadRepository.findOneBy({ id: propiedadId });
+  async findByPropiedad(cuentaId:number, propiedadId: number): Promise<Modelo3D[]> {
+    
+    if( await this.inmobiliariaService.esPremium(cuentaId)){
+      const propiedad = await this.propiedadRepository.findOneBy({ id: propiedadId });
 
-    if (!propiedad) {
-      throw new NotFoundException(`Propiedad con ID ${propiedadId} no encontrada.`);
+      if (!propiedad) {
+        throw new NotFoundException(`Propiedad con ID ${propiedadId} no encontrada.`);
+      }
+      const modelos3D = await this.modelo3DRepository.find({
+        where: { propiedad: { id: propiedadId } },
+      });
+
+      return modelos3D;
     }
-    const modelos3D = await this.modelo3DRepository.find({
-      where: { propiedad: { id: propiedadId } },
-    });
-
-    return modelos3D;
+    return []
   }
   
 }

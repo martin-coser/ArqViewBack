@@ -93,14 +93,6 @@ export class CalificacionResenaService {
     return calificacionesYReseñas;
   }
 
-  async findOne(id: number): Promise<CalificacionResena> {
-    const calificacionYReseña = await this.calificacionResenaRepository.findOneBy({ id });
-    if (!calificacionYReseña) {
-      throw new NotFoundException(`No se encontró la calificación o reseña con ID ${id}.`);
-    }
-    return calificacionYReseña;
-  }
-
   async update(id: number, updateDto: UpdateCalificacionResenaDto): Promise<CalificacionResena> {
     const calificacionYReseña = await this.calificacionResenaRepository.findOne({where: {id}});
     if (!calificacionYReseña) {

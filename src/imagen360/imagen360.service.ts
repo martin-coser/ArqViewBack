@@ -6,6 +6,9 @@ import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import { UploadImagen360Dto } from './dto/UploadImagen360Dto';
 import path from 'path';
 import * as fs from 'fs'; // Importa el módulo 'fs' para operaciones de archivos
+import { Cuenta } from 'src/auth/entities/cuenta.entity';
+import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
+import { InmobiliariaService } from 'src/inmobiliaria/inmobiliaria.service';
 
 
 @Injectable()
@@ -16,6 +19,7 @@ export class Imagen360Service {
     private readonly imagen360Repository: Repository<Imagen360>,
     @InjectRepository(Propiedad)
     private readonly propiedadRepository: Repository<Propiedad>,
+    private readonly inmobiliariaService: InmobiliariaService,
   ) {}
 
   async upload(file: Express.Multer.File, uploadImagen360Dto?: UploadImagen360Dto): Promise<{ imageUrl: string }> {
@@ -64,20 +68,28 @@ export class Imagen360Service {
     await this.imagen360Repository.remove(imagen);
   }
 
-  async findByPropiedad(propiedadId: number): Promise<Imagen360[]> {
-    // verificar si la propiedad existe
-    const propiedad = await this.propiedadRepository.findOneBy({ id: propiedadId });
+  async findByPropiedad(cuentaId: number, propiedadId: number): Promise<Imagen360[]> {
+    
 
-    if (!propiedad) {
-      throw new NotFoundException(`Propiedad con ID ${propiedadId} no encontrada.`);
+    // verificar que la inmobiliaria tenga el plan premium
+    if (await this.inmobiliariaService.esPremium(cuentaId)) {
+      // verificar si la propiedad existe
+      const propiedad = await this.propiedadRepository.findOneBy({ id: propiedadId });
+
+      if (!propiedad) {
+        throw new NotFoundException(`Propiedad con ID ${propiedadId} no encontrada.`);
+      }
+
+      // Buscar imágenes asociadas a la propiedad
+      const imagenes = await this.imagen360Repository.find({ 
+        where: { propiedad: { id: propiedadId } },
+      });
+
+      return imagenes;
     }
 
-    // Buscar imágenes asociadas a la propiedad
-    const imagenes = await this.imagen360Repository.find({ 
-      where: { propiedad: { id: propiedadId } },
-    });
+    return [];
 
-    return imagenes;
   }
   
 }

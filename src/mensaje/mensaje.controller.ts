@@ -1,21 +1,18 @@
-import { Controller, Get, Post, Body, Param, ParseIntPipe, Patch, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseIntPipe, Patch, HttpCode, HttpStatus } from '@nestjs/common';
 import { MensajeService } from './mensaje.service';
 import { CrearMensajeDto } from './dto/crear-mensaje.dto';
 import { Mensaje } from './entities/mensaje.entity';
 import { MensajeResponseDto } from './dto/mensaje-response.dto';
 import { MarcarComoLeidoDto } from './dto/marcar-como-leido.dto';
 import { Roles } from 'src/guards/decoradores/roles.decorator';
-import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/guards/roles.guard';
 
 @Controller('mensaje')
 export class MensajeController {
-  constructor(private readonly mensajeService: MensajeService) {}
+  constructor(private readonly mensajeService: MensajeService) { }
 
-@HttpCode(HttpStatus.CREATED)
-@UseGuards(AuthGuard('jwt'), RolesGuard)
-@Roles('CLIENTE', 'INMOBILIARIA')
-@Post()
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @Roles('CLIENTE', 'INMOBILIARIA')
   async enviarMensaje(@Body() crearMensajeDto: CrearMensajeDto): Promise<MensajeResponseDto> {
     const mensaje = await this.mensajeService.enviarMensaje(crearMensajeDto);
 
@@ -26,52 +23,50 @@ export class MensajeController {
       fechaCreacion: mensaje.fechaCreacion,
       remitenteCliente: mensaje.remitenteCliente
         ? {
-            id: mensaje.remitenteCliente.id,
-            nombre: mensaje.remitenteCliente.nombre,
-            apellido: mensaje.remitenteCliente.apellido,
-          }
+          id: mensaje.remitenteCliente.id,
+          nombre: mensaje.remitenteCliente.nombre,
+          apellido: mensaje.remitenteCliente.apellido,
+        }
         : undefined,
       receptorInmobiliaria: mensaje.receptorInmobiliaria
         ? {
-            id: mensaje.receptorInmobiliaria.id,
-            nombre: mensaje.receptorInmobiliaria.nombre,
-          }
+          id: mensaje.receptorInmobiliaria.id,
+          nombre: mensaje.receptorInmobiliaria.nombre,
+        }
         : undefined,
       remitenteInmobiliaria: mensaje.remitenteInmobiliaria
         ? {
-            id: mensaje.remitenteInmobiliaria.id,
-            nombre: mensaje.remitenteInmobiliaria.nombre,
-          }
+          id: mensaje.remitenteInmobiliaria.id,
+          nombre: mensaje.remitenteInmobiliaria.nombre,
+        }
         : undefined,
       receptorCliente: mensaje.receptorCliente
         ? {
-            id: mensaje.receptorCliente.id,
-            nombre: mensaje.receptorCliente.nombre,
-            apellido: mensaje.receptorCliente.apellido,
-          }
+          id: mensaje.receptorCliente.id,
+          nombre: mensaje.receptorCliente.nombre,
+          apellido: mensaje.receptorCliente.apellido,
+        }
         : undefined,
     };
 
     return response;
   }
-  
+
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('CLIENTE', 'INMOBILIARIA')
   @Get(':type/:id')
   async getMessagesByTypeAndId(
     @Param('type') type: string,
     @Param('id', ParseIntPipe) id: number
-  ): Promise<Mensaje[]> {  
-    return this.mensajeService.findMessagesByTypeAndId(type, id);
+  ): Promise<Mensaje[]> {
+    return await this.mensajeService.findMessagesByTypeAndId(type, id);
   }
 
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('CLIENTE', 'INMOBILIARIA')
   @Patch(':id/leido')
+  @HttpCode(HttpStatus.OK)
+  @Roles('CLIENTE', 'INMOBILIARIA')
   async marcarComoLeido(@Param('id') idMensaje: number, @Body() marcarComoLeidoDto: MarcarComoLeidoDto,
   ): Promise<Mensaje> {
-    return this.mensajeService.marcarComoLeido(Number(idMensaje), marcarComoLeidoDto);
+    return await this.mensajeService.marcarComoLeido(Number(idMensaje), marcarComoLeidoDto);
   }
 }
