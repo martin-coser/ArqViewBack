@@ -13,7 +13,6 @@ export class Imagen360Controller {
   @Get('/findByPropiedad/:id')
   @HttpCode(HttpStatus.OK)
   async findByPropiedad(@Param('id') id: number): Promise<Imagen360[]> {
-
     return this.imagen360Service.findByPropiedad(id);
   }
 
