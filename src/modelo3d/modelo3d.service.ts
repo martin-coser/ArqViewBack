@@ -50,9 +50,9 @@ export class Modelo3DService {
     await this.modelo3DRepository.remove(modelo3D);
   }
 
-  async findByPropiedad(cuentaId:number, propiedadId: number): Promise<Modelo3D[]> {
+  async findByPropiedad(propiedadId: number): Promise<Modelo3D[]> {
     
-    if( await this.inmobiliariaService.esPremium(cuentaId)){
+    if( await this.inmobiliariaService.esPremium(propiedadId)){
       const propiedad = await this.propiedadRepository.findOneBy({ id: propiedadId });
 
       if (!propiedad) {

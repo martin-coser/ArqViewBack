@@ -83,11 +83,11 @@ export class Imagen360Service {
     return this.imagen360Repository.save(imagen);
     }
 
-  async findByPropiedad(cuentaId: number, propiedadId: number): Promise<Imagen360[]> {
+  async findByPropiedad(propiedadId: number): Promise<Imagen360[]> {
     
 
     // verificar que la inmobiliaria tenga el plan premium
-    if (await this.inmobiliariaService.esPremium(cuentaId)) {
+    if (await this.inmobiliariaService.esPremium(propiedadId)) {
       // verificar si la propiedad existe
       const propiedad = await this.propiedadRepository.findOneBy({ id: propiedadId });
 

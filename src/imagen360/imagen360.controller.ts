@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, UseInterceptors, UploadedFile, HttpCode, HttpStatus, Req, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseInterceptors, UploadedFile, HttpCode, HttpStatus, Patch } from '@nestjs/common';
 import { Imagen360Service } from './imagen360.service';
 import { Imagen360 } from './entities/imagen360.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -12,9 +12,9 @@ export class Imagen360Controller {
 
   @Get('/findByPropiedad/:id')
   @HttpCode(HttpStatus.OK)
-  async findByPropiedad(@Param('id') id: number, @Req() req): Promise<Imagen360[]> {
-    const cuentaId = req.user.id;
-    return this.imagen360Service.findByPropiedad(cuentaId, id);
+  async findByPropiedad(@Param('id') id: number): Promise<Imagen360[]> {
+
+    return this.imagen360Service.findByPropiedad(id);
   }
 
   @Post('upload')
