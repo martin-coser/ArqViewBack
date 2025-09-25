@@ -22,6 +22,9 @@ import { RecomendacionModule } from './recomendacion/recomendacion.module';
 import { EstadisticaPropiedadModule } from './estadistica-propiedad/estadistica-propiedad.module';
 import { Imagen360Module } from './imagen360/imagen360.module';
 import { Modelo3DModule } from './modelo3d/modelo3d.module';
+import { CalificacionResenaModule } from './calificacion-reseña/calificacion-reseña.module';
+import { SuscripcionModule } from './suscripcion/suscripcion.module';
+import { GuardsModule } from './guards/guards.module';
 
 @Module({
   imports: [
@@ -61,6 +64,8 @@ import { Modelo3DModule } from './modelo3d/modelo3d.module';
     EstadisticaPropiedadModule,
     Imagen360Module,
     Modelo3DModule,
+    CalificacionResenaModule,
+    SuscripcionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
