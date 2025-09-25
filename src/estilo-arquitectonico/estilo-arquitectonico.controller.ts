@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
 import { EstiloArquitectonicoService } from './estilo-arquitectonico.service';
 import { CreateEstiloArquitectonicoDto } from './dto/create-estilo-arquitectonico.dto';
 import { UpdateEstiloArquitectonicoDto } from './dto/update-estilo-arquitectonico.dto';
@@ -13,7 +13,6 @@ export class EstiloArquitectonicoController {
 
   @Post('/create')
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   async create(@Body() createEstiloArquitectonicoDto: CreateEstiloArquitectonicoDto) : Promise<EstiloArquitectonico> {
     return await this.estiloArquitectonicoService.create(createEstiloArquitectonicoDto);
@@ -33,7 +32,6 @@ export class EstiloArquitectonicoController {
 
   @Patch('/update/:id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   async update(@Param('id') id: string, @Body() updateEstiloArquitectonicoDto: UpdateEstiloArquitectonicoDto) : Promise<EstiloArquitectonico> {
     return await this.estiloArquitectonicoService.update(+id, updateEstiloArquitectonicoDto);
@@ -41,7 +39,6 @@ export class EstiloArquitectonicoController {
 
   @Delete('/remove/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   async remove(@Param('id') id: string) : Promise<void> {
     return await this.estiloArquitectonicoService.remove(+id);

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsIn, IsInt, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsIn, IsNumber } from 'class-validator';
 
 export class MarcarComoLeidoDto {
   @IsNotEmpty()

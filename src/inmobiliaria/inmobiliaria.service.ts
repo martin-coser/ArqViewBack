@@ -137,4 +137,23 @@ export class InmobiliariaService {
     const result = await this.inmobiliariaRepository.save(inmobiliaria);
     return result;
   }
+
+  async esPremium(cuentaID: number): Promise<boolean> {
+    const cuenta = await this.cuentaRepository.findOne({
+      where: { id: cuentaID }
+    });
+    
+    if (!cuenta) {
+      throw new NotFoundException(`Cuenta con ID ${cuentaID} no encontrada.`);
+    }
+
+    const inmobiliaria = await this.inmobiliariaRepository.findOne({
+      where: { cuenta: cuenta }
+    });
+    if (!inmobiliaria) {
+      throw new NotFoundException(`Inmobiliaria asociada a la cuenta con ID ${cuentaID} no encontrada.`);
+    }
+
+    return inmobiliaria.plan === 'PREMIUM';
+  }
 }

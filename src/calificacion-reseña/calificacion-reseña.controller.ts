@@ -1,23 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
-
-import { Roles } from 'src/decoradores/roles.decorator';
-import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, HttpCode, HttpStatus, Req } from '@nestjs/common';
 import { CalificacionResena } from './entities/calificacion-reseña.entity';
 import { CreateCalificacionResenaDto } from './dto/create-calificacion-reseña.dto';
 import { UpdateCalificacionResenaDto } from './dto/update-calificacion-reseña.dto';
 import { CalificacionResenaService } from './calificacion-reseña.service';
+import { Roles } from 'src/guards/decoradores/roles.decorator';
 
 @Controller('calificacion-resena')
 export class CalificacionResenaController {
-  constructor(private readonly CalificacionResenaService: CalificacionResenaService){}
+  constructor(private readonly CalificacionResenaService: CalificacionResenaService) { }
 
- @Post()
+  @Post()
   @HttpCode(HttpStatus.CREATED)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('CLIENTE')
-  async create(@Body() createCalificacionResenaDto: CreateCalificacionResenaDto,@Req() req): Promise<CalificacionResena> {
-    const cuentaId = (req.user as any).id;
+  async create(@Body() createCalificacionResenaDto: CreateCalificacionResenaDto, @Req() req): Promise<CalificacionResena> {
+    const cuentaId = req.user.id;
     return await this.CalificacionResenaService.create(createCalificacionResenaDto, cuentaId);
   }
 
@@ -27,33 +23,24 @@ export class CalificacionResenaController {
     return this.CalificacionResenaService.getPromedioInmobiliaria(inmobiliariaId);
   }
 
-
-  @Get(':id')
-  @HttpCode(HttpStatus.OK)
-  findOne(@Param('id', ParseIntPipe) id: number) : Promise<CalificacionResena> {
-    return this.CalificacionResenaService.findOne(id);
-  }
-  
- 
+  // Obtener todas las calificaciones y reseñas por ID COREGGIR
   @Get()
   @HttpCode(HttpStatus.OK)
-  findAll() : Promise<CalificacionResena[]> {
+  findAll(): Promise<CalificacionResena[]> {
     return this.CalificacionResenaService.findAll();
   }
 
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('CLIENTE')
-  update(@Param('id', ParseIntPipe) id: number,@Body() updateCalificacionResenaDto: UpdateCalificacionResenaDto,) : Promise<CalificacionResena> {
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateCalificacionResenaDto: UpdateCalificacionResenaDto,): Promise<CalificacionResena> {
     return this.CalificacionResenaService.update(id, updateCalificacionResenaDto);
   }
-  
+
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('CLIENTE')
-  remove(@Param('id', ParseIntPipe) id: number) : Promise<void> {
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.CalificacionResenaService.remove(id);
   }
 }

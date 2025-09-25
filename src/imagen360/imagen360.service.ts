@@ -5,7 +5,8 @@ import { Imagen360 } from './entities/imagen360.entity';
 import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import { UploadImagen360Dto } from './dto/UploadImagen360Dto';
 import path from 'path';
-import * as fs from 'fs'; // Importa el módulo 'fs' para operaciones de archivos
+import * as fs from 'fs'; 
+import { InmobiliariaService } from 'src/inmobiliaria/inmobiliaria.service';
 
 
 @Injectable()
@@ -16,21 +17,28 @@ export class Imagen360Service {
     private readonly imagen360Repository: Repository<Imagen360>,
     @InjectRepository(Propiedad)
     private readonly propiedadRepository: Repository<Propiedad>,
+    private readonly inmobiliariaService: InmobiliariaService,
   ) {}
 
   async upload(file: Express.Multer.File, uploadImagen360Dto?: UploadImagen360Dto): Promise<{ imageUrl: string }> {
 
     // Crear una nueva instancia de Imagen360
     const imagen = new Imagen360();
-    imagen.filePath = `/imagenes360/${file.filename}`; // Ruta pública de la imagen
+    imagen.filePath = `/imagenes360/${file.filename}`;
 
     const propiedad = await this.propiedadRepository.findOneBy({ id: uploadImagen360Dto?.propiedad });
 
     if (!propiedad) {
+      // Elimina el archivo si la propiedad no existe
+      fs.unlinkSync(file.path);
       throw new NotFoundException(`Propiedad con ID ${uploadImagen360Dto?.propiedad} no encontrada.`);
     }
 
     imagen.propiedad = propiedad;
+
+    if(uploadImagen360Dto?.descripcion) {
+      imagen.descripcion = uploadImagen360Dto.descripcion; // Asignar descripción si se proporciona
+    }
 
     // Guardar en la base de datos
     const savedImagen = await this.imagen360Repository.save(imagen);
@@ -64,20 +72,39 @@ export class Imagen360Service {
     await this.imagen360Repository.remove(imagen);
   }
 
-  async findByPropiedad(propiedadId: number): Promise<Imagen360[]> {
-    // verificar si la propiedad existe
-    const propiedad = await this.propiedadRepository.findOneBy({ id: propiedadId });
-
-    if (!propiedad) {
-      throw new NotFoundException(`Propiedad con ID ${propiedadId} no encontrada.`);
+  async updateDescription(id: number, descripcion: string): Promise<Imagen360> {
+    const imagen = await this.imagen360Repository.findOneBy({ id });
+  
+    if (!imagen) {
+      throw new NotFoundException(`Imagen con ID ${id} no encontrada.`);
+    }
+  
+    imagen.descripcion = descripcion;
+    return this.imagen360Repository.save(imagen);
     }
 
-    // Buscar imágenes asociadas a la propiedad
-    const imagenes = await this.imagen360Repository.find({ 
-      where: { propiedad: { id: propiedadId } },
-    });
+  async findByPropiedad(cuentaId: number, propiedadId: number): Promise<Imagen360[]> {
+    
 
-    return imagenes;
+    // verificar que la inmobiliaria tenga el plan premium
+    if (await this.inmobiliariaService.esPremium(cuentaId)) {
+      // verificar si la propiedad existe
+      const propiedad = await this.propiedadRepository.findOneBy({ id: propiedadId });
+
+      if (!propiedad) {
+        throw new NotFoundException(`Propiedad con ID ${propiedadId} no encontrada.`);
+      }
+
+      // Buscar imágenes asociadas a la propiedad
+      const imagenes = await this.imagen360Repository.find({ 
+        where: { propiedad: { id: propiedadId } },
+      });
+
+      return imagenes;
+    }
+
+    return [];
+
   }
   
 }

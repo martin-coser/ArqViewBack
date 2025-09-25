@@ -7,10 +7,15 @@ export class Imagen360 {
     id: number;
 
     @Column()
-    filePath: string; // Almacena la ruta de la imagen (ej. "/imagenes360/123456789.jpg")
+    filePath: string; 
 
-    //muchas imagenes360 pertecen a una propiedad
-    @ManyToOne(() => Propiedad, {eager: true,onDelete: 'CASCADE'})
+    @Column({ nullable: true }) 
+    descripcion: string;
+
+    
+    @ManyToOne(() => Propiedad, { eager: true, onDelete: 'CASCADE' })
     @JoinColumn({ name: 'propiedad_id' })
     propiedad: Propiedad
+
+
 }

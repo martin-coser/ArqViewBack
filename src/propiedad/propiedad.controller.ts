@@ -1,9 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe } from '@nestjs/common';
 import { PropiedadService } from './propiedad.service';
 import { CreatePropiedadDto } from './dto/create-propiedad.dto';
 import { UpdatePropiedadDto } from './dto/update-propiedad.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/guards/roles.guard';
 import { Roles } from 'src/guards/decoradores/roles.decorator';
 import { RecomendacionService } from 'src/recomendacion/recomendacion.service';
 
@@ -12,7 +10,7 @@ export class PropiedadController {
   constructor(
     private readonly propiedadService: PropiedadService,
     private readonly recomendacionService: RecomendacionService,
-  ) {}
+  ) { }
 
   @Post('/create')
   @HttpCode(HttpStatus.CREATED)
@@ -37,6 +35,7 @@ export class PropiedadController {
 
   @Get('/findByInmobiliaria/:id')
   @HttpCode(HttpStatus.OK)
+  @Roles('INMOBILIARIA')
   async findByInmobiliaria(@Param('id') id: string) {
     return await this.propiedadService.findByInmobiliaria(+id);
   }
@@ -51,7 +50,7 @@ export class PropiedadController {
   @Delete('/remove/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Roles('INMOBILIARIA')
-  remove(@Param('id') id: string) {
-    return this.propiedadService.remove(+id);
+  async remove(@Param('id') id: string) {
+    return await this.propiedadService.remove(+id);
   }
 }

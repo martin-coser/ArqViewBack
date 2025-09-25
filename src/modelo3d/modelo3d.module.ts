@@ -8,6 +8,7 @@ import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import { PropiedadModule } from 'src/propiedad/propiedad.module';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { InmobiliariaModule } from 'src/inmobiliaria/inmobiliaria.module';
 
 @Module({
   imports: [
@@ -23,9 +24,10 @@ import { extname } from 'path';
       }),
     }),
     forwardRef(() => PropiedadModule),
+    InmobiliariaModule,
   ],
   controllers: [Modelo3DController],
   providers: [Modelo3DService],
   exports: [Modelo3DService],
 })
-export class Modelo3DModule {}
+export class Modelo3DModule { }

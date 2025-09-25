@@ -7,6 +7,7 @@ import { Imagen360 } from './entities/imagen360.entity';
 import { MulterModule } from '@nestjs/platform-express';
 import { extname } from 'path';
 import { diskStorage } from 'multer';
+import { InmobiliariaModule } from 'src/inmobiliaria/inmobiliaria.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { diskStorage } from 'multer';
         },
       }),
     }),
+    InmobiliariaModule,
   ],
   controllers: [Imagen360Controller],
   providers: [Imagen360Service],
