@@ -1,4 +1,4 @@
-import { Controller, Post, UploadedFile, UseInterceptors, Body, Delete, HttpCode, HttpStatus, Param, Get, Req } from '@nestjs/common';
+import { Controller, Post, UploadedFile, UseInterceptors, Body, Delete, HttpCode, HttpStatus, Param, Get } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Modelo3DService } from './modelo3d.service';
 import { UploadModelo3DDto } from './dto/upload-modelo3d.dto';
@@ -12,9 +12,8 @@ export class Modelo3DController {
 
   @Get('/findByPropiedad/:id')
   @HttpCode(HttpStatus.OK)
-  async findByPropiedad(@Param('id') id: number, @Req() req): Promise<Modelo3D[]> {
-    const cuentaId = req.user.id;
-    return await this.modelo3DService.findByPropiedad(cuentaId, id);
+  async findByPropiedad(@Param('id') id: number): Promise<Modelo3D[]> {
+    return await this.modelo3DService.findByPropiedad(id);
   }
 
   @Post('upload')
