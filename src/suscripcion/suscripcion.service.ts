@@ -81,7 +81,7 @@ export class SuscripcionService {
     } else {
       // Asegurarse de guardar el plan solo si el pago va a ser exitoso.
       // La lógica de simulación de pago va aquí.
-      await new Promise((resolve) => setTimeout(resolve, 20000));
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
       // Si la simulación de pago fue exitosa, entonces se guardan los cambios.
       await this.inmobiliariaRepository.save(inmobiliaria);
