@@ -8,6 +8,7 @@ import { Localidad } from 'src/localidad/entities/localidad.entity';
 import { Cuenta } from 'src/auth/entities/cuenta.entity';
 import { AuthService } from '../auth/auth.service';
 import { RegisterCuentaDto } from 'src/auth/dto/register-cuenta.dto';
+import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 
 @Injectable()
 export class InmobiliariaService {
@@ -18,6 +19,8 @@ export class InmobiliariaService {
     private localidadRepository: Repository<Localidad>,
     @InjectRepository(Cuenta)
     private cuentaRepository: Repository<Cuenta>,
+    @InjectRepository(Propiedad)
+    private propiedadRepository: Repository<Propiedad>,
     private readonly authService: AuthService,
   ){}
 
@@ -138,22 +141,19 @@ export class InmobiliariaService {
     return result;
   }
 
-  async esPremium(cuentaID: number): Promise<boolean> {
-    const cuenta = await this.cuentaRepository.findOne({
-      where: { id: cuentaID }
+  async esPremium(propiedadID: number): Promise<boolean> {
+    const propiedad = await this.propiedadRepository.findOne({
+      where: { id : propiedadID },
+      relations: ['inmobiliaria'],
     });
-    
-    if (!cuenta) {
-      throw new NotFoundException(`Cuenta con ID ${cuentaID} no encontrada.`);
+    if (!propiedad) {
+      throw new NotFoundException(`Propiedad con ID ${propiedadID} no encontrada.`);
     }
 
-    const inmobiliaria = await this.inmobiliariaRepository.findOne({
-      where: { cuenta: cuenta }
-    });
-    if (!inmobiliaria) {
-      throw new NotFoundException(`Inmobiliaria asociada a la cuenta con ID ${cuentaID} no encontrada.`);
+    if (!propiedad) {
+      throw new NotFoundException(`Propiedad con ID ${propiedadID} no encontrada.`);
     }
 
-    return inmobiliaria.plan === 'PREMIUM';
+    return propiedad.inmobiliaria.plan === 'PREMIUM';
   }
 }
