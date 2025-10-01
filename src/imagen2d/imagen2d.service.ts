@@ -49,14 +49,9 @@ export class Imagen2dService {
     }
 
     const imagePath = path.join(process.cwd(), imagen.filePath);
-    console.log('Ruta de la imagen a eliminar:', imagePath);
-    
-    try {
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
-    } catch (error) {
-      console.error(`Error al eliminar el archivo ${imagePath}:`, error);
+
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
     }
 
     await this.imagen2dRepository.remove(imagen);

@@ -58,14 +58,8 @@ export class Imagen360Service {
     const imagePath = path.join(process.cwd(), imagen.filePath); // process.cwd() obtiene el directorio de trabajo actual'
 
     // Eliminar el archivo del sistema de archivos
-    try {
-      if (fs.existsSync(imagePath)) { // Verificar si el archivo existe antes de intentar eliminarlo
-        fs.unlinkSync(imagePath);
-      }
-    } catch (error) {
-      console.error(`Error al eliminar el archivo ${imagePath}:`, error); 
-      // Puedes decidir si quieres lanzar una excepción o simplemente registrar el error
-      // throw new InternalServerErrorException('Error al eliminar el archivo de imagen.'); 
+    if (fs.existsSync(imagePath)) { // Verificar si el archivo existe antes de intentar eliminarlo
+      fs.unlinkSync(imagePath);
     }
 
     // Eliminar la imagen de la base de datos
