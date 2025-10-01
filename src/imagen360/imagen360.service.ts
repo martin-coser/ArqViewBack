@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Imagen360 } from './entities/imagen360.entity';
 import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import { UploadImagen360Dto } from './dto/UploadImagen360Dto';
-import path from 'path';
+import * as path from 'path';
 import * as fs from 'fs'; 
 import { InmobiliariaService } from 'src/inmobiliaria/inmobiliaria.service';
 

@@ -49,6 +49,7 @@ export class Imagen2dService {
     }
 
     const imagePath = path.join(process.cwd(), imagen.filePath);
+    console.log('Ruta de la imagen a eliminar:', imagePath);
     
     try {
       if (fs.existsSync(imagePath)) {
