@@ -1,9 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe, Req } from '@nestjs/common';
 import { InmobiliariaService } from './inmobiliaria.service';
 import { CreateInmobiliariaDto } from './dto/create-inmobiliaria.dto';
 import { UpdateInmobiliariaDto } from './dto/update-inmobiliaria.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/guards/roles.guard';
 import { Roles } from 'src/guards/decoradores/roles.decorator';
 import { Inmobiliaria } from './entities/inmobiliaria.entity';
 import { RegisterCuentaDto } from 'src/auth/dto/register-cuenta.dto';
@@ -28,6 +26,14 @@ export class InmobiliariaController {
   @HttpCode(HttpStatus.OK)
   findOne(@Param('id') id: string): Promise<Inmobiliaria> {
     return this.inmobiliariaService.findOne(+id);
+  }
+
+  @Get('/findByCuenta')
+  @HttpCode(HttpStatus.OK)
+  @Roles('INMOBILIARIA')
+  async findByCuenta(@Req() req): Promise<Inmobiliaria> {
+    const cuentaId = req.user.id;
+    return await this.inmobiliariaService.findByCuenta(cuentaId);
   }
 
   @Patch('/update/:id')

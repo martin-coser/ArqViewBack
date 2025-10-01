@@ -115,7 +115,8 @@ export class Imagen2dService {
       });
 
       const { predicted_part, features } = response.data;
-  
+      console.log('Clase predicha por el modelo:', predicted_part);
+      console.log('Características predichas:', features);
 
       // Traduccion de respuestas del modelo a español
       const parteMap: Record<string, string> = {
