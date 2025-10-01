@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Modelo3D } from './entities/modelo3d.entity';
 import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import { UploadModelo3DDto } from './dto/upload-modelo3d.dto';
-import path from 'path';
+import * as path from 'path';
 import * as fs from 'fs'; 
 import { InmobiliariaService } from 'src/inmobiliaria/inmobiliaria.service';
 

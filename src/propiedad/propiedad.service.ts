@@ -12,6 +12,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
 import { Imagen2dService } from 'src/imagen2d/imagen2d.service';
+import { Modelo3DService } from 'src/modelo3d/modelo3d.service';
+import { Imagen360Service } from 'src/imagen360/imagen360.service';
 
 @Injectable()
 export class PropiedadService {
@@ -38,6 +40,8 @@ export class PropiedadService {
     private eventEmitter: EventEmitter2,
 
     private imagen2dService: Imagen2dService,
+    private imagen360Service: Imagen360Service,
+    private modelo3DService: Modelo3DService,
   ) {}
 
 
@@ -317,6 +321,30 @@ export class PropiedadService {
 
 
   async remove(id: number):Promise<void> {
+    // buscar imagen 2d asociada y eliminarla
+    const imagenes = await this.imagen2dService.findByPropiedad(id);
+
+    // buscar imagen 360 asociada y eliminarla
+    const imagenes360 = await this.imagen360Service.findByPropiedad(id);
+
+    // buscar modelo 3d asociado y eliminarlo
+    const modelos3D = await this.modelo3DService.findByPropiedad(id);
+
+    // Recorro las imagenes y llamo al metodo remove de imagen2dService
+    for (const imagen of imagenes) {
+      await this.imagen2dService.remove(imagen.id);
+    }
+
+    // Recorro las imagenes360 y llamo al metodo remove de imagen360Service
+    for (const imagen360 of imagenes360) {
+      await this.imagen360Service.remove(imagen360.id);
+    }
+
+    //Recorro los modelos3D y llamo al metodo remove de modelo3DService
+    for (const modelo3D of modelos3D) {
+      await this.modelo3DService.remove(modelo3D.id);
+    }
+
     const propiedad = await this.findOne(id);
     await this.propiedadRepository.remove(propiedad);
   }
