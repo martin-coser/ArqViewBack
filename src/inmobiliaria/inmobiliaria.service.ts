@@ -12,6 +12,7 @@ import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 
 @Injectable()
 export class InmobiliariaService {
+
   constructor(
     @InjectRepository(Inmobiliaria)
     private inmobiliariaRepository: Repository<Inmobiliaria>,
@@ -70,6 +71,16 @@ export class InmobiliariaService {
       return await transactionalEntityManager.save(inmobiliaria);
     });
   } 
+
+  async findByCuenta(cuentaId: number): Promise<Inmobiliaria> {
+    const inmobiliaria = await this.inmobiliariaRepository.findOne({
+      where: { cuenta: { id: cuentaId } },
+    });
+    if (!inmobiliaria) {
+      throw new NotFoundException(`No se encontró una inmobiliaria asociada a la cuenta con ID ${cuentaId}`);
+    }
+    return inmobiliaria;
+  }
 
   async findAll(): Promise<Inmobiliaria[]> {
     return await this.inmobiliariaRepository.find()
