@@ -11,32 +11,34 @@ import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
+import { Imagen2dService } from 'src/imagen2d/imagen2d.service';
 
 @Injectable()
 export class PropiedadService {
 
-constructor(
-  @InjectRepository(Propiedad)
-  private propiedadRepository: Repository<Propiedad>,
+  constructor(
+    @InjectRepository(Propiedad)
+    private propiedadRepository: Repository<Propiedad>,
 
-  @InjectRepository(Localidad)
-  private localidadRepository: Repository<Localidad>,
+    @InjectRepository(Localidad)
+    private localidadRepository: Repository<Localidad>,
 
-  @InjectRepository(TipoDePropiedad)
-  private tipoPropiedadRepository: Repository<TipoDePropiedad>,
+    @InjectRepository(TipoDePropiedad)
+    private tipoPropiedadRepository: Repository<TipoDePropiedad>,
 
-  @InjectRepository(EstiloArquitectonico)
-  private estiloArquitectonicoRepository: Repository<EstiloArquitectonico>,
-  
-  @InjectRepository(TipoDeVisualizacion)
-  private tipoDeVisualizacionRepository: Repository<TipoDeVisualizacion>,
+    @InjectRepository(EstiloArquitectonico)
+    private estiloArquitectonicoRepository: Repository<EstiloArquitectonico>,
+    
+    @InjectRepository(TipoDeVisualizacion)
+    private tipoDeVisualizacionRepository: Repository<TipoDeVisualizacion>,
 
-  @InjectRepository(Inmobiliaria)
-  private inmobiliariaRepository: Repository<Inmobiliaria>,
+    @InjectRepository(Inmobiliaria)
+    private inmobiliariaRepository: Repository<Inmobiliaria>,
 
-  private eventEmitter: EventEmitter2,
+    private eventEmitter: EventEmitter2,
 
-) {}
+    private imagen2dService: Imagen2dService,
+  ) {}
 
 
   async create(createPropiedadDto: CreatePropiedadDto): Promise<Propiedad> {
@@ -104,7 +106,22 @@ constructor(
       });
 
       // Guarda la propiedad
-      return await this.propiedadRepository.save(propiedad);
+      const savedPropiedad = await this.propiedadRepository.save(propiedad);
+
+      // Después de guardar, espera 10 segundos y analiza las imágenes asociadas
+      setTimeout(async () => {
+        try {
+          const imagenes = await this.imagen2dService.findByPropiedad(savedPropiedad.id);
+          for (const imagen of imagenes) {
+            await this.imagen2dService.analyzeImage(imagen.id);
+          }
+        } catch (error) {
+          console.error(`Error al analizar imágenes para propiedad ${savedPropiedad.id}:`, error);
+          // Aquí podrías emitir un evento o loguear para monitoreo
+        }
+      }, 10000);
+
+      return savedPropiedad;
     }
 
 
@@ -140,7 +157,7 @@ constructor(
     }
 
     const cambios: string[] = [];
-    let oldNombre: string = oldPropiedad.nombre; // Guardamos el nombre antiguo
+    const oldNombre: string = oldPropiedad.nombre; // Guardamos el nombre antiguo
 
     // Nombre
     if (updatePropiedadDto.nombre !== undefined && updatePropiedadDto.nombre !== oldPropiedad.nombre) {

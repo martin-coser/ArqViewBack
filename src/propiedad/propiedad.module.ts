@@ -10,6 +10,7 @@ import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 import { RecomendacionModule } from 'src/recomendacion/recomendacion.module';
 import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
+import { Imagen2dService } from 'src/imagen2d/imagen2d.service';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
 
   ],
   controllers: [PropiedadController],
-  providers: [PropiedadService],
+  providers: [PropiedadService, Imagen2dService],
   exports: [PropiedadService],
 })
 export class PropiedadModule {}
