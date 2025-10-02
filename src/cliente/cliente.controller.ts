@@ -1,10 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe, Req } from '@nestjs/common';
 import { ClienteService } from './cliente.service';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { Cliente } from './entities/cliente.entity';
-import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from 'src/guards/roles.guard';
 import { Roles } from 'src/guards/decoradores/roles.decorator';
 import { RegisterCuentaDto } from 'src/auth/dto/register-cuenta.dto';
 
@@ -28,6 +26,14 @@ export class ClienteController {
   @Get('/findOne/:id')
   findOne(@Param('id', ParseIntPipe) id: number) : Promise<Cliente> {
     return this.clienteService.findOne(id);
+  }
+
+  @Get('/findByCuenta')
+  @HttpCode(HttpStatus.OK)
+  @Roles('CLIENTE')
+  async findByCuenta(@Req() req): Promise<Cliente> {
+    const cuentaId = req.user.id;
+    return await this.clienteService.findByCuenta(cuentaId);
   }
 
   @HttpCode(HttpStatus.OK)

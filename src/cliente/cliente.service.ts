@@ -65,6 +65,16 @@ export class ClienteService {
     return clientes;
   }
 
+  async findByCuenta(cuentaId: number): Promise<Cliente> {
+    const cliente = await this.clienteRepository.findOne({
+      where: { cuenta: { id: cuentaId } },
+    });
+    if (!cliente) {
+      throw new NotFoundException(`No se encontró un cliente asociado a la cuenta con ID ${cuentaId}`);
+    }
+    return cliente;
+  }
+
   async findOne(id: number) : Promise<Cliente> {
     const cliente = await this.clienteRepository.findOneBy({ id });
     if (!cliente) {
