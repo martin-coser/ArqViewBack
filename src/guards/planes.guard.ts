@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, ForbiddenException, Logger } from "@nestjs/common";
+import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Inmobiliaria } from "../inmobiliaria/entities/inmobiliaria.entity";
@@ -7,8 +7,6 @@ import { PLANES_KEY } from "src/guards/decoradores/planes.decorator";
 
 @Injectable()
 export class PlanesGuard implements CanActivate {
-    private readonly logger = new Logger(PlanesGuard.name);
-
     constructor(
         private reflector: Reflector,
         @InjectRepository(Inmobiliaria)
@@ -16,25 +14,20 @@ export class PlanesGuard implements CanActivate {
     ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        console.log('=== PLANES GUARD ACTIVATED ===');
         
         // Obtener los planes requeridos para la ruta actual
         const requiredPlans = this.reflector.get<string[]>(PLANES_KEY, context.getHandler());
-        console.log('Planes requeridos:', requiredPlans);
 
         // Si no se especificaron planes, permitir el acceso
         if (!requiredPlans || requiredPlans.length === 0) {
-            console.log('No hay planes requeridos, acceso permitido');
             return true;
         }
 
         // Obtener el objeto request y el usuario autenticado
         const request = context.switchToHttp().getRequest();
         const user = request.user;
-        console.log('User en request:', user);
 
         if (!user) {
-            this.logger.error('No hay usuario autenticado');
             throw new ForbiddenException('Usuario no autenticado');
         }
 
@@ -44,11 +37,7 @@ export class PlanesGuard implements CanActivate {
             relations: ['cuenta'], // Para debugging
         });
 
-        console.log('Inmobiliaria encontrada:', inmobiliaria);
-
-        // ✅ MANEJAR CASO NULL
         if (!inmobiliaria) {
-            this.logger.error(`No se encontró inmobiliaria para usuario ${user.id}`);
             throw new ForbiddenException(
                 `No tienes una inmobiliaria asociada. Contacta al administrador.`
             );
@@ -56,8 +45,6 @@ export class PlanesGuard implements CanActivate {
 
         // Verificar que el plan del usuario está en la lista de planes permitidos
         const hasValidPlan = requiredPlans.includes(inmobiliaria.plan);
-        console.log(`Plan actual: ${inmobiliaria.plan}, Planes requeridos: [${requiredPlans.join(', ')}]`);
-        console.log('¿Cumple con el plan requerido?', hasValidPlan);
 
         if (!hasValidPlan) {
             // 🎯 MENSaje PERSONALIZADO DE MARKETING
@@ -68,13 +55,11 @@ export class PlanesGuard implements CanActivate {
                 request.url
             );
         }
-
-        console.log('✅ PlanesGuard: Acceso permitido');
         return true;
     }
 
     /**
-     * 🎯 LANZA EXCEPCIÓN CON MENSAJE DE MARKETING PERSONALIZADO
+     * LANZA EXCEPCIÓN CON MENSAJE DE MARKETING PERSONALIZADO
      */
     private async throwPremiumRequiredError(
         username: string, 
@@ -82,7 +67,6 @@ export class PlanesGuard implements CanActivate {
         requiredPlans: string[], 
         url: string
     ): Promise<never> {
-        this.logger.warn(`Usuario ${username} (${currentPlan}) intentó acceder a ${url} que requiere ${requiredPlans.join(', ')}`);
 
         // Obtener beneficios dinámicos según el plan requerido
         const benefits = this.getPlanBenefits(requiredPlans[0]);

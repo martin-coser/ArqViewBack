@@ -40,13 +40,11 @@ export class Modelo3DService {
       throw new NotFoundException(`Modelo 3D con ID ${id} no encontrado.`);
     }
     const imagePath = path.join(process.cwd(), modelo3D.filePath); 
-    try {
-      if (fs.existsSync(imagePath)) { 
-        fs.unlinkSync(imagePath);
-      }
-    } catch (error) {
-      console.error(`Error al eliminar el archivo ${imagePath}:`, error); 
+
+    if (fs.existsSync(imagePath)) { 
+      fs.unlinkSync(imagePath);
     }
+
     await this.modelo3DRepository.remove(modelo3D);
   }
 
