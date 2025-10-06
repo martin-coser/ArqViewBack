@@ -20,12 +20,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
               port: configService.get<number>('MAIL_PORT', 587),
               secure: false,
               auth: {
-                user: configService.get<string>('MAIL_USER'), // grupo8albasoft@gmail.com
-                pass: configService.get<string>('MAIL_PASS'), // Contraseña o app password
+                user: configService.get<string>('MAIL_USER'),
+                pass: configService.get<string>('MAIL_PASS'), 
               },
             },
             defaults: {
-              from: '"No Reply" <grupo8albasoft@gmail.com>', // Asegúrate de que coincida con MAIL_USER
+              from: '"No Reply" <arqview8@gmail.com>', 
             },
           }),
           inject: [ConfigService],
