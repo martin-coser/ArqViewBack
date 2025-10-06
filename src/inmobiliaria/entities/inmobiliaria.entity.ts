@@ -40,4 +40,14 @@ export class Inmobiliaria {
     @Column({ type: 'timestamp', nullable: true })
     fechaVencimiento: Date | null; // Fecha en la que vence la suscripcion.
 
+    //Atributos para FREEMIUM
+    @Column({ type: 'timestamp', nullable: true })
+    fechaComienzoFreemium: Date | null;
+
+    @Column({ type: 'timestamp', nullable: true })
+    fechaFinFreemium: Date | null; 
+
+    fueFreemium(): boolean {
+        return this.fechaFinFreemium !== null;
+    }
 }

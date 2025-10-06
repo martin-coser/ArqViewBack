@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Comprobante } from './entities/comprobante.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
@@ -133,4 +133,53 @@ export class SuscripcionService {
       console.error('Error en la tarea programada notificarClientes:', error);
     }
   }
-}
+
+  async probarPremium(cuentaId: number): Promise<void> {
+    const cuenta = await this.cuentaRepository.findOneBy({ id: cuentaId });
+  
+    if (!cuenta) {
+      throw new NotFoundException(`Cuenta con ID ${cuentaId} no encontrada`);
+    }
+
+    const inmobiliaria = await this.inmobiliariaRepository.findOneBy({ cuenta: cuenta });
+    if (!inmobiliaria) {
+      throw new NotFoundException(`Inmobiliaria para la cuenta ID ${cuentaId} no encontrada`);
+    }
+
+    if (inmobiliaria.fueFreemium() === false) {
+      inmobiliaria.fechaComienzoFreemium = new Date();
+      // Establecer la fecha de vencimiento a 30 dias desde la fecha de comienzo
+      const fechaVencimiento = new Date(inmobiliaria.fechaComienzoFreemium);
+      fechaVencimiento.setDate(fechaVencimiento.getDate() + 30);
+      inmobiliaria.fechaVencimiento = fechaVencimiento;
+      await this.inmobiliariaService.updatePlan(inmobiliaria.id, 'PREMIUM');
+      await this.inmobiliariaRepository.save(inmobiliaria);
+      // Emitir evento de suscripción freemium iniciada
+      this.eventEmitter.emit('suscripcion.freemiumIniciada', {
+        cuentaId: cuenta.id,
+        mensaje: 'Has iniciado tu período de prueba gratuita de 30 días en el plan PREMIUM. Esta prueba finalizará automáticamente al término de los 30 días, a menos que decidas suscribirte antes. Fecha de finalización: ' + fechaVencimiento.toDateString(),
+      });
+    }else{
+      throw new BadRequestException('El período de prueba gratuita ya ha sido utilizado anteriormente.');
+    }
+  }
+
+  //ejecutar todos los dias a las 00:00
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async verificarFreemium() {
+    //traer todas las inmobiliarias que esten pasando por el periodo freemium
+    const inmobiliarias = await this.inmobiliariaRepository.find({
+      where: { plan: 'PREMIUM' },
+    });
+    const fechaActual = new Date();
+    for (const inmobiliaria of inmobiliarias) {
+      if (inmobiliaria.fueFreemium()) {
+        if (inmobiliaria.fechaVencimiento) {
+          const fechaVencimiento = new Date(inmobiliaria.fechaVencimiento);
+          if (fechaVencimiento < fechaActual) {
+            // Si la fecha de vencimiento es anterior a la fecha actual, cambiar a plan básico
+            await this.inmobiliariaService.updatePlan(inmobiliaria.id, 'BASIC');
+          }
+        }
+      }
+    }

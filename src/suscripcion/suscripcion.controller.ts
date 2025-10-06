@@ -1,4 +1,4 @@
-import { Controller, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Post, Req } from '@nestjs/common';
 import { SuscripcionService } from './suscripcion.service';
 import { Roles } from 'src/guards/decoradores/roles.decorator';
 
@@ -12,5 +12,13 @@ export class SuscripcionController {
   async abonar(@Req() req) {
     const cuentaId = req.user.id; 
     return await this.suscripcionService.abonar(cuentaId); 
+  }
+
+  @Get('probarPremium')
+  @HttpCode(HttpStatus.OK)
+  @Roles('INMOBILIARIA')
+  async probarPremium(@Req() req) {
+    const cuentaId = req.user.id;
+    return await this.suscripcionService.probarPremium(cuentaId);
   }
 }
