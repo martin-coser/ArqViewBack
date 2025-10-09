@@ -47,7 +47,6 @@ export class Inmobiliaria {
     @Column({ type: 'timestamp', nullable: true })
     fechaFinFreemium: Date | null; 
 
-    fueFreemium(): boolean {
-        return this.fechaFinFreemium !== null;
-    }
+    @Column({ type: 'boolean', default: false })
+    usoFreemium: boolean; // Indica si ya uso el freemium alguna vez.
 }
