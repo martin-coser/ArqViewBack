@@ -138,10 +138,12 @@ export class NotificacionService {
   async findByCliente(id: number): Promise<Notificacion[]> {
     const notificaciones = await this.notificacionRepository.find({
       where: { cliente: { id } },
+      relations: ['cliente', 'propiedad'],
     });
     if (!notificaciones || notificaciones.length === 0) {
       throw new NotFoundException(`No se encontraron notificaciones para el cliente con id ${id}`);
     }
+    console.log(notificaciones)
     return notificaciones;
   }
 
