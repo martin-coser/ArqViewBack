@@ -11,6 +11,7 @@ import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 import { RecomendacionModule } from 'src/recomendacion/recomendacion.module';
 import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
 import { Imagen2dService } from 'src/imagen2d/imagen2d.service';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { Imagen2dService } from 'src/imagen2d/imagen2d.service';
       Inmobiliaria,
       Imagen2d, 
     ]),
-    RecomendacionModule,
+    RecomendacionModule,HttpModule
 
   ],
   controllers: [PropiedadController],

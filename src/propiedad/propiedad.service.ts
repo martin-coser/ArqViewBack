@@ -10,7 +10,6 @@ import { EstiloArquitectonico } from 'src/estilo-arquitectonico/entities/estilo-
 import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-visualizacion.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
-import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
 import { Imagen2dService } from 'src/imagen2d/imagen2d.service';
 
 @Injectable()
