@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Comprobante } from './entities/comprobante.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { Cuenta } from 'src/auth/entities/cuenta.entity';
 import { InmobiliariaService } from 'src/inmobiliaria/inmobiliaria.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -131,6 +131,81 @@ export class SuscripcionService {
       }
     } catch (error) {
       console.error('Error en la tarea programada notificarClientes:', error);
+    }
+  }
+
+  async probarPremium(cuentaId: number): Promise<void> {
+    const cuenta = await this.cuentaRepository.findOneBy({ id: cuentaId });
+
+    if (!cuenta) {
+      throw new NotFoundException(`Cuenta con ID ${cuentaId} no encontrada`);
+    }
+
+    const inmobiliaria = await this.inmobiliariaRepository.findOneBy({ cuenta: cuenta });
+    if (!inmobiliaria) {
+      throw new NotFoundException(`Inmobiliaria para la cuenta ID ${cuentaId} no encontrada`);
+    }
+
+    if (inmobiliaria.usoFreemium === false && inmobiliaria.plan !== 'PREMIUM') {
+      inmobiliaria.fechaComienzoFreemium = new Date();
+      // Establecer la fecha de vencimiento a 30 dias desde la fecha de comienzo
+      const fechaVencimientoFreemium = new Date(inmobiliaria.fechaComienzoFreemium);
+      fechaVencimientoFreemium.setDate(fechaVencimientoFreemium.getDate() + 30);
+      inmobiliaria.fechaFinFreemium = fechaVencimientoFreemium;
+      await this.inmobiliariaRepository.save(inmobiliaria);
+      await this.inmobiliariaService.updatePlan(inmobiliaria.id, 'PREMIUM');
+      // Emitir evento de suscripción freemium iniciada
+      this.eventEmitter.emit('suscripcion.freemiumIniciada', {
+        cuentaId: cuenta.id,
+        mensaje: 'Has iniciado tu período de prueba gratuita de 30 días en el plan PREMIUM. Esta prueba finalizará automáticamente al término de los 30 días, a menos que decidas suscribirte antes. Fecha de finalización: ' + fechaVencimientoFreemium.toDateString(),
+      });
+    } else {
+      throw new BadRequestException('El período de prueba gratuita ya ha sido utilizado anteriormente.');
+    }
+  }
+
+  //ejecutar todos los dias a las 00:00
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async verificarFreemium() {
+    //traer todas las inmobiliarias que esten pasando por el periodo freemium
+    const inmobiliarias = await this.inmobiliariaRepository.find({
+      where: { plan: 'PREMIUM', usoFreemium: false, fechaComienzoFreemium: Not(require('typeorm').IsNull()) },
+      relations: ['cuenta'],
+    });
+
+    const fechaActual = new Date();
+
+    for (const inmobiliaria of inmobiliarias) {
+      // si fechaActual es mayor o igual a fechaFinFreemium, cambiar plan a basico
+      if (inmobiliaria.fechaFinFreemium && fechaActual > inmobiliaria.fechaFinFreemium) {
+
+        inmobiliaria.usoFreemium = true;
+
+        // notificar al cliente que su freemium ha finalizado y se cambio a basico
+        this.eventEmitter.emit('suscripcion.freemiumFinalizado', {
+          cuentaId: inmobiliaria.cuenta.id,
+          mensaje: 'Tu período de prueba gratuita de 30 días en el plan PREMIUM ha finalizado. Tu plan ha sido cambiado automáticamente al plan BÁSICO. Si deseas continuar disfrutando de los beneficios del plan PREMIUM, te invitamos a suscribirte. El costo de renovación es de USD $25.',
+        });
+        await this.inmobiliariaRepository.save(inmobiliaria);
+        await this.inmobiliariaService.updatePlan(inmobiliaria.id, 'BASICO');
+
+      } else {
+        if (inmobiliaria.fechaFinFreemium) {
+          // si la fecha actual es 3 dias menor a la fecha de fin freemium, enviar notificacion
+          const fechaNotificacion = new Date(inmobiliaria.fechaFinFreemium);
+          fechaNotificacion.setDate(fechaNotificacion.getDate() - 3);
+          if (fechaActual >= fechaNotificacion) { // Osea que faltan 3 dias o menos para que termine el freemium
+            const cuenta = await this.cuentaRepository.findOneBy({ id: inmobiliaria.cuenta.id });
+            if (cuenta) {
+              this.eventEmitter.emit('suscripcion.proximaAVencer', {
+                cuentaId: cuenta.id,
+                mensaje: `Tu período de prueba gratuita de 30 días en el plan PREMIUM está por vencer. Para continuar disfrutando de los beneficios del plan PREMIUM, te invitamos a suscribirte antes de que finalice tu prueba gratuita. El costo de renovación es de USD $25.`,
+              });
+            }
+          }
+        }
+
+      }
     }
   }
 }
