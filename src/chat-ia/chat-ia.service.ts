@@ -6,10 +6,10 @@ import { firstValueFrom } from 'rxjs';
 export class ChatIaService {
   constructor(private readonly httpService: HttpService) {}
 
-  async processChatQuery(query: string): Promise<any> {
+  async processChatQuery(message: string, session_id : number): Promise<any> {
     try {
       const response = await firstValueFrom(
-        this.httpService.post('http://localhost:5000/chat', { query })
+        this.httpService.post('http://localhost:5000/chat', { session_id, message })
       );
       return response.data;
     } catch (error) {
