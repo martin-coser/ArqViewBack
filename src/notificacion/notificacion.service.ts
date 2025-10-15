@@ -232,8 +232,8 @@ export class NotificacionService {
     }
   }
 
-  @OnEvent('suscripcion.proximaAVencer')
-  async handleSuscripcionProximaAVencer(payload: { cuentaId: number; mensaje: string }) {
+  @OnEvent('suscripcion.freemiumIniciada')
+  async handleSuscripcionFreemiumIniciada(payload: { cuentaId: number; mensaje: string }) {
     const cuenta = await this.cuentaRepository.findOne({
       where: { id: payload.cuentaId }
     });
@@ -241,12 +241,58 @@ export class NotificacionService {
       console.error(`Cuenta con ID ${payload.cuentaId} no encontrada`);
       return;
     }
-
     try {
       await this.mailerService.sendMail({
         to: cuenta.email,
         from: 'arqview8@gmail.com',
-        subject: 'Suscripción Proxima a Vencer',
+        subject: 'Prueba Gratuita de Suscripción Iniciada',
+        text: payload.mensaje,
+      });
+    }
+    catch (error) {
+      console.error(`Error al enviar correo a ${cuenta.email}:`, error);
+      throw new Error('No se pudo enviar el correo');
+    }
+  }  
+
+  @OnEvent('suscripcion.proximaAVencer')
+  async handleSuscripcionFreemiumAVencer(payload: { cuentaId: number; mensaje: string }) {
+    const cuenta = await this.cuentaRepository.findOne({
+      where: { id: payload.cuentaId }
+    });
+
+    if (!cuenta) {
+      console.error(`Cuenta con ID ${payload.cuentaId} no encontrada`);
+      return;
+    }
+    try {
+      await this.mailerService.sendMail({
+        to: cuenta.email,
+        from: 'arqview8@gmail.com',
+        subject: 'Prueba Gratuita de Suscripción Próxima a Vencer',
+        text: payload.mensaje,
+      });
+    }
+    catch (error) {
+      console.error(`Error al enviar correo a ${cuenta.email}:`, error);
+      throw new Error('No se pudo enviar el correo');
+    }
+  }
+
+  @OnEvent('suscripcion.freemiumFinalizado')
+  async handleSuscripcionFreemiumFinalizado(payload: { cuentaId: number; mensaje: string }) {
+    const cuenta = await this.cuentaRepository.findOne({
+      where: { id: payload.cuentaId }
+    });
+    if (!cuenta) {
+      console.error(`Cuenta con ID ${payload.cuentaId} no encontrada`);
+      return;
+    }
+    try {
+      await this.mailerService.sendMail({
+        to: cuenta.email,
+        from: 'arqview8@gmail.com',
+        subject: 'Prueba Gratuita de Suscripción Finalizada',
         text: payload.mensaje,
       });
     } catch (error) {
@@ -254,4 +300,5 @@ export class NotificacionService {
       throw new Error('No se pudo enviar el correo');
     }
   }
+
 }
