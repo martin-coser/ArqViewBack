@@ -143,7 +143,6 @@ export class NotificacionService {
     if (!notificaciones || notificaciones.length === 0) {
       throw new NotFoundException(`No se encontraron notificaciones para el cliente con id ${id}`);
     }
-    console.log(notificaciones)
     return notificaciones;
   }
 
