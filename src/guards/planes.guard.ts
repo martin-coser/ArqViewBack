@@ -16,22 +16,18 @@ export class PlanesGuard implements CanActivate {
     ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-        console.log('=== PLANES GUARD ACTIVATED ===');
         
         // Obtener los planes requeridos para la ruta actual
         const requiredPlans = this.reflector.get<string[]>(PLANES_KEY, context.getHandler());
-        console.log('Planes requeridos:', requiredPlans);
 
         // Si no se especificaron planes, permitir el acceso
         if (!requiredPlans || requiredPlans.length === 0) {
-            console.log('No hay planes requeridos, acceso permitido');
             return true;
         }
 
         // Obtener el objeto request y el usuario autenticado
         const request = context.switchToHttp().getRequest();
         const user = request.user;
-        console.log('User en request:', user);
 
         if (!user) {
             this.logger.error('No hay usuario autenticado');
@@ -44,8 +40,6 @@ export class PlanesGuard implements CanActivate {
             relations: ['cuenta'], // Para debugging
         });
 
-        console.log('Inmobiliaria encontrada:', inmobiliaria);
-
         // ✅ MANEJAR CASO NULL
         if (!inmobiliaria) {
             this.logger.error(`No se encontró inmobiliaria para usuario ${user.id}`);
@@ -56,8 +50,6 @@ export class PlanesGuard implements CanActivate {
 
         // Verificar que el plan del usuario está en la lista de planes permitidos
         const hasValidPlan = requiredPlans.includes(inmobiliaria.plan);
-        console.log(`Plan actual: ${inmobiliaria.plan}, Planes requeridos: [${requiredPlans.join(', ')}]`);
-        console.log('¿Cumple con el plan requerido?', hasValidPlan);
 
         if (!hasValidPlan) {
             // 🎯 MENSaje PERSONALIZADO DE MARKETING
@@ -69,7 +61,6 @@ export class PlanesGuard implements CanActivate {
             );
         }
 
-        console.log('✅ PlanesGuard: Acceso permitido');
         return true;
     }
 
