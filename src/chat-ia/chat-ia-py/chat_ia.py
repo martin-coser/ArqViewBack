@@ -42,7 +42,7 @@ conversation_histories = {}
 def extract_parameters(user_query):
     """
     Extrae parámetros SÓLO de la consulta actual usando Gemini API.
-    **MODIFICADO:** Restringe tagsVisuales a solo espacios + adjetivos (grande, luminoso, etc.).
+    **MODIFICADO:** Incluye tagsVisualesExcluir para gestionar negaciones.
     """
     prompt = f"""
     Eres un asistente de búsqueda de propiedades. Tu única tarea es extraer **SÓLO** los siguientes parámetros
@@ -52,13 +52,14 @@ def extract_parameters(user_query):
 
     Si el usuario menciona 'propiedad' o 'propiedades' sin especificar tipo, no asumas un tipoPropiedad y deja el campo como null, indicando que necesita más detalles.
 
-    **REGLA DE TAGS VISUALES**: Si el usuario menciona características visuales de **espacios** acompañados de un adjetivo descriptivo (ej: 'cocina grande', 'habitación luminosa', 'baño pequeño', 'living oscuro'), agrégalas como strings en el array **tagsVisuales**. **OMITE** cualquier otra característica (como 'balcón', 'pileta', 'asador', 'garage') de los tagsVisuales.
-    
+    **REGLA DE TAGS VISUALES**:
+    1. Si el usuario menciona características visuales de **espacios** acompañados de un adjetivo descriptivo (ej: 'cocina grande', 'habitación luminosa', 'baño pequeño', 'living oscuro'), agrégalas como strings en el array **tagsVisuales** (Deseados). **OMITE** cualquier otra característica (como 'balcón', 'pileta', 'asador') de los tagsVisuales.
+    2. **REGLA DE EXCLUSIÓN (tagsVisualesExcluir):** Si el usuario menciona **negaciones** de espacios con adjetivos descriptivos (ej: "no quiero un garage pequeño", "sin cocina oscura", "que no tenga baño pequeño"), agrégalas como strings al array **tagsVisualesExcluir**. No las incluyas en `tagsVisuales` ni en `contentFilter`. No traigas la propiedad que contenga el tag visual negado.
+    3. Si el usuario menciona más de un espacio/adjetivo, inclúyelos todos en el array correspondiente.
+    4. Si el usuario menciona alguna palabra que pueda ser tambien un espacio (ej garage) puede que sea un tag visual o un content filter, para determinar de que tipo es, fijate si tiene alguna caracteristica luego de la palabra como por ejemplo "garage grande" o "garage pequeño" en ese caso es un tag visual, si no tiene ninguna caracteristica luego de la palabra entonces es un content filter.
     Si el usuario menciona características de **equipamiento** ('balcón', 'pileta', 'asador', 'garage') o de **ambiente/uso** ('ideal para estudiantes', 'cerca del parque', 'soleado', 'tranquilo'), extrae toda esa frase en el campo **contentFilter**. Si hay varios, combina las frases de ambiente y equipamiento en una sola frase coherente.
-    
     Si el usuario menciona una 'familia grande', '4 o 5 personas' o 'más personas', interpreta que necesitan al menos 3 habitaciones; si dice '5 o más personas', asigna un mínimo de 3 habitaciones.
     Si el usuario solo saluda, agradece o charla (e.g., 'hola cómo estás', 'genial muchas gracias'), no extraigas parámetros y devuelve un JSON vacío, **A MENOS** que se mencione un comando de reinicio.
-    
     Si el usuario indica una intención de REINICIAR o CANCELAR la búsqueda actual (ej: 'empezar de cero', 'olvídalo', 'nueva búsqueda', 'comencemos de nuevo'), agrega el campo **"reset_search": true** al JSON.
     NO INCLUYAS texto adicional, solo el JSON.
 
@@ -73,7 +74,8 @@ def extract_parameters(user_query):
     - superficieMin: número entero (solo si se menciona explícitamente)
     - estiloArquitectonico: e.g., 'moderno', 'clásico' (solo si se menciona explícitamente)
     - tipoVisualizaciones: lista de strings, e.g., ['vista al mar', 'vista a la montaña'] (solo si se menciona explícitamente)
-    - tagsVisuales: lista de strings, e.g., ['dormitorio grande', 'baño pequeño'] (solo incluye espacios con adjetivos descriptivos)
+    - tagsVisuales: lista de strings, e.g., ['dormitorio grande', 'baño pequeño'] (deseados)
+    - tagsVisualesExcluir: lista de strings, e.g., ['garage pequeño', 'cocina oscura'] (**NO DESEADOS**)
     - reset_search: bool (true si el usuario quiere reiniciar la búsqueda)
     - **contentFilter**: string con frases descriptivas de uso, ambiente y equipamiento (ej: "ideal para estudiantes, con pileta y asador")
 
@@ -127,16 +129,57 @@ def get_conversational_response(user_query, history):
         logger.error(f"Error al generar respuesta conversacional: {e}")
         return "¡Hola! ¿En qué puedo ayudarte hoy con tu búsqueda de propiedades?"
 
-# --- Función de Búsqueda en DB ---
+
+# --- FUNCIÓN DE NORMALIZACIÓN ---
+
+def normalize_visual_tags(tags_list):
+    """
+    Transforma la lista de frases de tags visuales (ej: ['comedor grande', 'baño pequeño y oscuro']) 
+    en una lista de pares 'espacio,caracteristica' para la búsqueda FTS.
+    """
+    normalized_tags = []
+    
+    for phrase in tags_list:
+        parts = phrase.strip().lower().split()
+        
+        if not parts:
+            continue
+            
+        space = parts[0] # Asumimos la primera palabra es el espacio
+        features = parts[1:] # El resto son las características
+        
+        if not features:
+            continue 
+
+        # Crear un par (espacio, característica) por cada adjetivo/característica
+        adjectives = [f for f in features if f not in ['y', 'o', 'con', 'sin']]
+        
+        for adj in adjectives:
+            # Formato 'espacio,caracteristica' que será usado en la FTS query
+            normalized_tags.append(f"{space},{adj}")
+            
+    return normalized_tags
+
+
+# --- Función de Búsqueda en DB 
 
 def query_properties(params):
     """
-    Consulta propiedades aplicando todos los filtros y priorizando por
-    relevancia de Full-Text Search si se proporciona un contentFilter.
+    Consulta propiedades aplicando todos los filtros, incluyendo la lógica OR/ANY 
+    para los tags visuales mediante Full-Text Search (FTS) y la lógica NOT IN para exclusiones.
     """
     
-    # 1. Preparación y FTS Rank
+    # 1. Preparación de filtros de tags visuales
     content_filter = params.get('contentFilter')
+    
+    # Lectura de tags DESEADOS y NO DESEADOS
+    tags_visuales_raw = params.get('tagsVisuales', [])
+    tags_visuales_excluir_raw = params.get('tagsVisualesExcluir', []) 
+    
+    # Normalizar ambas listas
+    tags_visuales_solicitados = normalize_visual_tags(tags_visuales_raw) 
+    tags_visuales_excluir = normalize_visual_tags(tags_visuales_excluir_raw)
+    
     rank_select = ""
     
     try:
@@ -146,13 +189,12 @@ def query_properties(params):
         # Lista final de parámetros para la ejecución de la consulta
         sql_params = []
         
-        # Condición de FTS (Si existe, debe ser el primer parámetro)
+        # Condición de FTS para rankeo
         if content_filter:
-            # Creamos una columna temporal de rankeo
             rank_select = f", ts_rank(to_tsvector('spanish', p.descripcion), plainto_tsquery('spanish', %s)) AS rank"
             sql_params.append(content_filter) 
         
-        # Columnas de selección (sin cambios)
+        # Columnas de selección
         select_columns = [
             'p.id', 'p.nombre', 'p.descripcion', 'p.direccion', 'p.precio', 'p.superficie',
             'p."cantidadBanios"', 'p."cantidadDormitorios"', 'p."cantidadAmbientes"', 'p."tipoOperacion"',
@@ -161,7 +203,7 @@ def query_properties(params):
             'tp.nombre as tipo_propiedad_nombre',
             'ea.nombre as estilo_arquitectonico_nombre',
             'array_agg(DISTINCT tv.nombre) as tipo_visualizaciones_nombres',
-            'array_agg(i.tags_visuales) as tags_visuales' 
+            'array_agg(i.tags_visuales) as tags_visuales_agregados' 
         ]
         
         sql_select = f"SELECT {', '.join(select_columns)} {rank_select}"
@@ -179,19 +221,15 @@ def query_properties(params):
         
         conditions = []
         
-        # APLICACIÓN DE FILTRO DE FTS (¡CLAVE!)
+        # APLICACIÓN DE FILTRO DE FTS
         if content_filter:
-            # Solo se buscan propiedades donde la descripción coincida con el content_filter
             conditions.append(f"to_tsvector('spanish', p.descripcion) @@ plainto_tsquery('spanish', %s)")
-            sql_params.append(content_filter) # Este parámetro ahora es el $2 (o el $1 si no había rank)
+            sql_params.append(content_filter) 
 
         # Mapeo de Operaciones
         tipo_operacion_map = {
-            'compra': 'VENTA',
-            'venta': 'VENTA',
-            'alquiler': 'ALQUILER'
+            'compra': 'VENTA', 'venta': 'VENTA', 'alquiler': 'ALQUILER'
         }
-        
         tipo_operacion = params.get('tipoOperacion')
         if tipo_operacion and tipo_operacion.lower() in tipo_operacion_map:
             conditions.append(f"p.\"tipoOperacion\" = %s")
@@ -200,7 +238,7 @@ def query_properties(params):
             conditions.append(f"p.\"tipoOperacion\" IN (%s, %s)")
             sql_params.extend(['VENTA', 'ALQUILER'])
 
-        # Filtros Estructurados (el resto es igual)
+        # Filtros Estructurados 
         if params.get('tipoPropiedad'):
             conditions.append("tp.nombre ILIKE %s")
             sql_params.append(f"%{params['tipoPropiedad']}%")
@@ -209,7 +247,6 @@ def query_properties(params):
             conditions.append("l.nombre ILIKE %s")
             sql_params.append(f"%{params['localidad']}%")
         
-        # ... (Otros filtros como cantidadDormitorios, precioMax, etc., que no cambian)
         if params.get('cantidadDormitorios') is not None:
             conditions.append("p.\"cantidadDormitorios\" = %s")
             sql_params.append(params['cantidadDormitorios'])
@@ -238,25 +275,72 @@ def query_properties(params):
             conditions.append("tv.nombre = ANY(%s)")
             sql_params.append(params['tipoVisualizaciones'])
 
-        # Lógica de Tags Visuales (Sin cambios)
-        if params.get('tagsVisuales') and params['tagsVisuales']:
-            like_patterns = []
-            for tag in params['tagsVisuales']:
-                parts = tag.split()
-                if len(parts) >= 2:
-                    space_part = parts[0]
-                    features = ' '.join(parts[1:])
-                    full_tag = f"%{space_part},{features}%"
-                    like_patterns.append(full_tag)
+
+        # LÓGICA DE FILTRO POR TAGS VISUALES DESEADOS
+        if tags_visuales_solicitados:
             
-            if like_patterns:
-                tag_conditions = []
-                for _ in like_patterns:
-                    # Usamos un marcador de posición que psycopg2 reemplaza
-                    tag_conditions.append("EXISTS (SELECT 1 FROM imagen2d i_sub WHERE i_sub.propiedad_id = p.id AND i_sub.tags_visuales ILIKE %s)")
+            tag_conditions = []
+            
+            for tag_pair in tags_visuales_solicitados:
+                parts = tag_pair.split(',')
+                if len(parts) != 2: continue
+                    
+                space = parts[0].strip()
+                feature = parts[1].strip()
                 
-                conditions.append(" AND ".join(tag_conditions))
-                sql_params.extend(like_patterns)
+                # FTS Query: Busca que la imagen contenga AMBAS palabras (AND)
+                fts_query_term = f"{space} & {feature}"
+                
+                tag_conditions.append(f"""
+                    to_tsvector('spanish', i_sub.tags_visuales) @@ plainto_tsquery('spanish', %s)
+                """)
+                sql_params.append(fts_query_term)
+            
+            if tag_conditions:
+                # Une las condiciones de FTS con OR y las encapsula en un IN (para lógica ANY/OR)
+                full_tag_condition = " OR ".join(tag_conditions)
+                
+                final_condition = f"""
+                    p.id IN (
+                        SELECT i_sub.propiedad_id
+                        FROM imagen2d i_sub
+                        WHERE {full_tag_condition}
+                        GROUP BY i_sub.propiedad_id
+                    )
+                """
+                conditions.append(final_condition)
+        
+        # LÓGICA DE FILTRO POR TAGS VISUALES NO DESEADOS (EXCLUSIÓN - NOT IN) 
+        if tags_visuales_excluir:
+            tag_exclude_conditions = []
+            
+            for tag_pair in tags_visuales_excluir:
+                parts = tag_pair.split(',')
+                if len(parts) != 2: continue
+                space = parts[0].strip()
+                feature = parts[1].strip()
+                
+                # FTS Query: Busca que la imagen contenga AMBAS palabras (AND)
+                fts_query_term = f"{space} & {feature}"
+                
+                tag_exclude_conditions.append(f"""
+                    to_tsvector('spanish', i_sub_exc.tags_visuales) @@ plainto_tsquery('spanish', %s)
+                """)
+                sql_params.append(fts_query_term)
+                
+            if tag_exclude_conditions:
+                # Une las condiciones de exclusión con OR. Si coincide con *cualquiera* de ellas, debe ser excluido.
+                full_exclude_condition = " OR ".join(tag_exclude_conditions)
+                
+                final_exclude_condition = f"""
+                    p.id NOT IN (
+                        SELECT i_sub_exc.propiedad_id
+                        FROM imagen2d i_sub_exc
+                        WHERE {full_exclude_condition}
+                        GROUP BY i_sub_exc.propiedad_id
+                    )
+                """
+                conditions.append(final_exclude_condition)
 
         if conditions:
             # Aplica todos los filtros al WHERE
@@ -281,9 +365,11 @@ def query_properties(params):
         try:
             cur.execute(sql, sql_params) 
             results = cur.fetchall()
+            print(f"Resultados encontrados: {(results)}")
         except psycopg2.ProgrammingError as e:
-            logger.error(f"Error en la consulta SQL (verificar FTS en DB): {e}")
+            logger.error(f"Error en la consulta SQL (verificar FTS en DB y ARRAY en tags_visuales): {e}")
             results = [] 
+
         
         cur.close()
         conn.close()
@@ -318,7 +404,7 @@ def chat():
         
         # Extraer solo los parámetros nuevos/modificados de la consulta actual
         new_params = extract_parameters(user_query)
-        print(f"Parámetros extraídos: {new_params}") # Mantenido el print del código original
+        print(f"Parámetros extraídos: {new_params}")
         
         # Inicializar variables
         params = deepcopy(old_params)
@@ -333,9 +419,15 @@ def chat():
             
         else:
             # Lógica de Fusión de Contexto
+            # NOTA: La fusión de listas (tagsVisuales y tagsVisualesExcluir) debe manejarse manualmente si
+            # el usuario añade más en una consulta posterior (ej: params['tagsVisuales'].extend(new_params['tagsVisuales'])).
+            # Por ahora, para simplificar y mantener la consistencia, la lógica de deepcopy y la siguiente iteración
+            # simplemente reemplazará el array anterior si se proporciona uno nuevo.
+
             for key, value in new_params.items():
                 if value is not None and (not isinstance(value, list) or value):
-                    params[key] = value
+                    # Esto reemplazará las listas tagsVisuales y tagsVisualesExcluir si existen en new_params.
+                    params[key] = value 
             
             # Lógica de Priorización de Flujo y Conversación
             has_minimal_params = params.get('tipoPropiedad') and params.get('localidad')
@@ -344,7 +436,6 @@ def chat():
                   bot_response = get_conversational_response(user_query, history)
             
             elif not new_params and has_minimal_params: # Conversación social tras una búsqueda exitosa
-                # Opcional: Podrías mantener los resultados previos si los guardaste, pero aquí se regeneran si el usuario refina.
                 bot_response = get_conversational_response(user_query, history)
                 
             # Caso C: Faltan datos críticos, pero se detectaron nuevos parámetros
@@ -373,19 +464,19 @@ def chat():
                         visualizaciones = prop.get('tipo_visualizaciones_nombres', [])
                         visualizaciones = ', '.join([v for v in visualizaciones if v is not None]) if visualizaciones else 'Ninguna especificada'
                         
-                        tags = prop.get('tags_visuales', [])
+                        # LOGICA DE LIMPIEZA DE TAGS VISUALES
+                        tags = prop.get('tags_visuales_agregados', []) 
                         tags_str_list = []
                         for sublist in tags:
                             if sublist is not None and isinstance(sublist, str):
-                                # Limpieza simple de los tags para mostrar
-                                tags_str_list.extend([tag.strip() for tag in sublist.split(', ') if tag.strip()])
-                        
-                        tags_str = ', '.join(list(set(tags_str_list))) 
+                                # Asume tags separados por coma en la DB
+                                tags_str_list.extend([tag.strip() for tag in sublist.split(',') if tag.strip()])
+                                
+                        tags_str = ', '.join(list(set(tags_str_list))) # Elimina duplicados
                         if not tags_str:
                             tags_str = 'No especificados'
 
                         # Formato de respuesta de propiedades
-                        # Opcional: Mostrar el rank si se desea para depuración
                         rank_display = f" (Rank: {prop.get('rank'):.2f})" if params.get('contentFilter') and prop.get('rank') is not None else ""
                         
                         response_parts.append(f"{i}. **{prop.get('nombre', 'Sin nombre')}**{rank_display} [ID:{prop.get('id')}] - {prop.get('tipo_propiedad_nombre', 'Sin tipo')} en {prop.get('localidad_nombre', 'Sin localidad')}\n")
