@@ -78,7 +78,6 @@ export class ListaDeInteresService {
     const cliente = await this.clienteRepository.findOne({
       where: { cuenta: { id: cuentaId } },
     });
-    console.log('Cliente encontrado:', cliente);
     
     if (!cliente) {
       throw new NotFoundException(`No se encontró un cliente asociado a la cuenta con ID ${cuentaId}`);

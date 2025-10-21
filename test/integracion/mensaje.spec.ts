@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { MensajeService } from './mensaje.service';
+import { MensajeService } from '../../src/mensaje/mensaje.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Mensaje } from './entities/mensaje.entity';
+import { Mensaje } from '../../src/mensaje/entities/mensaje.entity';
 import { Cliente } from 'src/cliente/entities/cliente.entity';
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { CrearMensajeDto } from './dto/crear-mensaje.dto';
+import { CrearMensajeDto } from '../../src/mensaje/dto/crear-mensaje.dto';
 import { Repository } from 'typeorm';
-import { MarcarComoLeidoDto } from './dto/marcar-como-leido.dto';
+import { MarcarComoLeidoDto } from '../../src/mensaje/dto/marcar-como-leido.dto';
 import { UnauthorizedException, NotFoundException } from '@nestjs/common';
 
 describe('MensajeService', () => {

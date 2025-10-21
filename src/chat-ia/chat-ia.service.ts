@@ -9,7 +9,7 @@ export class ChatIaService {
   async processChatQuery(message: string, session_id : number): Promise<any> {
     try {
       const response = await firstValueFrom(
-        this.httpService.post('http://localhost:5000/chat', { session_id, message })
+        this.httpService.post('http://localhost:5001/chat', { session_id, message })
       );
       return response.data;
     } catch (error) {

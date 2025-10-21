@@ -6,13 +6,14 @@ import { Test, TestingModule } from "@nestjs/testing";
 import * as bcrypt from 'bcrypt';
 import { RegisterCuentaDto } from "src/auth/dto/register-cuenta.dto";
 import { AuthService } from "src/auth/auth.service";
-import { Cliente } from './entities/cliente.entity';
-import { ClienteService } from './cliente.service';
-import { CreateClienteDto } from './dto/create-cliente.dto';
-import { UpdateClienteDto } from './dto/update-cliente.dto';
+
 import { Localidad } from 'src/localidad/entities/localidad.entity';
 import { JwtService } from "@nestjs/jwt";
 import { Inmobiliaria } from "src/inmobiliaria/entities/inmobiliaria.entity";
+import { ClienteService } from "src/cliente/cliente.service";
+import { Cliente } from "src/cliente/entities/cliente.entity";
+import { CreateClienteDto } from "src/cliente/dto/create-cliente.dto";
+import { UpdateClienteDto } from "src/cliente/dto/update-cliente.dto";
 
 // Mock de la función de hash de bcrypt para evitar problemas de rendimiento
 jest.mock('bcrypt', () => ({

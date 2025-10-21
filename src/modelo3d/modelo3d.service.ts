@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Modelo3D } from './entities/modelo3d.entity';
 import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import { UploadModelo3DDto } from './dto/upload-modelo3d.dto';
-import path from 'path';
+import * as path from 'path';
 import * as fs from 'fs'; 
 import { InmobiliariaService } from 'src/inmobiliaria/inmobiliaria.service';
 
@@ -40,13 +40,9 @@ export class Modelo3DService {
       throw new NotFoundException(`Modelo 3D con ID ${id} no encontrado.`);
     }
     const imagePath = path.join(process.cwd(), modelo3D.filePath); 
-    try {
-      if (fs.existsSync(imagePath)) { 
+    if (fs.existsSync(imagePath)) { 
         fs.unlinkSync(imagePath);
       }
-    } catch (error) {
-      console.error(`Error al eliminar el archivo ${imagePath}:`, error); 
-    }
     await this.modelo3DRepository.remove(modelo3D);
   }
 
