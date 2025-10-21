@@ -53,4 +53,10 @@ export class PropiedadController {
   async remove(@Param('id') id: string) {
     return await this.propiedadService.remove(+id);
   }
+
+  @Post('/search-chatbot')
+  @HttpCode(HttpStatus.OK)
+  async searchForChatbot(@Body() searchCriteria: any) {
+    return await this.propiedadService.buscarParaChatbot(searchCriteria);
+  }
 }
