@@ -74,12 +74,11 @@ export class ListaDeInteresService {
   return listaConRelaciones;
 }
 
-// busca una lista de interés por el cliente asociado a la cuenta
   async findByClient(cuentaId: number): Promise<ListaDeInteres> {
     const cliente = await this.clienteRepository.findOne({
       where: { cuenta: { id: cuentaId } },
-      relations: ['listaDeInteres'],
     });
+    console.log('Cliente encontrado:', cliente);
     
     if (!cliente) {
       throw new NotFoundException(`No se encontró un cliente asociado a la cuenta con ID ${cuentaId}`);

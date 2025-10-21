@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Imagen360 } from './entities/imagen360.entity';
 import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import { UploadImagen360Dto } from './dto/UploadImagen360Dto';
-import * as path from 'path';
+import path from 'path';
 import * as fs from 'fs'; 
 import { InmobiliariaService } from 'src/inmobiliaria/inmobiliaria.service';
 
@@ -58,8 +58,14 @@ export class Imagen360Service {
     const imagePath = path.join(process.cwd(), imagen.filePath); // process.cwd() obtiene el directorio de trabajo actual'
 
     // Eliminar el archivo del sistema de archivos
-    if (fs.existsSync(imagePath)) { // Verificar si el archivo existe antes de intentar eliminarlo
-      fs.unlinkSync(imagePath);
+    try {
+      if (fs.existsSync(imagePath)) { // Verificar si el archivo existe antes de intentar eliminarlo
+        fs.unlinkSync(imagePath);
+      }
+    } catch (error) {
+      console.error(`Error al eliminar el archivo ${imagePath}:`, error); 
+      // Puedes decidir si quieres lanzar una excepción o simplemente registrar el error
+      // throw new InternalServerErrorException('Error al eliminar el archivo de imagen.'); 
     }
 
     // Eliminar la imagen de la base de datos

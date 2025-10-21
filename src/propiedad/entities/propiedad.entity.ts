@@ -69,9 +69,6 @@ export class Propiedad {
     @Column({ type: 'double precision', nullable: true })
     longitud: number;
 
-    @Column({ type: 'text', nullable: true })
-    tags_visuales: string;
-
     @ManyToOne(() => Inmobiliaria, { eager: true })
     @JoinColumn({ name: 'inmobiliaria_id' })
     inmobiliaria:Inmobiliaria 

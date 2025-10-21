@@ -25,6 +25,7 @@ import { Modelo3DModule } from './modelo3d/modelo3d.module';
 import { CalificacionResenaModule } from './calificacion-reseña/calificacion-reseña.module';
 import { SuscripcionModule } from './suscripcion/suscripcion.module';
 import { GuardsModule } from './guards/guards.module';
+import { ChatIaModule } from './chat-ia/chat-ia.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { GuardsModule } from './guards/guards.module';
     Modelo3DModule,
     CalificacionResenaModule,
     SuscripcionModule,
+    ChatIaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

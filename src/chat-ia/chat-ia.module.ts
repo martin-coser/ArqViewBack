@@ -1,0 +1,28 @@
+import { Module } from '@nestjs/common';
+import { ChatIaService } from './chat-ia.service';
+import { ChatIaController } from './chat-ia.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
+import { Localidad } from 'src/localidad/entities/localidad.entity';
+import { TipoDePropiedad } from 'src/tipo-de-propiedad/entities/tipo-de-propiedad.entity';
+import { EstiloArquitectonico } from 'src/estilo-arquitectonico/entities/estilo-arquitectonico.entity';
+import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-visualizacion.entity';
+import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
+import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
+import { HttpModule } from '@nestjs/axios';
+
+@Module({
+  imports: [TypeOrmModule.forFeature([
+        Propiedad,
+        Localidad,
+        TipoDePropiedad,
+        EstiloArquitectonico,
+        TipoDeVisualizacion,
+        Inmobiliaria,
+        Imagen2d, 
+      ]),HttpModule
+    ],
+  controllers: [ChatIaController],
+  providers: [ChatIaService],
+})
+export class ChatIaModule {}

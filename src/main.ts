@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { DataSource } from 'typeorm';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
@@ -32,13 +31,12 @@ async function bootstrap() {
     const port = process.env.PORT ?? 3000; // O 3001 si cambiaste el puerto
     await app.listen(port);
 
-    const dataSource = app.get(DataSource);
 
   } catch (error) {
     console.log('❌ Error en bootstrap:', error);
   }
 }
 
-bootstrap().catch((error) => {
+bootstrap().catch(() => {
   process.exit(1);
 });

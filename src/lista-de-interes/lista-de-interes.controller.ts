@@ -21,20 +21,12 @@ export class ListaDeInteresController {
     return await this.listaDeInteresService.create(createListaDeInteresDto, cuentaId);
   }
 
-  // borrar
-  @Get('/findAll')
+  @Get('/findListaCliente')
   @HttpCode(HttpStatus.OK)
   @Roles('CLIENTE')
-  async findAll(): Promise<ListaDeInteres[]> {
-    return await this.listaDeInteresService.findAll();
-  }
-
-  // corregir
-  @Get('/findOne/:id')
-  @HttpCode(HttpStatus.OK)
-  @Roles('CLIENTE')
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<ListaDeInteres> {
-    return await this.listaDeInteresService.findOne(id);
+  async findByCliente(@Req() req): Promise<ListaDeInteres> {
+    const cuentaId = req.user.id;
+    return await this.listaDeInteresService.findByClient(cuentaId);
   }
 
   @Patch('/update/:id')
