@@ -94,6 +94,7 @@ export class AuthService {
 
 
   async validate(LoginCuentaDto: LoginCuentaDto): Promise<Omit<Cuenta, 'password'>> { // devuelvo la cuenta sin password, tambien puedo crear una interface y ponerla como lo que devuelve.
+    console.log('🔍 VALIDATE - Intentando login con:', LoginCuentaDto.nombreUsuario);
 
     const { nombreUsuario, password } = LoginCuentaDto;
     const cuenta = await this.cuentaRepository.findOne({ where: { nombreUsuario } })

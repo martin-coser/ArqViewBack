@@ -49,9 +49,13 @@ export class Imagen2dService {
     }
 
     const imagePath = path.join(process.cwd(), imagen.filePath);
-
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
+    
+    try {
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    } catch (error) {
+      console.error(`Error al eliminar el archivo ${imagePath}:`, error);
     }
 
     await this.imagen2dRepository.remove(imagen);
@@ -111,6 +115,8 @@ export class Imagen2dService {
       });
 
       const { predicted_part, features } = response.data;
+      console.log('Clase predicha por el modelo:', predicted_part);
+      console.log('Características predichas:', features);
 
       // Traduccion de respuestas del modelo a español
       const parteMap: Record<string, string> = {

@@ -75,6 +75,15 @@ export class RecomendacionService {
     // Similitud total con mayor peso a catSim
     const sim = (sumPesosNum * Math.max(cosineNum, 0) + pesos.tipoPropiedad * catSim * 4) / (sumPesosNum + pesos.tipoPropiedad * 4);
 
+    // Depuración
+    console.log(`Similitud entre ${prop1.nombre} y ${prop2.nombre}:`);
+    console.log(`  Features Normalizadas Prop1: ${featuresNum1}`);
+    console.log(`  Features Normalizadas Prop2: ${featuresNum2}`);
+    console.log(`  Pesos: ${JSON.stringify(pesos)}`);
+    console.log(`  Similitud Coseno Numérica: ${cosineNum}`);
+    console.log(`  Similitud Categórica: ${catSim}`);
+    console.log(`  Similitud Total: ${sim}`);
+
     return sim;
   }
 
@@ -136,6 +145,9 @@ export class RecomendacionService {
       Object.entries(pesos).map(([key, value]) => [key, value / sumaPesos]),
     );
 
+    console.log('Pesos Calculados:', pesosNormalizados);
+    console.log('Rangos Calculados:', ranges);
+
     return { pesos: pesosNormalizados, ranges };
   }
 
@@ -159,6 +171,7 @@ export class RecomendacionService {
     const propiedadesPremium = allPropiedades.filter(prop => prop.inmobiliaria.plan === 'PREMIUM');
 
     const { pesos, ranges } = this.calcularPesosDinamicos(listaDeInteres.propiedades);
+    console.log('Pesos:', pesos, 'Ranges:', ranges);
 
     const recomendacionesConScores = propiedadesPremium
       .map((prop) => {
@@ -166,17 +179,29 @@ export class RecomendacionService {
           (sum, interes) => sum + this.calculateSimilarity(interes, prop, pesos, ranges),
           0,
         ) / listaDeInteres.propiedades.length;
+        console.log(`Propiedad ${prop.nombre}: Score ${score}`);
         return { propiedad: prop, score };
       });
 
     // Calcular el umbral dinámico (50% del puntaje máximo)
     const maxScore = Math.max(...recomendacionesConScores.map(item => item.score));
     const threshold = maxScore * 0.55; // Puedes ajustar el factor (0.5) según necesidades
+    console.log(`Umbral dinámico calculado: ${threshold}`);
 
     const recomendacionesFiltradas = recomendacionesConScores
       .filter((item) => !listaDeInteres.propiedades.some((p) => p.id === item.propiedad.id) && item.score >= threshold)
       .sort((a, b) => b.score - a.score)
       .slice(0, 5);
+
+    console.log(
+      'Recomendaciones Finales:',
+      recomendacionesFiltradas.map((item) => ({
+        id: item.propiedad.id,
+        nombre: item.propiedad.nombre,
+        score: item.score,
+      })),
+    );
+
     const recomendaciones = recomendacionesFiltradas.map((item) => item.propiedad);
 
     return recomendaciones;
@@ -189,6 +214,7 @@ export class RecomendacionService {
     });
 
     if (!nuevaPropiedad || nuevaPropiedad.inmobiliaria.plan !== 'PREMIUM') {
+      console.log(`La propiedad ${propiedadId} no es de plan PREMIUM. No se enviarán notificaciones.`);
       return;
     }
 
@@ -212,6 +238,7 @@ export class RecomendacionService {
         0,
       ) / listaDeInteres.propiedades.length;
 
+      console.log(`Score de similitud para ${cliente.nombre}: ${score}`);
       if (score > 0.6) {
         const notificacion = this.notificacionRepository.create({
           mensaje: `Nueva propiedad en ${nuevaPropiedad.localidad.nombre}: ${nuevaPropiedad.nombre}`,
