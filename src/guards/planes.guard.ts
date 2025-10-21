@@ -7,8 +7,6 @@ import { PLANES_KEY } from "src/guards/decoradores/planes.decorator";
 
 @Injectable()
 export class PlanesGuard implements CanActivate {
-    private readonly logger = new Logger(PlanesGuard.name);
-
     constructor(
         private reflector: Reflector,
         @InjectRepository(Inmobiliaria)
@@ -30,7 +28,6 @@ export class PlanesGuard implements CanActivate {
         const user = request.user;
 
         if (!user) {
-            this.logger.error('No hay usuario autenticado');
             throw new ForbiddenException('Usuario no autenticado');
         }
 
@@ -42,7 +39,6 @@ export class PlanesGuard implements CanActivate {
 
         // ✅ MANEJAR CASO NULL
         if (!inmobiliaria) {
-            this.logger.error(`No se encontró inmobiliaria para usuario ${user.id}`);
             throw new ForbiddenException(
                 `No tienes una inmobiliaria asociada. Contacta al administrador.`
             );
@@ -64,17 +60,12 @@ export class PlanesGuard implements CanActivate {
         return true;
     }
 
-    /**
-     * 🎯 LANZA EXCEPCIÓN CON MENSAJE DE MARKETING PERSONALIZADO
-     */
     private async throwPremiumRequiredError(
         username: string, 
         currentPlan: string, 
         requiredPlans: string[], 
         url: string
     ): Promise<never> {
-        this.logger.warn(`Usuario ${username} (${currentPlan}) intentó acceder a ${url} que requiere ${requiredPlans.join(', ')}`);
-
         // Obtener beneficios dinámicos según el plan requerido
         const benefits = this.getPlanBenefits(requiredPlans[0]);
         

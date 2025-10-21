@@ -48,7 +48,6 @@ export class ActividadClienteService {
         propiedad,
         cliente,
       });
-      console.log('ActividadCliente a guardar:', actividadCliente);
       this.actividadClienteRepository.save(actividadCliente);
     } else if (createActividadClienteDto.tipoDeActividad === 'CONSULTA') {
       //Busco mensajes previos relacionados con la propiedad y el cliente
@@ -68,7 +67,6 @@ export class ActividadClienteService {
           propiedad,
           cliente,
         });
-        console.log('ActividadCliente a guardar:', actividadCliente);
         this.actividadClienteRepository.save(actividadCliente);
       }
     } else if (createActividadClienteDto.tipoDeActividad === 'LISTADEINTERES') {
@@ -84,7 +82,6 @@ export class ActividadClienteService {
       if (!listaCliente) {
         // Escenario 1: La lista de interés NO existe para este cliente.
         // En este caso, siempre se debe crear la actividad.
-        console.log('No se encontró lista de interés para el cliente. Se creará la actividad LISTADEINTERES.');
         debeCrearActividad = true;
       } else {
         // Escenario 2: La lista de interés SÍ existe para este cliente.
@@ -97,11 +94,9 @@ export class ActividadClienteService {
 
         if (!propiedadYaEnLista) {
           // Si la propiedad NO está en la lista existente, creamos la actividad.
-          console.log('La propiedad no está en la lista de interés existente. Se creará la actividad LISTADEINTERES.');
           debeCrearActividad = true;
         } else {
           // Si la propiedad YA está en la lista existente, no hacemos nada (debeCrearActividad sigue siendo false).
-          console.log('La propiedad ya se encuentra en la lista de interés del cliente. No se creará la actividad LISTADEINTERES.');
         }
       }
 
@@ -112,7 +107,6 @@ export class ActividadClienteService {
           propiedad,
           cliente,
         });
-        console.log('ActividadCliente a guardar:', actividadCliente);
         await this.actividadClienteRepository.save(actividadCliente);
       }
     }
