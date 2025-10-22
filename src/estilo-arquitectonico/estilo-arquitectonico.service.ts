@@ -18,7 +18,7 @@ export class EstiloArquitectonicoService {
     const { nombre } = createEstiloArquitectonicoDto
     const estiloArquitectonicoExistente = await this.estiloArquitectonicoRepository.findOneBy({ nombre })
     if(estiloArquitectonicoExistente) {
-      throw new NotFoundException('El estilo arquitectonico ya existe')
+      throw new ConflictException('El estilo arquitectonico ya existe')
     }
 
     // Creo y guardo el estilo arquitectonico en la BD.
