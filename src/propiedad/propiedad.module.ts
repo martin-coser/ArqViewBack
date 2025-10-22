@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { PropiedadService } from './propiedad.service';
 import { PropiedadController } from './propiedad.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -30,7 +30,7 @@ import { Modelo3DModule } from 'src/modelo3d/modelo3d.module';
     ]),
     RecomendacionModule,
     HttpModule,
-    Imagen2dModule,
+    forwardRef(() => Imagen2dModule),
     Imagen360Module,
     Modelo3DModule
 
