@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import axios from 'axios';
-import * as FormData from 'form-data'; // Agregamos form-data
+import FormData from 'form-data';
 
 @Injectable()
 export class Imagen2dService {
