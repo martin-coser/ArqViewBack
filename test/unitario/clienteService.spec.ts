@@ -192,39 +192,38 @@ describe('ClienteService (Unit)', () => {
         
         // --- TEST DE FALLA: Localidad no encontrada ---
         it('debería lanzar NotFoundException si la localidad no existe', async () => {
-            
-            // 1. Configurar Mocks para la Transacción de Falla
-            const transactionalEntityManager = {
-                // Simula que no se encuentra la localidad
-                findOne: jest.fn().mockResolvedValue(null), 
-                create: jest.fn(),
-                save: jest.fn(),
-            } as unknown as EntityManager;
-            
-            jest.spyOn(authService, 'register').mockResolvedValue(mockCuentaCreada);
-            
-            // 2. Configurar el Mock de la Transacción
-            (clienteRepository.manager.transaction as jest.Mock).mockImplementation(
-                async (callback) => {
-                    return callback(transactionalEntityManager);
-                }
-            );
+        const transactionalEntityManager = {
+            // Simula que no se encuentra la localidad
+            findOne: jest.fn().mockResolvedValue(null), 
+            create: jest.fn(),
+            save: jest.fn(),
+        } as unknown as EntityManager;
+        
+        jest.spyOn(authService, 'register').mockResolvedValue(mockCuentaCreada);
+        
+        (clienteRepository.manager.transaction as jest.Mock).mockImplementation(
+            async (callback) => {
+                return callback(transactionalEntityManager);
+            }
+        );
 
-            // 3. Ejecutar y esperar la excepción
-            await expect(
-                service.create(mockCreateClienteDto, mockRegisterCuentaDto)
-            ).rejects.toThrow(NotFoundException);
-            
-            await expect(
-                service.create(mockCreateClienteDto, mockRegisterCuentaDto)
-            ).rejects.toThrow(`La localidad con el Id ${mockCreateClienteDto.localidad} no existe.`);
+        // 1. Ejecutar y esperar la excepción
+        const expectedErrorMessage = `La localidad con el Id ${mockCreateClienteDto.localidad} no existe.`;
 
-            // 4. Verificaciones de Flujo de Falla
-            expect(authService.register).toHaveBeenCalledTimes(1);
-            expect(transactionalEntityManager.create).not.toHaveBeenCalled();
-            expect(transactionalEntityManager.save).not.toHaveBeenCalled();
-            // Nota: Si la excepción es lanzada, TypeORM hace un ROLLBACK automáticamente.
-        });
+        await expect(
+            service.create(mockCreateClienteDto, mockRegisterCuentaDto)
+        ).rejects.toThrow(expectedErrorMessage);
+        
+        // 2. Verificaciones (Se realizaron tras la única ejecución fallida)
+        
+        // Verifica que se haya llamado al registro de la cuenta
+        expect(authService.register).toHaveBeenCalledTimes(1); 
+        
+        // También verifica que las llamadas a findOne, create y save sean correctas para este flujo
+        expect(transactionalEntityManager.findOne).toHaveBeenCalledTimes(1);
+        expect(transactionalEntityManager.create).not.toHaveBeenCalled();
+        expect(transactionalEntityManager.save).not.toHaveBeenCalled();
+    });
         
         // --- TEST DE FALLA: Error al guardar el cliente ---
         it('debería lanzar NotFoundException si no se puede guardar el cliente', async () => {
@@ -247,13 +246,12 @@ describe('ClienteService (Unit)', () => {
             );
 
             // 3. Ejecutar y esperar la excepción
+            const expectedErrorMessage = 'Error al guardar el cliente en la bases de datos.';
+
             await expect(
                 service.create(mockCreateClienteDto, mockRegisterCuentaDto)
-            ).rejects.toThrow(NotFoundException);
+            ).rejects.toThrow(expectedErrorMessage);
             
-            await expect(
-                service.create(mockCreateClienteDto, mockRegisterCuentaDto)
-            ).rejects.toThrow('Error al guardar el cliente en la bases de datos.');
 
             // 4. Verificaciones de Flujo
             expect(transactionalEntityManager.findOne).toHaveBeenCalledTimes(1);
