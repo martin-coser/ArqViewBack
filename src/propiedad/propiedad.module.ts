@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { PropiedadService } from './propiedad.service';
 import { PropiedadController } from './propiedad.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -12,6 +12,10 @@ import { RecomendacionModule } from 'src/recomendacion/recomendacion.module';
 import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
 import { Imagen2dService } from 'src/imagen2d/imagen2d.service';
 import { HttpModule } from '@nestjs/axios';
+import { Imagen2dModule } from 'src/imagen2d/imagen2d.module';
+import { Imagen360Module } from 'src/imagen360/imagen360.module';
+import { Modelo3DModule } from 'src/modelo3d/modelo3d.module';
+
 
 @Module({
   imports: [
@@ -24,7 +28,11 @@ import { HttpModule } from '@nestjs/axios';
       Inmobiliaria,
       Imagen2d, 
     ]),
-    RecomendacionModule,HttpModule
+    RecomendacionModule,
+    HttpModule,
+    forwardRef(() => Imagen2dModule),
+    Imagen360Module,
+    Modelo3DModule
 
   ],
   controllers: [PropiedadController],

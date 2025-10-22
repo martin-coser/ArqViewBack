@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import axios from 'axios';
-import * as FormData from 'form-data'; // Agregamos form-data
+import FormData from 'form-data';
 
 @Injectable()
 export class Imagen2dService {
@@ -49,13 +49,9 @@ export class Imagen2dService {
     }
 
     const imagePath = path.join(process.cwd(), imagen.filePath);
-    
-    try {
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
-    } catch (error) {
-      console.error(`Error al eliminar el archivo ${imagePath}:`, error);
+
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
     }
 
     await this.imagen2dRepository.remove(imagen);
@@ -115,8 +111,6 @@ export class Imagen2dService {
       });
 
       const { predicted_part, features } = response.data;
-      console.log('Clase predicha por el modelo:', predicted_part);
-      console.log('Características predichas:', features);
 
       // Traduccion de respuestas del modelo a español
       const parteMap: Record<string, string> = {
