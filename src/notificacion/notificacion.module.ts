@@ -11,11 +11,12 @@ import { NotificacionMensaje } from './entities/notificacionMensaje.entity';
 import { Mensaje } from 'src/mensaje/entities/mensaje.entity';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config'; // Importar ConfigModule
+import { Cuenta } from 'src/auth/entities/cuenta.entity';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }), // Cargar variables de entorno
-    TypeOrmModule.forFeature([Cliente, Notificacion, Propiedad, ListaDeInteres, NotificacionMensaje, Mensaje]),
+    TypeOrmModule.forFeature([Cliente, Notificacion, Propiedad, ListaDeInteres, NotificacionMensaje, Mensaje, Cuenta]),
     EventEmitterModule.forRoot(), // Configuración recomendada para EventEmitter
     MailerModule.forRootAsync({
       imports: [ConfigModule],

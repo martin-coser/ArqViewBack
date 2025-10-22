@@ -5,6 +5,8 @@ import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 import { Repository } from 'typeorm';
 import { Cuenta } from 'src/auth/entities/cuenta.entity';
 import { InmobiliariaService } from 'src/inmobiliaria/inmobiliaria.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class SuscripcionService {
@@ -16,7 +18,8 @@ export class SuscripcionService {
     @InjectRepository(Comprobante)
     private comprobanteRepository: Repository<Comprobante>,
     private readonly inmobiliariaService: InmobiliariaService,
-  ) {}
+    private readonly eventEmitter: EventEmitter2,
+  ) { }
 
   async abonar(cuentaId: number): Promise<Comprobante> {
     const cuenta = await this.cuentaRepository.findOneBy({ id: cuentaId });
@@ -32,7 +35,7 @@ export class SuscripcionService {
     }
 
     let fechaVencimientoActual: Date | null;
-    let fechaLimite: Date; 
+    let fechaLimite: Date;
     const fechaActual = new Date();
 
     // Verifico si tiene fecha de suscripcion
@@ -63,12 +66,19 @@ export class SuscripcionService {
     // Verifico si el pago se realiza dentro del plazo
     // Aquí es donde usas la fecha límite para comparar.
     if (fechaActual > fechaLimite) {
+
       const inmobiliariaActualizada = await this.inmobiliariaService.updatePlan(inmobiliaria.id, 'BASICO');
       inmobiliariaActualizada.fechaSuscripcion = null;
       inmobiliariaActualizada.fechaVencimiento = null;
       await this.inmobiliariaRepository.save(inmobiliariaActualizada);
+
+      this.eventEmitter.emit('suscripcion.caducada', {
+        cuentaId: cuenta.id,
+        mensaje: 'La suscripción ha caducado y el plan ha sido cambiado a básico.',
+      });
+
       throw new BadRequestException('El pago no se realizó porque la fecha esta fuera del plazo permitido. El plan ha sido cambiado a básico.');
-    }else{
+    } else {
       // Asegurarse de guardar el plan solo si el pago va a ser exitoso.
       // La lógica de simulación de pago va aquí.
       await new Promise((resolve) => setTimeout(resolve, 20000));
@@ -84,10 +94,43 @@ export class SuscripcionService {
       await this.comprobanteRepository.save(comprobante);
 
       // Enviar comprobante por email
+      this.eventEmitter.emit('suscripcion.pagada', {
+        cuentaId: cuenta.id,
+        mensaje: 'El pago de la suscripción se ha realizado con éxito.',
+        comprobante: comprobante,
+      });
 
       return comprobante;
     }
+  }
 
-    
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async notificarClientes() {
+    try {
+      const inmobiliarias = await this.inmobiliariaRepository.find({
+        where: { plan: 'PREMIUM' },
+        relations: ['cuenta'],
+      });
+
+      const fechaActual = new Date();
+      for (const inmobiliaria of inmobiliarias) {
+        try {
+          if (inmobiliaria.fechaVencimiento) {
+            const fechaVencimiento = new Date(inmobiliaria.fechaVencimiento);
+            const diferenciaEnDias = Math.ceil((fechaVencimiento.getTime() - fechaActual.getTime()) / (1000 * 60 * 60 * 24));
+            if (diferenciaEnDias === 3) {
+              this.eventEmitter.emit('suscripcion.proximaAVencer', {
+                cuentaId: inmobiliaria.cuenta.id,
+                mensaje: `Tu suscripción está por vencer, tienes 3 días para pagar, de lo contrario se cambiará al plan básico. El costo de renovación es de USD $25.`,
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`Error al procesar notificación para inmobiliaria ${inmobiliaria.id}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Error en la tarea programada notificarClientes:', error);
+    }
   }
 }

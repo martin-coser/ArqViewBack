@@ -6,11 +6,15 @@ import { Cuenta } from 'src/auth/entities/cuenta.entity';
 import { Comprobante } from './entities/comprobante.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { InmobiliariaModule } from 'src/inmobiliaria/inmobiliaria.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Inmobiliaria, Cuenta, Comprobante]),
     InmobiliariaModule,
+    EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
   ],
   controllers: [SuscripcionController],
   providers: [SuscripcionService],
