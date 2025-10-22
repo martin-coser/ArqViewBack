@@ -1,10 +1,10 @@
-import { BadRequestException, Body, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cuenta } from './entities/cuenta.entity';
 import { EntityManager, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterCuentaDto } from './dto/register-cuenta.dto';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { LoginCuentaDto } from './dto/login-cuenta.dto';
 import { MailerService } from '@nestjs-modules/mailer';
