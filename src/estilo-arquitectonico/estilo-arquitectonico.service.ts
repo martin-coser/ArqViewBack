@@ -58,6 +58,11 @@ export class EstiloArquitectonicoService {
     if (!estiloArquitectonico){
       throw new NotFoundException(`El estilo arquitectonico con el id ${id} no existe`)
     }
-    await this.estiloArquitectonicoRepository.remove(estiloArquitectonico)
+    try {
+      await this.estiloArquitectonicoRepository.remove(estiloArquitectonico)
+    } catch (error) {
+      console.error(error);
+      throw new ConflictException('No se puede eliminar el estilo arquitectonico porque está siendo utilizado' );
+    }
   }
 }
