@@ -18,7 +18,7 @@ export class EstiloArquitectonicoService {
     const { nombre } = createEstiloArquitectonicoDto
     const estiloArquitectonicoExistente = await this.estiloArquitectonicoRepository.findOneBy({ nombre })
     if(estiloArquitectonicoExistente) {
-      throw new NotFoundException('El estilo arquitectonico ya existe')
+      throw new ConflictException('El estilo arquitectonico ya existe')
     }
 
     // Creo y guardo el estilo arquitectonico en la BD.
@@ -58,6 +58,11 @@ export class EstiloArquitectonicoService {
     if (!estiloArquitectonico){
       throw new NotFoundException(`El estilo arquitectonico con el id ${id} no existe`)
     }
-    await this.estiloArquitectonicoRepository.remove(estiloArquitectonico)
+    try {
+      await this.estiloArquitectonicoRepository.remove(estiloArquitectonico)
+    } catch (error) {
+      console.error(error);
+      throw new ConflictException('No se puede eliminar el estilo arquitectonico porque está siendo utilizado' );
+    }
   }
 }
