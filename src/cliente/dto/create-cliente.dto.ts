@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsDate, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 import { Cuenta } from "src/auth/entities/cuenta.entity";
 import { Localidad } from "src/localidad/entities/localidad.entity";
 
@@ -13,7 +13,8 @@ export class CreateClienteDto {
     apellido: string;
     
     @IsNotEmpty()
-    @IsString()
+    @IsDate()
+    @Type(() => Date)
     fechaNacimiento: Date;
     
     @IsString()

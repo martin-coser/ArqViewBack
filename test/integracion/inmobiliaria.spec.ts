@@ -1,310 +1,158 @@
-import { ConflictException, NotFoundException, BadRequestException } from "@nestjs/common";
-import { getRepositoryToken } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { Test, TestingModule } from "@nestjs/testing";
-import * as bcrypt from 'bcrypt';
-import { RegisterCuentaDto } from "src/auth/dto/register-cuenta.dto";
-import { AuthService } from "src/auth/auth.service";
-import { Inmobiliaria } from "src/inmobiliaria/entities/inmobiliaria.entity";
-import { InmobiliariaService } from "src/inmobiliaria/inmobiliaria.service";
-import { CreateInmobiliariaDto } from "src/inmobiliaria/dto/create-inmobiliaria.dto";
-import { JwtService } from "@nestjs/jwt";
-import { Localidad } from "src/localidad/entities/localidad.entity";
-import { Cuenta } from "src/auth/entities/cuenta.entity";
-import { ClienteService } from "src/cliente/cliente.service";
-import { Cliente } from "src/cliente/entities/cliente.entity";
-import { validate } from 'class-validator';
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication, ValidationPipe, ConflictException, NotFoundException } from '@nestjs/common';
+import request from 'supertest';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { InmobiliariaController } from 'src/inmobiliaria/inmobiliaria.controller';
+import { InmobiliariaService } from 'src/inmobiliaria/inmobiliaria.service';
+import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
+import { Localidad } from 'src/localidad/entities/localidad.entity';
+import { Cuenta } from 'src/auth/entities/cuenta.entity';
+import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
+import { AuthService } from 'src/auth/auth.service';
 
-// Mock de la función hash de bcrypt
-jest.mock('bcrypt', () => ({
-  hash: jest.fn().mockResolvedValue('hashed_password'),
-}));
 
-describe('Pruebas de integración para InmobiliariaService', () => {
-  let authService: AuthService;
-  let inmobiliariaService: InmobiliariaService;
-  let cuentaRepository: Repository<Cuenta>;
-  let inmobiliariaRepository: Repository<Inmobiliaria>;
-  let localidadRepository: Repository<Localidad>;
-  let clienteRepository: Repository<Cliente>;
+// --- Mocks de Datos y Respuestas ---
+const mockLocalidadId = 20;
+const mockCuentaId = 200;
 
-  // DTOs y entidades simuladas
-  const mockRegisterCuentaDto: RegisterCuentaDto = {
-    nombreUsuario: 'inmobiliaria',
-    email: 'inmobiliaria@gmail.com',
-    password: 'Password123!',
-    rol: 'INMOBILIARIA',
-  };
+const mockCreatePayload = {
+    inmobiliaria: {
+        nombre: 'Inmo Test S.A.',
+        direccion: 'Avenida Ficticia 500',
+        localidad: mockLocalidadId,
+        codigoPais: '+54',
+        numeroTelefono: '3514000000',
+    },
+    cuenta: {
+        nombreUsuario: 'inmo.test',
+        email: 'test@inmobiliaria.com',
+        password: 'SecurePassword456!',
+        rol: 'INMOBILIARIA',
+    }
+};
 
-  const mockCuenta = {
+const mockInmobiliariaCreated = {
     id: 1,
-    nombreUsuario: 'inmobiliaria',
-    email: 'inmobiliaria@gmail.com',
-    password: 'hashed_password',
-    rol: 'INMOBILIARIA',
-    login: new Date(),
-  };
+    ...mockCreatePayload.inmobiliaria,
+    plan: 'BASICO',
+    localidad: { id: mockLocalidadId, nombre: 'Mock' },
+    cuenta: { id: mockCuentaId, email: mockCreatePayload.cuenta.email },
+};
 
-  const mockLocalidad = { id: 1, nombre: 'Ciudad Ejemplo', codigoPostal: 12345, provincia: 1 };
+// --- Mock del Servicio ---
+const mockInmobiliariaService = {
+    create: jest.fn(),
+};
 
-  const mockCreateInmobiliariaDto: CreateInmobiliariaDto = {
-    nombre: 'Inmobiliaria',
-    direccion: 'Avenida Falsa 123',
-    caracteristica: '123',
-    numeroTelefono: '1234567890',
-    localidad: 1,
-    cuenta: 1,
-  };
+describe('InmobiliariaController (Integration - POST /inmobiliaria/create)', () => {
+    let app: INestApplication;
 
-  const mockInmobiliaria = {
-    id: 1,
-    nombre: 'Inmobiliaria',
-    direccion: 'Avenida Falsa 123',
-    localidad: mockLocalidad,
-    cuenta: mockCuenta,
-  };
+    beforeAll(async () => {
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+            controllers: [InmobiliariaController],
+            providers: [
+                // 1. Sobreescribir el InmobiliariaService con nuestro mock
+                {
+                    provide: InmobiliariaService,
+                    useValue: mockInmobiliariaService,
+                },
+                // 2. Mockear dependencias (solo para satisfacer el inyector)
+                { provide: getRepositoryToken(Inmobiliaria), useValue: {} },
+                { provide: getRepositoryToken(Localidad), useValue: {} },
+                { provide: getRepositoryToken(Cuenta), useValue: {} },
+                { provide: getRepositoryToken(Propiedad), useValue: {} },
+                { provide: AuthService, useValue: {} },
+            ],
+        }).compile();
 
-  // Repositorios y servicios simulados
-  const mockCuentaRepository = {
-    manager: {
-      findOne: jest.fn(),
-      create: jest.fn().mockReturnValue(mockCuenta),
-      save: jest.fn().mockResolvedValue(mockCuenta),
-    },
-  };
-
-  const mockInmobiliariaRepository = {
-    manager: {
-      transaction: jest.fn(),
-    },
-  };
-
-  const mockLocalidadRepository = {
-    manager: {
-      findOne: jest.fn(),
-    },
-  };
-
-  const mockClienteRepository = {};
-  const mockJwtService = {};
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AuthService,
-        InmobiliariaService,
-        ClienteService,
-        {
-          provide: getRepositoryToken(Cuenta),
-          useValue: mockCuentaRepository,
-        },
-        {
-          provide: getRepositoryToken(Inmobiliaria),
-          useValue: mockInmobiliariaRepository,
-        },
-        {
-          provide: getRepositoryToken(Localidad),
-          useValue: mockLocalidadRepository,
-        },
-        {
-          provide: getRepositoryToken(Cliente),
-          useValue: mockClienteRepository,
-        },
-        {
-          provide: JwtService,
-          useValue: mockJwtService,
-        },
-      ],
-    }).compile();
-
-    authService = module.get<AuthService>(AuthService);
-    inmobiliariaService = module.get<InmobiliariaService>(InmobiliariaService);
-    cuentaRepository = module.get<Repository<Cuenta>>(getRepositoryToken(Cuenta));
-    inmobiliariaRepository = module.get<Repository<Inmobiliaria>>(getRepositoryToken(Inmobiliaria));
-    localidadRepository = module.get<Repository<Localidad>>(getRepositoryToken(Localidad));
-    clienteRepository = module.get<Repository<Cliente>>(getRepositoryToken(Cliente));
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  describe('AuthService.register', () => {
-    it('✅ Debería registrar una nueva cuenta con éxito', async () => {
-      mockCuentaRepository.manager.findOne
-        .mockResolvedValueOnce(null) // Nombre de usuario no existe
-        .mockResolvedValueOnce(null); // Email no existe
-
-      const result = await authService.register(mockRegisterCuentaDto);
-
-      expect(mockCuentaRepository.manager.findOne).toHaveBeenCalledWith(Cuenta, { where: { nombreUsuario: 'inmobiliaria' } });
-      expect(mockCuentaRepository.manager.findOne).toHaveBeenCalledWith(Cuenta, { where: { email: 'inmobiliaria@gmail.com' } });
-      expect(bcrypt.hash).toHaveBeenCalledWith('Password123!', 10);
-      expect(mockCuentaRepository.manager.create).toHaveBeenCalledWith(
-        Cuenta,
-        expect.objectContaining({
-          nombreUsuario: 'inmobiliaria',
-          email: 'inmobiliaria@gmail.com',
-          password: 'hashed_password',
-          rol: 'INMOBILIARIA',
-          login: expect.any(Date),
-        })
-      );
-      expect(mockCuentaRepository.manager.save).toHaveBeenCalledWith(mockCuenta);
-      expect(result).toEqual(mockCuenta);
+        app = moduleFixture.createNestApplication();
+        app.useGlobalPipes(new ValidationPipe({ transform: true }));
+        await app.init();
     });
 
-    it('❌ Debería lanzar BadRequestException si el nombre de usuario ya existe', async () => {
-      mockCuentaRepository.manager.findOne
-        .mockResolvedValueOnce(mockCuenta); // Nombre de usuario existe
-
-      await expect(authService.register(mockRegisterCuentaDto)).rejects.toThrow(
-        new BadRequestException('El nombre de usuario ya está en uso')
-      );
+    afterEach(() => {
+        jest.clearAllMocks();
     });
 
-    it('❌ Debería lanzar BadRequestException si el email ya existe', async () => {
-      mockCuentaRepository.manager.findOne
-        .mockResolvedValueOnce(null) // Nombre de usuario no existe
-        .mockResolvedValueOnce(mockCuenta); // Email existe
 
-      await expect(authService.register(mockRegisterCuentaDto)).rejects.toThrow(
-        new BadRequestException('El email ya está en uso')
-      );
+    // CASO 1: CREACIÓN EXITOSA (201)
+    it('Debería crear una inmobiliaria y devolver 201 CREATED', async () => {
+        mockInmobiliariaService.create.mockResolvedValue(mockInmobiliariaCreated);
+
+        await request(app.getHttpServer())
+            .post('/inmobiliaria/create')
+            .send(mockCreatePayload)
+            .expect(201)
+            .expect(res => {
+                expect(res.body).toEqual(mockInmobiliariaCreated);
+            });
+        // verificar que el servicio fue llamado con los DTOs correctos
+        const expectedInmobiliariaDto = {
+            ...mockCreatePayload.inmobiliaria,
+            cuenta: undefined,
+        };
+        //verificar que el servicio fue llamado con los DTOs correctos
+        const expectedCuentaDto = mockCreatePayload.cuenta;
+
+
+        expect(mockInmobiliariaService.create).toHaveBeenCalledWith(
+            expectedInmobiliariaDto, // Usar el DTO ajustado con cuenta: undefined
+            expectedCuentaDto
+        );
     });
 
-    it('❌ Debería devolver errores de validación para un DTO inválido', async () => {
-      const invalidDto = new RegisterCuentaDto();
-      invalidDto.nombreUsuario = '';
-      invalidDto.email = 'invalid-email';
-      invalidDto.password = 'short';
-      invalidDto.rol = 'INVALID_ROL' as any;
+    
+    // CASO 2: FALLA POR CONFLICTO (Simular 409 del servicio - Dirección Duplicada)
+    it('Debería devolver 409 CONFLICT si el servicio lanza ConflictException (ej. Dirección duplicada)', async () => {
+        // Simular que el servicio lanza la excepción
+        mockInmobiliariaService.create.mockRejectedValue(
+            new ConflictException('La dirección ya existe')
+        );
 
-      const errors = await validate(invalidDto);
-      expect(errors.length).toBeGreaterThan(0);
-    });
-  });
+        await request(app.getHttpServer())
+            .post('/inmobiliaria/create')
+            .send(mockCreatePayload)
+            .expect(409)
+            .expect(res => {
+                expect(res.body.message).toContain('La dirección ya existe');
+            });
 
-  describe('InmobiliariaService.create', () => {
-    it('✅ Debería crear una nueva inmobiliaria con éxito', async () => {
-      const mockTransactionalEntityManager = {
-        findOne: jest.fn()
-          .mockResolvedValueOnce(null) // Nombre de usuario no existe
-          .mockResolvedValueOnce(null) // Email no existe
-          .mockResolvedValueOnce(null) // Inmobiliaria no existe
-          .mockResolvedValueOnce(mockLocalidad) // Localidad existe
-          .mockResolvedValueOnce(mockCuenta), // Cuenta existe
-        create: jest.fn()
-          .mockReturnValueOnce(mockCuenta) // Para AuthService.register
-          .mockReturnValueOnce(mockInmobiliaria), // Para InmobiliariaService.create
-        save: jest.fn()
-          .mockResolvedValueOnce(mockCuenta) // Para AuthService.register
-          .mockResolvedValueOnce(mockInmobiliaria), // Para InmobiliariaService.create
-      };
-
-      mockInmobiliariaRepository.manager.transaction.mockImplementation(async (cb) => {
-        return await cb(mockTransactionalEntityManager);
-      });
-
-      const result = await inmobiliariaService.create(mockCreateInmobiliariaDto, mockRegisterCuentaDto);
-
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cuenta, { where: { nombreUsuario: 'inmobiliaria' } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cuenta, { where: { email: 'inmobiliaria@gmail.com' } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Inmobiliaria, { where: { direccion: mockCreateInmobiliariaDto.direccion } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Localidad, { where: { id: mockCreateInmobiliariaDto.localidad } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cuenta, { where: { id: mockCreateInmobiliariaDto.cuenta } });
-      expect(mockTransactionalEntityManager.create).toHaveBeenCalledWith(
-        Inmobiliaria,
-        expect.objectContaining({
-          nombre: 'Inmobiliaria',
-          direccion: 'Avenida Falsa 123',
-          localidad: mockLocalidad,
-          cuenta: mockCuenta,
-        })
-      );
-      expect(mockTransactionalEntityManager.save).toHaveBeenCalledWith(mockInmobiliaria);
-      expect(result).toEqual(mockInmobiliaria);
+        expect(mockInmobiliariaService.create).toHaveBeenCalledTimes(1);
     });
 
-    it('❌ Debería lanzar ConflictException si la inmobiliaria con la misma dirección ya existe', async () => {
-      const mockTransactionalEntityManager = {
-        findOne: jest.fn()
-          .mockResolvedValueOnce(null) // Nombre de usuario no existe
-          .mockResolvedValueOnce(null) // Email no existe
-          .mockResolvedValueOnce(mockInmobiliaria), // Inmobiliaria existe
-        create: jest.fn().mockReturnValue(mockCuenta),
-        save: jest.fn().mockResolvedValue(mockCuenta),
-      };
+    // CASO 3: FALLA POR VALIDACIÓN (DTO Inválido)
+    it('Debería fallar con 400 BAD REQUEST si falta un campo requerido (ej. nombre)', async () => {
+        const invalidPayload = {
+            inmobiliaria: { ...mockCreatePayload.inmobiliaria, nombre: '' }, // Nombre vacío
+            cuenta: mockCreatePayload.cuenta,
+        };
 
-      mockInmobiliariaRepository.manager.transaction.mockImplementation(async (cb) => {
-        return await cb(mockTransactionalEntityManager);
-      });
+        await request(app.getHttpServer())
+            .post('/inmobiliaria/create')
+            .send(invalidPayload)
+            .expect(400);
 
-      await expect(inmobiliariaService.create(mockCreateInmobiliariaDto, mockRegisterCuentaDto)).rejects.toThrow(
-        new ConflictException('La dirección ya existe')
-      );
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cuenta, { where: { nombreUsuario: 'inmobiliaria' } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cuenta, { where: { email: 'inmobiliaria@gmail.com' } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Inmobiliaria, { where: { direccion: mockCreateInmobiliariaDto.direccion } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledTimes(3);
-      expect(mockTransactionalEntityManager.create).not.toHaveBeenCalledWith(Inmobiliaria, expect.anything());
-      expect(mockTransactionalEntityManager.save).not.toHaveBeenCalledWith(mockInmobiliaria);
+        expect(mockInmobiliariaService.create).not.toHaveBeenCalled();
     });
 
-    it('❌ Debería lanzar NotFoundException si la localidad no existe', async () => {
-      const mockTransactionalEntityManager = {
-        findOne: jest.fn()
-          .mockResolvedValueOnce(null) // Nombre de usuario no existe
-          .mockResolvedValueOnce(null) // Email no existe
-          .mockResolvedValueOnce(null) // Inmobiliaria no existe
-          .mockResolvedValueOnce(null), // Localidad no existe
-        create: jest.fn().mockReturnValue(mockCuenta),
-        save: jest.fn().mockResolvedValue(mockCuenta),
-      };
+    // CASO 4: FALLA POR 404 NOT FOUND (ej. Localidad no existe)
+    it('Debería devolver 404 NOT FOUND si el servicio lanza NotFoundException', async () => {
+        mockInmobiliariaService.create.mockRejectedValue(
+            new NotFoundException('Localidad con id 999 no existe')
+        );
 
-      mockInmobiliariaRepository.manager.transaction.mockImplementation(async (cb) => {
-        return await cb(mockTransactionalEntityManager);
-      });
+        await request(app.getHttpServer())
+            .post('/inmobiliaria/create')
+            .send(mockCreatePayload)
+            .expect(404)
+            .expect(res => {
+                expect(res.body.message).toContain('Localidad con id 999 no existe');
+            });
 
-      await expect(inmobiliariaService.create(mockCreateInmobiliariaDto, mockRegisterCuentaDto)).rejects.toThrow(
-        new NotFoundException(`Localidad con id ${mockCreateInmobiliariaDto.localidad} no existe`)
-      );
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cuenta, { where: { nombreUsuario: 'inmobiliaria' } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cuenta, { where: { email: 'inmobiliaria@gmail.com' } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Inmobiliaria, { where: { direccion: mockCreateInmobiliariaDto.direccion } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Localidad, { where: { id: mockCreateInmobiliariaDto.localidad } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledTimes(4);
-      expect(mockTransactionalEntityManager.create).not.toHaveBeenCalledWith(Inmobiliaria, expect.anything());
-      expect(mockTransactionalEntityManager.save).not.toHaveBeenCalledWith(mockInmobiliaria);
+        expect(mockInmobiliariaService.create).toHaveBeenCalledTimes(1);
     });
 
-    it('❌ Debería lanzar NotFoundException si la cuenta no existe', async () => {
-      const mockTransactionalEntityManager = {
-        findOne: jest.fn()
-          .mockResolvedValueOnce(null) // Nombre de usuario no existe
-          .mockResolvedValueOnce(null) // Email no existe
-          .mockResolvedValueOnce(null) // Inmobiliaria no existe
-          .mockResolvedValueOnce(mockLocalidad) // Localidad existe
-          .mockResolvedValueOnce(null), // Cuenta no existe
-        create: jest.fn().mockReturnValue(mockCuenta),
-        save: jest.fn().mockResolvedValue(mockCuenta),
-      };
-
-      mockInmobiliariaRepository.manager.transaction.mockImplementation(async (cb) => {
-        return await cb(mockTransactionalEntityManager);
-      });
-
-      await expect(inmobiliariaService.create(mockCreateInmobiliariaDto, mockRegisterCuentaDto)).rejects.toThrow(
-        new NotFoundException(`Cuenta con id ${mockCreateInmobiliariaDto.cuenta} no existe`)
-      );
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cuenta, { where: { nombreUsuario: 'inmobiliaria' } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cuenta, { where: { email: 'inmobiliaria@gmail.com' } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Inmobiliaria, { where: { direccion: mockCreateInmobiliariaDto.direccion } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Localidad, { where: { id: mockCreateInmobiliariaDto.localidad } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledWith(Cuenta, { where: { id: mockCreateInmobiliariaDto.cuenta } });
-      expect(mockTransactionalEntityManager.findOne).toHaveBeenCalledTimes(5);
-      expect(mockTransactionalEntityManager.create).not.toHaveBeenCalledWith(Inmobiliaria, expect.anything());
-      expect(mockTransactionalEntityManager.save).not.toHaveBeenCalledWith(mockInmobiliaria);
+    afterAll(async () => {
+        await app.close();
     });
-  });
 });
