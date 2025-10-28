@@ -71,12 +71,7 @@ describe('Imagen360Service', () => {
       const file = { filename: 'test360.jpg', path: '/tmp/test360.jpg' } as Express.Multer.File;
       const dto: UploadImagen360Dto = { descripcion: 'Imagen 360 de prueba', propiedad: 1 };
       const propiedad = { id: 1, nombre: 'Propiedad 1' };
-      const savedImagen = {
-        id: 1,
-        filePath: '/imagenes360/test360.jpg',
-        descripcion: 'Imagen 360 de prueba',
-        propiedad,
-      };
+      const savedImagen = {id: 1, filePath: '/imagenes360/test360.jpg', descripcion: 'Imagen 360 de prueba', propiedad,};
 
       mockPropiedadRepository.findOneBy.mockResolvedValue(propiedad);
       mockImagen360Repository.save.mockResolvedValue(savedImagen);
