@@ -13,7 +13,6 @@ export class CreateLocalidadDto {
     codigoPostal: number;
 
     @IsInt()
-    @IsOptional()
     @Type(() => Number)
-    provincia?: number; 
+    provincia: number; 
 }

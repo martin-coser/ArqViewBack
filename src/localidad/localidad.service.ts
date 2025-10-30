@@ -62,14 +62,15 @@ export class LocalidadService {
 
   async update(id: number, updateLocalidadDto: UpdateLocalidadDto):Promise<Localidad> {
     const localidad = await this.findOne(id);
-    if (!localidad) {
-      throw new NotFoundException(`La localidad con el id ${id} no existe`);
+    if (updateLocalidadDto.nombre && updateLocalidadDto.nombre !== localidad.nombre) {
+      const localidadExistente = await this.localidadRepository.findOneBy({
+        nombre: updateLocalidadDto.nombre,
+      });
+      if (localidadExistente) {
+        throw new ConflictException('La localidad con ese nombre ya existe');
+      }
     }
-    
-    // Actualizo los campos de la localidad.
     Object.assign(localidad, updateLocalidadDto);
-    
-    // Guardo los cambios en la BD.
     return await this.localidadRepository.save(localidad);
   }
 
@@ -78,6 +79,10 @@ export class LocalidadService {
     if (!localidad) {
       throw new NotFoundException(`La localidad con el id ${id} no existe`);
     }
-    await this.localidadRepository.remove(localidad);
+    try {
+      await this.localidadRepository.remove(localidad);
+    } catch (error) {
+      throw new ConflictException('No se puede eliminar la localidad porque está siendo utilizada');
+    }
   }
 }
