@@ -130,7 +130,6 @@ export class InmobiliariaService {
   }
 
   async updatePlan(idInmobiliaria: number, plan: 'BASICO' | 'PREMIUM'): Promise<Inmobiliaria> {
-    console.log(`Actualizando plan de inmobiliaria ID ${idInmobiliaria} a ${plan}`);
     const inmobiliaria = await this.findOne(idInmobiliaria);
 
     if (!inmobiliaria) {
