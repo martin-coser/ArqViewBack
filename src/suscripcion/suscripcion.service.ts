@@ -79,10 +79,6 @@ export class SuscripcionService {
 
       throw new BadRequestException('El pago no se realizó porque la fecha esta fuera del plazo permitido. El plan ha sido cambiado a básico.');
     } else {
-      // Asegurarse de guardar el plan solo si el pago va a ser exitoso.
-      // La lógica de simulación de pago va aquí.
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-
       // Si la simulación de pago fue exitosa, entonces se guardan los cambios.
       await this.inmobiliariaRepository.save(inmobiliaria);
 
