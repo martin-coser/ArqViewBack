@@ -13,7 +13,13 @@ export class InmobiliariaController {
   @Post('/create')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body('inmobiliaria') createInmobiliariaDto: CreateInmobiliariaDto, @Body('cuenta') registerCuentaDto: RegisterCuentaDto,): Promise<Inmobiliaria> {
-    return await this.inmobiliariaService.create(createInmobiliariaDto, registerCuentaDto);
+    try {
+      return await this.inmobiliariaService.create(createInmobiliariaDto, registerCuentaDto);
+    } catch (error) {
+      console.error('Error creating Inmobiliaria:', error);
+      console.error('Error creating Inmobiliaria:', error.message);
+      throw error;
+    }
   }
 
   @Get('/findAll')
