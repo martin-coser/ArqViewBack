@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Res, UseGuards, HttpStatus, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Res, HttpStatus, NotFoundException, Ip } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterCuentaDto } from './dto/register-cuenta.dto';
 import { LoginCuentaDto } from './dto/login-cuenta.dto';
@@ -17,10 +17,18 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() loginCuentaDto: LoginCuentaDto) {
-    const user = await this.authService.validate(loginCuentaDto);
+  async login(@Body() loginCuentaDto: LoginCuentaDto, @Ip() ip: string) {
+    const user = await this.authService.validate(loginCuentaDto, ip);
     return this.authService.login(user);
   }
+
+  @Post('login/v2')
+    async loginV2(@Body() loginCuentaDto: LoginCuentaDto, @Ip() clienteIp: string,) {
+        // Llama al método que verifica el token V2 y procede con el login.
+        const user = await this.authService.validateAfterV2(loginCuentaDto, clienteIp);
+        // Si la verificación V2 y las credenciales pasan, genera el token de acceso
+        return this.authService.login(user);
+      }
 
   @Get('findAll')
   @Roles('ADMIN')
