@@ -8,7 +8,7 @@ async function bootstrap() {
 
   try {
     const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-      logger: false,
+      logger: ['error', 'warn', 'log', 'debug', 'verbose'],
     });
 
     app.use((req, res, next) => {

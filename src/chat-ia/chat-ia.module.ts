@@ -10,6 +10,8 @@ import { TipoDeVisualizacion } from 'src/tipo-de-visualizacion/entities/tipo-de-
 import { Inmobiliaria } from 'src/inmobiliaria/entities/inmobiliaria.entity';
 import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
 import { HttpModule } from '@nestjs/axios';
+import { PuntuacionChatIA } from './entities/puntuacion-chat-ia.entity';
+import { ClienteModule } from 'src/cliente/cliente.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -19,8 +21,10 @@ import { HttpModule } from '@nestjs/axios';
         EstiloArquitectonico,
         TipoDeVisualizacion,
         Inmobiliaria,
-        Imagen2d, 
-      ]),HttpModule
+        Imagen2d,
+        PuntuacionChatIA,
+      ]),HttpModule,
+      ClienteModule
     ],
   controllers: [ChatIaController],
   providers: [ChatIaService],
