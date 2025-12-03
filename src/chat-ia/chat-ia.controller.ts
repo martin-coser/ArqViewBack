@@ -10,7 +10,7 @@ export class ChatIaController {
   @HttpCode(HttpStatus.CREATED)
   @Roles('CLIENTE')
   async handleChat(@Body('message') message: string, @Req() req) {
-    const userId = req.user.id
-    return this.chatIaService.processChatQuery(message, userId);
+    const cuentaId = req.user.id
+    return this.chatIaService.processChatQuery(message, cuentaId);
   }
 }

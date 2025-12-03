@@ -202,6 +202,7 @@ export class AuthService {
           const response = await firstValueFrom(
               this.httpService.post<RecaptchaResponse>(verificationUrl, params),
           );
+          //esta data tiene la respuesta de google
           const data = response.data;
 
           if (!data.success) {

@@ -9,9 +9,9 @@ export class ActividadCliente {
 
     @Column({
     type: 'enum',
-    enum: ['VISUALIZACION', 'CONSULTA', 'LISTADEINTERES'],
+    enum: ['VISUALIZACION', 'CONSULTA', 'LISTADEINTERES', 'USOCHATIA'],
     })
-    tipoDeActividad: 'VISUALIZACION' | 'CONSULTA' | 'LISTADEINTERES';
+    tipoDeActividad: 'VISUALIZACION' | 'CONSULTA' | 'LISTADEINTERES' | 'USOCHATIA';
 
     @CreateDateColumn({type: 'timestamp'})
     fechaYHoraActividad: Date;
@@ -23,7 +23,7 @@ export class ActividadCliente {
     cliente: Cliente;
 
     // Una propiedad puede estar asociada a muchas actividades de clientes
-    @ManyToOne(() => Propiedad, {eager: true,onDelete: 'CASCADE'})
+    @ManyToOne(() => Propiedad, {eager: true,onDelete: 'CASCADE', nullable: true})
     @JoinColumn({ name: 'propiedad_id' })
     propiedad: Propiedad;
 

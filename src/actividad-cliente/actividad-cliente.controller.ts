@@ -1,8 +1,9 @@
-import { Controller, Post, Body, Req, UnauthorizedException, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Req, UnauthorizedException, HttpCode, HttpStatus, Get, Query } from '@nestjs/common';
 import { ActividadClienteService } from './actividad-cliente.service';
 import { CreateActividadClienteDto } from './dto/create-actividad-cliente.dto';
 
 import { Roles } from 'src/guards/decoradores/roles.decorator';
+import { FiltrosFechaChatIaDto } from './dto/filtrosfechaChatIa.dto';
 
 @Controller('actividadCliente')
 export class ActividadClienteController {
@@ -18,5 +19,12 @@ export class ActividadClienteController {
     }
     return this.actividadClienteService.create(createActividadClienteDto, cuentaId);
   }
+
+  @Get('/chat-ia-uses')
+    @Roles('ADMINISTRADOR')
+    async getCountChatIaUses(@Query() filterDto: FiltrosFechaChatIaDto) { // Usamos @Query para filtros de fecha
+        // Llama al método del servicio que calcula el total y el desglose diario (cantidad de usos por día)
+        return this.actividadClienteService.getcountChatIaUses(filterDto);
+    }
 
 }

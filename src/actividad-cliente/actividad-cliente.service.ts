@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateActividadClienteDto } from './dto/create-actividad-cliente.dto';
 import { ActividadCliente } from './entities/actividad-cliente.entity';
-import { In, Repository } from 'typeorm';
+import { Between, MoreThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import { Cliente } from 'src/cliente/entities/cliente.entity';
 import { ListaDeInteres } from 'src/lista-de-interes/entities/lista-de-interes.entity';
+import { FiltrosFechaChatIaDto } from './dto/filtrosfechaChatIa.dto';
 
 @Injectable()
 export class ActividadClienteService {
@@ -18,9 +19,12 @@ export class ActividadClienteService {
     private readonly clienteRepository: Repository<Cliente>,
     @InjectRepository(ListaDeInteres)
     private readonly listaDeInteresRepository: Repository<ListaDeInteres>,
-  ) { }
+  ) {}
 
-  async create(createActividadClienteDto: CreateActividadClienteDto, cuentaId: number) {
+  async create(
+    createActividadClienteDto: CreateActividadClienteDto,
+    cuentaId: number,
+  ) {
     //Busco la propiedad asociada al ID proporcionado
     const propiedad = await this.propiedadRepository.findOne({
       where: { id: createActividadClienteDto.propiedad },
@@ -28,7 +32,9 @@ export class ActividadClienteService {
 
     //Verifico si la propiedad existe
     if (!propiedad) {
-      throw new NotFoundException(`No se encontró la propiedad con ID ${createActividadClienteDto.propiedad}`);
+      throw new NotFoundException(
+        `No se encontró la propiedad con ID ${createActividadClienteDto.propiedad}`,
+      );
     }
 
     //Busco al cliente asociado a la cuenta
@@ -38,7 +44,9 @@ export class ActividadClienteService {
 
     //Verifico si el cliente existe
     if (!cliente) {
-      throw new NotFoundException(`No se encontró un cliente asociado a la cuenta con ID ${cuentaId}`);
+      throw new NotFoundException(
+        `No se encontró un cliente asociado a la cuenta con ID ${cuentaId}`,
+      );
     }
 
     //Osea cuando se intente crear una actividad cliente de tipo consulta, debo verificar que no exista ningun mensaje anterior. De lo contrario, no se creara.
@@ -110,7 +118,92 @@ export class ActividadClienteService {
         await this.actividadClienteRepository.save(actividadCliente);
       }
     }
-
   }
 
+  //Registra una actividad simple de uso de chat con IA (solo para conteo).
+
+  async registerChatUsage(clienteCuentaId: number): Promise<ActividadCliente | null> {
+    // 1. Buscar al cliente asociado a la cuenta
+    const cliente = await this.clienteRepository.findOne({
+      where: { cuenta: { id: clienteCuentaId } },
+    });
+
+    if (!cliente) {
+      throw new NotFoundException(
+        `Cliente con cuenta ID ${clienteCuentaId} no encontrado. No se pudo registrar uso del chat.`,
+      );
+    }
+
+    // 2. Determinar la medianoche de hoy (00:00:00). Esta fecha cambia con el día.
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0); 
+
+    // 3. Buscar si ya existe una actividad de USO CHAT IA hoy para este cliente
+    const usoExistenteHoy = await this.actividadClienteRepository.findOne({
+        where: {
+            tipoDeActividad: 'USOCHATIA',
+            cliente: { id: cliente.id },
+            // La actividad debe ser posterior a la medianoche de hoy
+            fechaYHoraActividad: MoreThan(startOfToday), 
+        },
+    });
+
+    if (usoExistenteHoy) {
+        // Si ya existe, NO contamos de nuevo. El día ha sido contado.
+        console.log(`Uso de chat IA ya registrado hoy para el cliente ${cliente.id}. Saltando registro.`);
+        return null; 
+    }
+
+    // 2. Crear y guardar el registro de actividad
+    const actividadChat = this.actividadClienteRepository.create({
+      tipoDeActividad: 'USOCHATIA',
+      cliente: cliente,
+    });
+
+    return this.actividadClienteRepository.save(actividadChat);
+  }
+
+  async getcountChatIaUses(FiltrosFechaChatIaDto: FiltrosFechaChatIaDto) {
+    const queryBuilder = this.actividadClienteRepository
+      .createQueryBuilder('actividad')
+      .where('actividad.tipoDeActividad = :type', { type: 'USOCHATIA' });
+
+    // 1. Lógica de Filtrado por Rango de Fechas
+    let totalWhere = {};
+    if (FiltrosFechaChatIaDto.fechaInicio && FiltrosFechaChatIaDto.fechaFin) {
+      const start = new Date(FiltrosFechaChatIaDto.fechaInicio);
+      const end = new Date(FiltrosFechaChatIaDto.fechaFin);
+      end.setHours(23, 59, 59, 999);
+
+      // Aplicar filtro al QueryBuilder
+      queryBuilder.andWhere(
+        'actividad.fechaYHoraActividad BETWEEN :start AND :end',
+        { start, end },
+      );
+
+      // Configurar el filtro para el conteo simple también
+      totalWhere = { fechaYHoraActividad: Between(start, end) };
+    }
+
+    // 2. Obtener el número total de interacciones
+    // Usamos el método count() con los filtros aplicados
+    const totalInteracciones = await this.actividadClienteRepository.count({
+      where: { tipoDeActividad: 'USOCHATIA', ...totalWhere },
+    });
+
+    // 3. Obtener el desglose de interacciones por día (Para gráficos visuales - CA: Visualmente claras)
+    const interaccionesPorDia = await queryBuilder
+      .select([
+        'DATE(actividad.fechaYHoraActividad) as date', // Agrupa por fecha
+        'COUNT(actividad.id) as count', // Cuenta las interacciones
+      ])
+      .groupBy('date')
+      .orderBy('date', 'ASC')
+      .getRawMany();
+
+    return {
+      totalInteracciones: totalInteracciones, 
+      interaccionesPorDia: interaccionesPorDia,
+    };
+  }
 }

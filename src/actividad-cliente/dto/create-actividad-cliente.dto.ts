@@ -1,5 +1,5 @@
 import { Type } from "class-transformer"
-import { IsDate, IsEnum, IsNotEmpty, IsNumber } from "class-validator"
+import { IsEnum, IsNotEmpty, IsNumber } from "class-validator"
 
 export class CreateActividadClienteDto {
     @IsNotEmpty()
