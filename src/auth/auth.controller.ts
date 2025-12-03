@@ -32,7 +32,7 @@ export class AuthController {
 
   @Get('findAll')
   @Roles('ADMIN')
-  async findAll(): Promise<RegisterCuentaDto[]> {
+  async findAll(): Promise<Cuenta[]> {
     return await this.authService.findAll()
   }
 

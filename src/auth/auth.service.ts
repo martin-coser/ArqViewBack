@@ -30,11 +30,14 @@ export class AuthService {
     private httpService: HttpService,
   ) {}
 
-  async register(registerCuentaDto: RegisterCuentaDto, entityManager?: EntityManager): Promise<Cuenta> {
+  /**
+ * Lógica central para crear la cuenta. Se usa para V3 exitoso y V2 exitoso.
+ */
+  private async _performRegistration(registerCuentaDto: RegisterCuentaDto,transactionalEntityManager?: EntityManager): Promise<Cuenta> {
     const { nombreUsuario, password, email, rol } = registerCuentaDto;
-
-    // Usar el entityManager si se proporciona, de lo contrario usar el repositorio
-    const manager = entityManager || this.cuentaRepository.manager;
+    
+    // Usar el entityManager si se proporciona (dentro de una transacción)
+    const manager = transactionalEntityManager || this.cuentaRepository.manager; 
 
     // Verificar si el nombre de usuario ya existe
     const cuentaPorNombre = await manager.findOne(Cuenta, { where: { nombreUsuario }});
@@ -66,12 +69,49 @@ export class AuthService {
 
     const nuevaCuenta = await manager.save(cuenta); 
 
-    //Llamar a la funcion para enviar el correo de validacion
+    // Llamar a la funcion para enviar el correo de validacion
     await this.enviarCorreoValidacion(nuevaCuenta.email, validationToken)
 
-    // Guardar la cuenta
     return nuevaCuenta;
   }
+
+
+  async register(registerCuentaDto: RegisterCuentaDto, transactionalEntityManager?: EntityManager): Promise<Cuenta> {
+    const { nombreUsuario, recaptchaToken } = registerCuentaDto; 
+
+    // 1. VERIFICACIÓN DE RECAPTCHA V3
+    const score = await this.verifyRecaptcha(recaptchaToken, '0.0.0.0'); 
+
+    // Umbral de decisión: Si el score es bajo (0.5), bloqueamos y pedimos V2
+    if (score < 0.5) { 
+        console.warn(`Intento de registro sospechoso: Usuario ${nombreUsuario}, Score ${score}. Solicitando V2.`);
+        // Responde igual que el login para consistencia (pide V2)
+        throw new UnauthorizedException({ 
+            message: 'Fallo en la verificación de seguridad. Se requiere desafío V2.',
+            requiresV2: true // Propiedad clave para el frontend
+        });
+    }
+    
+    // Si el score es aceptable (>= 0.5), procedemos al registro
+    return this._performRegistration(registerCuentaDto, transactionalEntityManager);  
+   }
+
+  
+  //Flujo de Registro Secundario (/auth/register/v2). Se ejecuta después del desafío V2.
+  async registerAfterV2(registerCuentaDto: RegisterCuentaDto, clienteIp: string, transactionalEntityManager?: EntityManager): Promise<Cuenta> {
+    const { nombreUsuario, recaptchaToken: v2Token } = registerCuentaDto;
+
+    // 1. Verificar el token V2
+    const isV2Verified = await this.verifyRecaptchaV2(v2Token, clienteIp);
+
+    if (!isV2Verified) {
+        console.warn(`Bloqueo V2: IP ${clienteIp}, Usuario ${nombreUsuario}. Falló la resolución del desafío.`);
+        throw new UnauthorizedException('Fallo al resolver el desafío de seguridad V2.');
+    }
+
+    // 2. Si V2 es exitoso, procedemos al registro
+    return this._performRegistration(registerCuentaDto, transactionalEntityManager);
+}
 
   // Método para enviar el correo de validación
   private async enviarCorreoValidacion(email: string, token: string): Promise<void> {

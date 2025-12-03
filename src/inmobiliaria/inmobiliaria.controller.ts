@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, ParseIntPipe, Req, Ip } from '@nestjs/common';
 import { InmobiliariaService } from './inmobiliaria.service';
 import { CreateInmobiliariaDto } from './dto/create-inmobiliaria.dto';
 import { UpdateInmobiliariaDto } from './dto/update-inmobiliaria.dto';
@@ -12,8 +12,15 @@ export class InmobiliariaController {
 
   @Post('/create')
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body('inmobiliaria') createInmobiliariaDto: CreateInmobiliariaDto, @Body('cuenta') registerCuentaDto: RegisterCuentaDto,): Promise<Inmobiliaria> {
+  async create(@Body('inmobiliaria') createInmobiliariaDto: CreateInmobiliariaDto, @Body('cuenta') registerCuentaDto: RegisterCuentaDto): Promise<Inmobiliaria> {
     return await this.inmobiliariaService.create(createInmobiliariaDto, registerCuentaDto);
+  }
+
+  @Post('/create/v2')
+  @HttpCode(HttpStatus.CREATED)
+  async createV2(@Body('inmobiliaria') createInmobiliariaDto: CreateInmobiliariaDto, @Body('cuenta') registerCuentaDto: RegisterCuentaDto, @Ip() clienteIp: string): Promise<Inmobiliaria> {
+    // Llama al método createAfterV2 del servicio Inmobiliaria
+    return await this.inmobiliariaService.createAfterV2(createInmobiliariaDto, registerCuentaDto, clienteIp);
   }
 
   @Get('/findAll')

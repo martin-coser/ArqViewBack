@@ -4,7 +4,7 @@ import { UpdateClienteDto } from './dto/update-cliente.dto';
 import { Cliente } from './entities/cliente.entity';
 import { Roles } from 'src/guards/decoradores/roles.decorator';
 import { RegisterCuentaDto } from 'src/auth/dto/register-cuenta.dto';
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Ip, Param, ParseIntPipe, Patch, Post, Req } from '@nestjs/common';
 
 @Controller('cliente')
 export class ClienteController {
@@ -12,10 +12,17 @@ export class ClienteController {
   
   @Post('create')
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body('cliente') createClienteDto: CreateClienteDto, @Body('cuenta') registerCuentaDto: RegisterCuentaDto,): Promise<Cliente> {
+  async create(@Body('cliente') createClienteDto: CreateClienteDto, @Body('cuenta') registerCuentaDto: RegisterCuentaDto): Promise<Cliente> {
     return await this.clienteService.create(createClienteDto, registerCuentaDto);
   }
   
+  @Post('create/v2')
+  @HttpCode(HttpStatus.CREATED)
+  async createV2(@Body('cliente') createClienteDto: CreateClienteDto, @Body('cuenta') registerCuentaDto: RegisterCuentaDto, @Ip() clienteIp: string): Promise<Cliente> {
+    // Llama al método createAfterV2 del servicio Cliente
+      return await this.clienteService.createAfterV2(createClienteDto, registerCuentaDto, clienteIp);
+  }
+
   @HttpCode(HttpStatus.OK)  
   @Get('/findAll')
   async findAll() : Promise<Cliente[]> {
