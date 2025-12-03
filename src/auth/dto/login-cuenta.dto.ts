@@ -6,7 +6,7 @@ export class LoginCuentaDto extends PartialType(RegisterCuentaDto){
 
     @IsString()
     @IsNotEmpty()
-    nombreUsuario:string
+    nombreUsuario:string;
     
     @IsString()
     @IsNotEmpty()
@@ -14,5 +14,10 @@ export class LoginCuentaDto extends PartialType(RegisterCuentaDto){
     @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, {
         message: 'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial (@$!%*?&).'
     })
-    password:string
+    password:string;
+
+    @IsString()
+    @IsNotEmpty()
+    recaptchaToken: string;
+
 }
