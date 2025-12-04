@@ -15,7 +15,7 @@ import { firstValueFrom } from 'rxjs';
 interface RecaptchaResponse {
     success: boolean;
     score: number;
-    'error-codes'?: string[]; // La propiedad lleva guion, es importante
+    'error-codes'?: string[];
     hostname?: string;
     challenge_ts?: string;
 }
@@ -30,9 +30,7 @@ export class AuthService {
     private httpService: HttpService,
   ) {}
 
-  /**
- * Lógica central para crear la cuenta. Se usa para V3 exitoso y V2 exitoso.
- */
+  //Lógica central para crear la cuenta. Se usa para V3 exitoso y V2 exitoso.
   private async _performRegistration(registerCuentaDto: RegisterCuentaDto,transactionalEntityManager?: EntityManager): Promise<Cuenta> {
     const { nombreUsuario, password, email, rol } = registerCuentaDto;
     
@@ -88,7 +86,7 @@ export class AuthService {
         // Responde igual que el login para consistencia (pide V2)
         throw new UnauthorizedException({ 
             message: 'Fallo en la verificación de seguridad. Se requiere desafío V2.',
-            requiresV2: true // Propiedad clave para el frontend
+            requiresV2: true 
         });
     }
     
@@ -96,7 +94,6 @@ export class AuthService {
     return this._performRegistration(registerCuentaDto, transactionalEntityManager);  
    }
 
-  
   //Flujo de Registro Secundario (/auth/register/v2). Se ejecuta después del desafío V2.
   async registerAfterV2(registerCuentaDto: RegisterCuentaDto, clienteIp: string, transactionalEntityManager?: EntityManager): Promise<Cuenta> {
     const { nombreUsuario, recaptchaToken: v2Token } = registerCuentaDto;
@@ -166,7 +163,6 @@ export class AuthService {
         if (!data.success) {
             // Falla de Google (ej: token inválido, expirado)
             console.error('reCAPTCHA verification failed:', data['error-codes']);
-            // Decisión: Score bajo para forzar el bloqueo.
             return 0.0;
         }
 
@@ -175,9 +171,7 @@ export class AuthService {
     } catch (error) {
         // Fallback: Error de red o servicio de Google caído
         console.error('reCAPTCHA service error (network/timeout):', error.message);
-        
         // Decisión de Fallback: Devolver 1.0 para que el login pueda proceder 
-        // (priorizando la disponibilidad sobre la seguridad estricta temporalmente).
         return 1.0; 
     }
 }
@@ -193,7 +187,6 @@ export class AuthService {
     if(score < 0.5){
       //se pide v2
       console.warn(`Intento de login sospechoso: IP ${clienteIp}, Usuario ${nombreUsuario}, Score ${score}. Solicitando V2.`);
-      // Lanzamos una excepción genérica para no dar pistas al atacante
       throw new UnauthorizedException({ message: 'Fallo en la verificación de seguridad. Se requiere desafío V2.',
         requiresV2: true // Propiedad específica para el frontend
       });
@@ -215,15 +208,13 @@ export class AuthService {
     return cuentaSinPassword
   }
 
-    /**
-   * Método para verificar el token generado por el desafío de reCAPTCHA V2 (el "no soy un robot").
-   * Se comunica con la API de Google para validar si el usuario resolvió el desafío correctamente.
-   */
+  
+   //Método para verificar el token generado por el desafío de reCAPTCHA V2 (el "no soy un robot").
+   //Se comunica con la API de Google para validar si el usuario resolvió el desafío correctamente.
+ 
   private async verifyRecaptchaV2(token: string, ip: string): Promise<boolean> {
-      // 1. Obtener la clave secreta
       const secretKey = process.env.RECAPTCHA_SECRET_KEY;
       if (!secretKey) {
-          // Fallo de configuración crítico
           console.error('RECAPTCHA_SECRET_KEY no configurada. No se puede verificar V2.');
           return false; 
       }
@@ -232,9 +223,9 @@ export class AuthService {
 
       // 2. Construir los parámetros de la solicitud
       const params = new URLSearchParams();
-      params.append('secret', secretKey); // La clave privada para autenticar la solicitud
-      params.append('response', token);   // El token generado por el frontend (g-recaptcha-response)
-      params.append('remoteip', ip);      // La IP del cliente para el análisis de riesgo de Google
+      params.append('secret', secretKey);
+      params.append('response', token);   
+      params.append('remoteip', ip);      
       
       try {
           // 3. Enviar la solicitud POST a la API de Google
@@ -258,23 +249,18 @@ export class AuthService {
       } catch (error) {
           // 6. Fallo de servicio (Error de red, timeout, Google no responde)
           console.error('reCAPTCHA V2 service error (network/timeout):', error.message);
-          
           // Política de seguridad: Si el servicio está caído, negamos el acceso para un desafío V2
           // porque no podemos confirmar que el usuario es humano.
           return false; 
       }
   }
 
-  /**
- * Valida un intento de login que ya ha resuelto el desafío V2.
- * Esta función debe ser llamada por un NUEVO endpoint en el Controller (ej: POST /auth/login/v2).
- * Recibe el token V2 del formulario y procede con el login si la verificación es exitosa.
- */
+  
+  //Valida un intento de login que ya ha resuelto el desafío V2.
   async validateAfterV2(LoginCuentaDto: LoginCuentaDto, clienteIp: string): Promise<Omit<Cuenta, 'password'>> {
     // Extraemos las credenciales y el token V2 (renombrando recaptchaToken a v2Token para claridad)
     const { nombreUsuario, password, recaptchaToken: v2Token } = LoginCuentaDto;
-
-    // 1. Verificar el token V2
+    
     // La función verifyRecaptchaV2() llama a Google para confirmar que el desafío fue resuelto.
     const isV2Verified = await this.verifyRecaptchaV2(v2Token, clienteIp);
 

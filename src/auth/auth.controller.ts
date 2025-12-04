@@ -24,9 +24,7 @@ export class AuthController {
 
   @Post('login/v2')
     async loginV2(@Body() loginCuentaDto: LoginCuentaDto, @Ip() clienteIp: string,) {
-        // Llama al método que verifica el token V2 y procede con el login.
         const user = await this.authService.validateAfterV2(loginCuentaDto, clienteIp);
-        // Si la verificación V2 y las credenciales pasan, genera el token de acceso
         return this.authService.login(user);
       }
 
