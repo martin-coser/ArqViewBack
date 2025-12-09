@@ -26,6 +26,7 @@ import { CalificacionResenaModule } from './calificacion-reseña/calificacion-re
 import { SuscripcionModule } from './suscripcion/suscripcion.module';
 import { GuardsModule } from './guards/guards.module';
 import { ChatIaModule } from './chat-ia/chat-ia.module';
+import { EstadisticaAdministradorModule } from './estadistica-administrador/estadistica-administrador.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { ChatIaModule } from './chat-ia/chat-ia.module';
     CalificacionResenaModule,
     SuscripcionModule,
     ChatIaModule,
+    EstadisticaAdministradorModule,
   ],
   controllers: [AppController],
   providers: [AppService],
