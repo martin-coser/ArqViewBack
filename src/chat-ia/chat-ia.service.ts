@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { ActividadClienteService } from 'src/actividad-cliente/actividad-cliente.service';
 import { ClienteService } from 'src/cliente/cliente.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PuntuacionChatIA } from './entities/puntuacion-chat-ia.entity';
@@ -9,8 +8,6 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class ChatIaService {
-  constructor(private readonly httpService: HttpService, 
-    private readonly actividadClienteService: ActividadClienteService,) {}
   constructor(
     private readonly httpService: HttpService,
     private readonly clienteService: ClienteService,
@@ -18,13 +15,8 @@ export class ChatIaService {
     private readonly puntuacionChatIARepository: Repository<PuntuacionChatIA>,
   ) {}
 
-  async processChatQuery(message: string, session_id : number): Promise<undefined> {
+  async processChatQuery(message: string, session_id : number): Promise<any> {
     try {
-      //registrar el uso del chat
-      this.actividadClienteService.registerChatUsage(session_id)
-      .catch(error => console.error("Fallo al registrar log de chat:", error));
-
-      //Llamar al API de Python (usando session_id en la llamada)
       const response = await firstValueFrom(
         this.httpService.post('http://localhost:5001/chat', { session_id, message })
       );
