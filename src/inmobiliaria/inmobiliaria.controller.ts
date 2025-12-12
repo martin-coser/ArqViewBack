@@ -14,14 +14,6 @@ export class InmobiliariaController {
   @HttpCode(HttpStatus.CREATED)
   async create(@Body('inmobiliaria') createInmobiliariaDto: CreateInmobiliariaDto, @Body('cuenta') registerCuentaDto: RegisterCuentaDto): Promise<Inmobiliaria> {
     return await this.inmobiliariaService.create(createInmobiliariaDto, registerCuentaDto);
-  async create(@Body('inmobiliaria') createInmobiliariaDto: CreateInmobiliariaDto, @Body('cuenta') registerCuentaDto: RegisterCuentaDto,): Promise<Inmobiliaria> {
-    try {
-      return await this.inmobiliariaService.create(createInmobiliariaDto, registerCuentaDto);
-    } catch (error) {
-      console.error('Error creating Inmobiliaria:', error);
-      console.error('Error creating Inmobiliaria:', error.message);
-      throw error;
-    }
   }
 
   @Post('/create/v2')

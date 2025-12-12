@@ -17,9 +17,15 @@ import { HttpModule } from '@nestjs/axios';
     TypeOrmModule.forFeature([Cuenta, Cliente, Inmobiliaria]),
     HttpModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      secret: 'FRANCOCOLAPINTO', // Usar variables de entorno en producción
-      signOptions: { expiresIn: '1h' },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: '1h'
+        },
+      }),
+      inject: [ConfigService],
     }),
     MailerModule.forRootAsync({
       imports: [ConfigModule],
