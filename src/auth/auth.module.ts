@@ -11,11 +11,13 @@ import { JwtStrategy } from './jwt.strategy'
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
+import { ActividadClienteModule } from 'src/actividad-cliente/actividad-cliente.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Cuenta, Cliente, Inmobiliaria]),
     HttpModule,
+    ActividadClienteModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

@@ -12,6 +12,7 @@ import { Imagen2d } from 'src/imagen2d/entities/imagen2d.entity';
 import { HttpModule } from '@nestjs/axios';
 import { PuntuacionChatIA } from './entities/puntuacion-chat-ia.entity';
 import { ClienteModule } from 'src/cliente/cliente.module';
+import { ActividadClienteModule } from 'src/actividad-cliente/actividad-cliente.module';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -24,7 +25,8 @@ import { ClienteModule } from 'src/cliente/cliente.module';
         Imagen2d,
         PuntuacionChatIA,
       ]),HttpModule,
-      ClienteModule
+      ClienteModule,
+      ActividadClienteModule
     ],
   controllers: [ChatIaController],
   providers: [ChatIaService],

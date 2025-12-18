@@ -9,9 +9,9 @@ export class ActividadCliente {
 
     @Column({
     type: 'enum',
-    enum: ['VISUALIZACION', 'CONSULTA', 'LISTADEINTERES', 'USOCHATIA'],
+    enum: ['VISUALIZACION', 'CONSULTA', 'LISTADEINTERES', 'USOCHATIA', 'LOGIN'],
     })
-    tipoDeActividad: 'VISUALIZACION' | 'CONSULTA' | 'LISTADEINTERES' | 'USOCHATIA';
+    tipoDeActividad: 'VISUALIZACION' | 'CONSULTA' | 'LISTADEINTERES' | 'USOCHATIA' | 'LOGIN';
 
     @CreateDateColumn({type: 'timestamp'})
     fechaYHoraActividad: Date;

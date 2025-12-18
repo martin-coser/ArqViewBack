@@ -10,6 +10,7 @@ import { LoginCuentaDto } from './dto/login-cuenta.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { HttpService } from '@nestjs/axios'; 
 import { firstValueFrom } from 'rxjs'; 
+import { ActividadClienteService } from 'src/actividad-cliente/actividad-cliente.service';
 
 //definicion de interfaz de respuesta de api de google recaptcha
 interface RecaptchaResponse {
@@ -28,6 +29,7 @@ export class AuthService {
     private jwtService: JwtService,
     private readonly mailerService: MailerService,
     private httpService: HttpService,
+    private actividadClienteService: ActividadClienteService,
   ) {}
 
   //Lógica central para crear la cuenta. Se usa para V3 exitoso y V2 exitoso.
@@ -290,6 +292,12 @@ export class AuthService {
 }
 
   async login(user: Omit<Cuenta, 'password'>) {
+    try{
+      await this.actividadClienteService.registerLoginUsage(user.id);
+    } catch (error){
+      console.error('Error registrando actividad de login:', error);
+    }
+
     const payload = { 
       username: user.nombreUsuario, 
       sub: user.id, 

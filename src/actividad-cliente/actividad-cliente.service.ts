@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateActividadClienteDto } from './dto/create-actividad-cliente.dto';
 import { ActividadCliente } from './entities/actividad-cliente.entity';
-import { Between, MoreThan, Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Propiedad } from 'src/propiedad/entities/propiedad.entity';
 import { Cliente } from 'src/cliente/entities/cliente.entity';
@@ -122,7 +122,9 @@ export class ActividadClienteService {
 
   //Registra una actividad simple de uso de chat con IA (solo para conteo).
 
-  async registerChatUsage(clienteCuentaId: number): Promise<ActividadCliente | null> {
+  async registerChatUsage(
+    clienteCuentaId: number,
+  ): Promise<ActividadCliente | null> {
     // 1. Buscar al cliente asociado a la cuenta
     const cliente = await this.clienteRepository.findOne({
       where: { cuenta: { id: clienteCuentaId } },
@@ -136,22 +138,24 @@ export class ActividadClienteService {
 
     // 2. Determinar la medianoche de hoy (00:00:00). Esta fecha cambia con el día.
     const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0); 
+    startOfToday.setHours(0, 0, 0, 0);
 
     // 3. Buscar si ya existe una actividad de USO CHAT IA hoy para este cliente
     const usoExistenteHoy = await this.actividadClienteRepository.findOne({
-        where: {
-            tipoDeActividad: 'USOCHATIA',
-            cliente: { id: cliente.id },
-            // La actividad debe ser posterior a la medianoche de hoy
-            fechaYHoraActividad: MoreThan(startOfToday), 
-        },
+      where: {
+        tipoDeActividad: 'USOCHATIA',
+        cliente: { id: cliente.id },
+        // La actividad debe ser posterior a la medianoche de hoy
+        fechaYHoraActividad: MoreThan(startOfToday),
+      },
     });
 
     if (usoExistenteHoy) {
-        // Si ya existe, NO contamos de nuevo. El día ha sido contado.
-        console.log(`Uso de chat IA ya registrado hoy para el cliente ${cliente.id}. Saltando registro.`);
-        return null; 
+      // Si ya existe, NO contamos de nuevo. El día ha sido contado.
+      console.log(
+        `Uso de chat IA ya registrado hoy para el cliente ${cliente.id}. Saltando registro.`,
+      );
+      return null;
     }
 
     // 2. Crear y guardar el registro de actividad
@@ -163,47 +167,115 @@ export class ActividadClienteService {
     return this.actividadClienteRepository.save(actividadChat);
   }
 
-  async getcountChatIaUses(FiltrosFechaChatIaDto: FiltrosFechaChatIaDto) {
+  // Obtiene el conteo de usos del chat IA y logins por día, con porcentajes de adopción
+  async getcountChatIaUses(filtros: FiltrosFechaChatIaDto) {
     const queryBuilder = this.actividadClienteRepository
       .createQueryBuilder('actividad')
-      .where('actividad.tipoDeActividad = :type', { type: 'USOCHATIA' });
+      .select('DATE(actividad.fechaYHoraActividad)', 'fecha')
+      .addSelect(
+        "COUNT(DISTINCT CASE WHEN actividad.tipoDeActividad = 'LOGIN' THEN actividad.clienteId END)",
+        'totalLogueados',
+      )
+      .addSelect(
+        "COUNT(DISTINCT CASE WHEN actividad.tipoDeActividad = 'USOCHATIA' THEN actividad.clienteId END)",
+        'totalUsaronChat',
+      );
 
-    // 1. Lógica de Filtrado por Rango de Fechas
-    let totalWhere = {};
-    if (FiltrosFechaChatIaDto.fechaInicio && FiltrosFechaChatIaDto.fechaFin) {
-      const start = new Date(FiltrosFechaChatIaDto.fechaInicio);
-      const end = new Date(FiltrosFechaChatIaDto.fechaFin);
+    // 1. Aplicar filtro SOLO si las fechas están presentes
+    if (filtros.fechaInicio && filtros.fechaFin) {
+      const start = new Date(filtros.fechaInicio);
+      const end = new Date(filtros.fechaFin);
       end.setHours(23, 59, 59, 999);
-
-      // Aplicar filtro al QueryBuilder
-      queryBuilder.andWhere(
+      
+      queryBuilder.where(
         'actividad.fechaYHoraActividad BETWEEN :start AND :end',
         { start, end },
       );
-
-      // Configurar el filtro para el conteo simple también
-      totalWhere = { fechaYHoraActividad: Between(start, end) };
     }
 
-    // 2. Obtener el número total de interacciones
-    // Usamos el método count() con los filtros aplicados
-    const totalInteracciones = await this.actividadClienteRepository.count({
-      where: { tipoDeActividad: 'USOCHATIA', ...totalWhere },
-    });
-
-    // 3. Obtener el desglose de interacciones por día (Para gráficos visuales - CA: Visualmente claras)
-    const interaccionesPorDia = await queryBuilder
-      .select([
-        'DATE(actividad.fechaYHoraActividad) as date', // Agrupa por fecha
-        'COUNT(actividad.id) as count', // Cuenta las interacciones
-      ])
-      .groupBy('date')
-      .orderBy('date', 'ASC')
+    // 2. Obtener los datos (agrupados por fecha siempre)
+    const estadisticasRaw = await queryBuilder
+      .groupBy('fecha')
+      .orderBy('fecha', 'ASC')
       .getRawMany();
 
+    // 3. Procesamiento de los totales y porcentajes
+    //esto sirve para el resumen global de toda la data obtenida
+    let globalLogins = 0;
+    let globalChatUsers = 0;
+
+    //esto sirve para el detalle por dia
+    const datosPorDia = estadisticasRaw.map((dia) => {
+      const logueados = parseInt(dia.totalLogueados) || 0;
+      const usaronChat = parseInt(dia.totalUsaronChat) || 0;
+
+      globalLogins += logueados;
+      globalChatUsers += usaronChat;
+
+      // Calculo el porcentaje de adopción para el día
+      return {
+        fecha: dia.fecha,
+        personasLogueadas: logueados,
+        personasUsaronChat: usaronChat,
+        porcentajeAdopcion:
+          logueados > 0
+            ? `${((usaronChat / logueados) * 100).toFixed(2)}%`
+            : '0%',
+      };
+    });
+    
     return {
-      totalInteracciones: totalInteracciones, 
-      interaccionesPorDia: interaccionesPorDia,
+      resumenGlobal: {
+        totalLogueadosHistorial: globalLogins,
+        totalUsaronChatHistorial: globalChatUsers,
+        tasaAdopcionMedia:
+          globalLogins > 0
+            ? `${((globalChatUsers / globalLogins) * 100).toFixed(2)}%`
+            : '0%',
+      },
+      datosPorDia,
     };
+  }
+
+  // Registra que el cliente ingresó a la plataforma (una vez por día)
+  async registerLoginUsage(
+    clienteCuentaId: number,
+  ): Promise<ActividadCliente | null> {
+    // 1. Buscar al cliente asociado a la cuenta
+    const cliente = await this.clienteRepository.findOne({
+      where: { cuenta: { id: clienteCuentaId } },
+    });
+
+    if (!cliente) {
+      throw new NotFoundException(
+        `Cliente con cuenta ID ${clienteCuentaId} no encontrado.`,
+      );
+    }
+
+    // 2. Determinar la medianoche de hoy (00:00:00)
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    // 3. Verificar si ya existe un registro de 'LOGIN' para este cliente el día de hoy
+    const loginExistenteHoy = await this.actividadClienteRepository.findOne({
+      where: {
+        tipoDeActividad: 'LOGIN', // Nuevo tipo para diferenciar del chat
+        cliente: { id: cliente.id },
+        fechaYHoraActividad: MoreThan(startOfToday),
+      },
+    });
+
+    if (loginExistenteHoy) {
+      // El usuario ya entró hoy, no duplicamos el registro
+      return null;
+    }
+
+    // 4. Crear el registro de actividad de inicio de sesión
+    const actividadLogin = this.actividadClienteRepository.create({
+      tipoDeActividad: 'LOGIN',
+      cliente: cliente,
+    });
+
+    return this.actividadClienteRepository.save(actividadLogin);
   }
 }

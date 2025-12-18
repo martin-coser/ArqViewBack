@@ -20,7 +20,7 @@ export class ActividadClienteController {
     return this.actividadClienteService.create(createActividadClienteDto, cuentaId);
   }
 
-  @Get('/chat-ia-uses')
+  @Get('/uso-ia-vs-logins')
     @Roles('ADMINISTRADOR')
     async getCountChatIaUses(@Query() filterDto: FiltrosFechaChatIaDto) { // Usamos @Query para filtros de fecha
         // Llama al método del servicio que calcula el total y el desglose diario (cantidad de usos por día)
