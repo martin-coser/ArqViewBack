@@ -173,12 +173,12 @@ export class ActividadClienteService {
       .createQueryBuilder('actividad')
       .select('DATE(actividad.fechaYHoraActividad)', 'fecha')
       .addSelect(
-        "COUNT(DISTINCT CASE WHEN actividad.tipoDeActividad = 'LOGIN' THEN actividad.clienteId END)",
-        'totalLogueados',
+        "COUNT(DISTINCT CASE WHEN actividad.tipoDeActividad = 'LOGIN' THEN actividad.cliente_id END)",
+        'totallogueados',
       )
       .addSelect(
-        "COUNT(DISTINCT CASE WHEN actividad.tipoDeActividad = 'USOCHATIA' THEN actividad.clienteId END)",
-        'totalUsaronChat',
+        "COUNT(DISTINCT CASE WHEN actividad.tipoDeActividad = 'USOCHATIA' THEN actividad.cliente_id END)",
+        'totalusaronchat',
       );
 
     // 1. Aplicar filtro SOLO si las fechas están presentes
@@ -186,7 +186,7 @@ export class ActividadClienteService {
       const start = new Date(filtros.fechaInicio);
       const end = new Date(filtros.fechaFin);
       end.setHours(23, 59, 59, 999);
-      
+
       queryBuilder.where(
         'actividad.fechaYHoraActividad BETWEEN :start AND :end',
         { start, end },
@@ -206,8 +206,10 @@ export class ActividadClienteService {
 
     //esto sirve para el detalle por dia
     const datosPorDia = estadisticasRaw.map((dia) => {
-      const logueados = parseInt(dia.totalLogueados) || 0;
-      const usaronChat = parseInt(dia.totalUsaronChat) || 0;
+      const logueados =
+        parseInt(dia.totallogueados) || parseInt(dia.totalLogueados) || 0;
+      const usaronChat =
+        parseInt(dia.totalusaronchat) || parseInt(dia.totalUsaronChat) || 0;
 
       globalLogins += logueados;
       globalChatUsers += usaronChat;
@@ -223,7 +225,7 @@ export class ActividadClienteService {
             : '0%',
       };
     });
-    
+
     return {
       resumenGlobal: {
         totalLogueadosHistorial: globalLogins,
@@ -241,25 +243,23 @@ export class ActividadClienteService {
   async registerLoginUsage(
     clienteCuentaId: number,
   ): Promise<ActividadCliente | null> {
-    // 1. Buscar al cliente asociado a la cuenta
+    // Intentar buscar al cliente asociado a la cuenta
     const cliente = await this.clienteRepository.findOne({
       where: { cuenta: { id: clienteCuentaId } },
     });
 
+    //si no existe el cliente, no se puede registrar login
     if (!cliente) {
-      throw new NotFoundException(
-        `Cliente con cuenta ID ${clienteCuentaId} no encontrado.`,
-      );
+      return null;
     }
 
-    // 2. Determinar la medianoche de hoy (00:00:00)
+    // Determinar la medianoche de hoy (00:00:00)
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    // 3. Verificar si ya existe un registro de 'LOGIN' para este cliente el día de hoy
     const loginExistenteHoy = await this.actividadClienteRepository.findOne({
       where: {
-        tipoDeActividad: 'LOGIN', // Nuevo tipo para diferenciar del chat
+        tipoDeActividad: 'LOGIN',
         cliente: { id: cliente.id },
         fechaYHoraActividad: MoreThan(startOfToday),
       },
@@ -270,7 +270,7 @@ export class ActividadClienteService {
       return null;
     }
 
-    // 4. Crear el registro de actividad de inicio de sesión
+    // Crear el registro de actividad de inicio de sesión
     const actividadLogin = this.actividadClienteRepository.create({
       tipoDeActividad: 'LOGIN',
       cliente: cliente,
