@@ -22,7 +22,7 @@ GM_API_KEY = os.getenv("GM_API_KEY")
 if not GM_API_KEY:
     raise ValueError("GM_API_KEY no configurada. Revisa tu archivo .env.")
 genai.configure(api_key=GM_API_KEY)
-model = genai.GenerativeModel('gemini-2.5-flash')
+model = genai.GenerativeModel('gemini-3.5-flash-lite')
 
 #-- Configuración de la Base de Datos ---
 DB_CONFIG = {
