@@ -277,22 +277,28 @@ export class PropiedadService {
     await this.propiedadRepository.remove(propiedad);
   }
 
-  async buscarParaChatbot(criterios: any): Promise<Propiedad[]> {
+  async buscarParaChatbot(criterios: any): Promise<any> {
     const query = this.propiedadRepository.createQueryBuilder('propiedad')
       .leftJoinAndSelect('propiedad.localidad', 'localidad')
       .leftJoinAndSelect('propiedad.tipoPropiedad', 'tipoPropiedad')
       .leftJoinAndSelect('propiedad.estiloArquitectonico', 'estiloArquitectonico');
 
     if (criterios.localidad) {
-      query.andWhere('LOWER(localidad.nombre) LIKE :localidad', { localidad: `%${criterios.localidad.toLowerCase()}%` });
+      query.andWhere('LOWER(localidad.nombre) LIKE :localidad', { 
+        localidad: `%${criterios.localidad.trim().toLowerCase()}%` 
+      });
     }
 
     if (criterios.tipoPropiedad) {
-      query.andWhere('LOWER(tipoPropiedad.nombre) LIKE :tipo', { tipo: `%${criterios.tipoPropiedad.toLowerCase()}%` });
+      query.andWhere('LOWER(tipoPropiedad.nombre) LIKE :tipo', { 
+        tipo: `%${criterios.tipoPropiedad.trim().toLowerCase()}%` 
+      });
     }
     
     if (criterios.tipoOperacion) {
-        query.andWhere('propiedad.tipoOperacion = :tipoOperacion', { tipoOperacion: criterios.tipoOperacion });
+      query.andWhere('LOWER(propiedad.tipoOperacion) LIKE :tipoOperacion', { 
+        tipoOperacion: `%${criterios.tipoOperacion.trim().toLowerCase()}%` 
+      });
     }
 
     if (criterios.cantidadDormitorios) {
@@ -300,7 +306,7 @@ export class PropiedadService {
     }
 
     if (criterios.cantidadBanios) {
-        query.andWhere('propiedad.cantidadBanios >= :banios', { banios: criterios.cantidadBanios });
+      query.andWhere('propiedad.cantidadBanios >= :banios', { banios: criterios.cantidadBanios });
     }
 
     if (criterios.precioMin) {
@@ -312,28 +318,27 @@ export class PropiedadService {
     }
     
     if (criterios.estiloArquitectonico) {
-        query.andWhere('LOWER(estiloArquitectonico.nombre) LIKE :estilo', { estilo: `%${criterios.estiloArquitectonico.toLowerCase()}%` });
-    }
-
-    // La parte clave: búsqueda por tags visuales y de descripción
-    if (criterios.tags && criterios.tags.length > 0) {
-      // Necesitamos unir con las imágenes 2D que contienen los tags
-      query.innerJoin('imagen2d', 'imagen', 'imagen.propiedad_id = propiedad.id');
-      
-      criterios.tags.forEach((tag, index) => {
-        // Busca tanto en los tags de la imagen como en la descripción de la propiedad
-        const tagQuery = `(LOWER(imagen.tags_visuales) LIKE :tag_${index} OR LOWER(propiedad.descripcion) LIKE :tag_${index})`;
-        query.andWhere(tagQuery, { [`tag_${index}`]: `%${tag.toLowerCase()}%` });
+      query.andWhere('LOWER(estiloArquitectonico.nombre) LIKE :estilo', { 
+        estilo: `%${criterios.estiloArquitectonico.trim().toLowerCase()}%` 
       });
     }
 
-    // Para evitar duplicados si una propiedad tiene múltiples imágenes que coinciden
+    // Usamos leftJoin en lugar de innerJoin para no descartar propiedades sin imágenes 2D asociadas
+    if (criterios.tags && criterios.tags.length > 0) {
+      query.leftJoin('imagen2d', 'imagen', 'imagen.propiedad_id = propiedad.id');
+      
+      criterios.tags.forEach((tag, index) => {
+        const tagQuery = `(LOWER(imagen.tags_visuales) LIKE :tag_\({index} OR LOWER(propiedad.descripcion) LIKE :tag_\){index})`;
+        query.andWhere(tagQuery, { [`tag_\({index}`]: `%\){tag.trim().toLowerCase()}%` });
+      });
+    }
+
     query.distinct(true); 
 
     const propiedades = await query.getMany();
 
     if (!propiedades || propiedades.length === 0) {
-      throw new NotFoundException('No se encontraron propiedades que coincidan con los criterios.');
+      return propiedades || [];
     }
 
     return propiedades;

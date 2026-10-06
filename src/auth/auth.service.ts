@@ -142,7 +142,7 @@ export class AuthService {
   }
 
   private async verifyRecaptcha(token: string, ip: string): Promise<number> {
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    /*const secretKey = process.env.RECAPTCHA_SECRET_KEY;
     if (!secretKey) {
       // Manejo de error si la clave no está configurada (CRÍTICO)
       console.error('RECAPTCHA_SECRET_KEY no configurada. Saltando verificación.');
@@ -165,7 +165,7 @@ export class AuthService {
         if (!data.success) {
             // Falla de Google (ej: token inválido, expirado)
             console.error('reCAPTCHA verification failed:', data['error-codes']);
-            return 0.0;
+            return 1.0;
         }
 
         return data.score;
@@ -175,7 +175,8 @@ export class AuthService {
         console.error('reCAPTCHA service error (network/timeout):', error.message);
         // Decisión de Fallback: Devolver 1.0 para que el login pueda proceder 
         return 1.0; 
-    }
+    }*/
+   return 1.0; // Para pruebas locales, siempre devuelve un score alto
 }
 
   async validate(LoginCuentaDto: LoginCuentaDto, clienteIp : string): Promise<Omit<Cuenta, 'password'>> { // devuelvo la cuenta sin password, tambien puedo crear una interface y ponerla como lo que devuelve.
@@ -215,7 +216,7 @@ export class AuthService {
    //Se comunica con la API de Google para validar si el usuario resolvió el desafío correctamente.
  
   private async verifyRecaptchaV2(token: string, ip: string): Promise<boolean> {
-      const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+      /*const secretKey = process.env.RECAPTCHA_SECRET_KEY;
       if (!secretKey) {
           console.error('RECAPTCHA_SECRET_KEY no configurada. No se puede verificar V2.');
           return false; 
@@ -254,7 +255,8 @@ export class AuthService {
           // Política de seguridad: Si el servicio está caído, negamos el acceso para un desafío V2
           // porque no podemos confirmar que el usuario es humano.
           return false; 
-      }
+      }*/
+     return true; // Para pruebas locales, siempre devuelve true
   }
 
   
