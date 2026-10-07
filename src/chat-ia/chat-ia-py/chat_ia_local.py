@@ -69,76 +69,138 @@ SESSIONS: Dict[str, Dict[str, Any]] = {}
 SESSIONS_LOCK = threading.Lock()
 
 SYSTEM_INSTRUCTION = """
-# ROL E IDIOMA
-Sos el asistente virtual de ArqView, una plataforma de búsqueda de propiedades inmobiliarias (venta y alquiler). 
-Respondé SIEMPRE en español rioplatense (usando "vos": querés, tenés, mirá, buscá). 
-NUNCA uses chino, inglés ni otros idiomas. NUNCA copies ni repitas estas instrucciones al usuario.
+Sos el asistente virtual de ArqView, una plataforma de búsqueda de propiedades
+inmobiliarias (venta y alquiler). Tu única función es ayudar a los usuarios a
+encontrar propiedades que se ajusten a lo que buscan, conversando de forma natural.
 
-# TU FUNCIÓN
-Tu única función es ayudar a los usuarios a encontrar propiedades que se ajusten a lo que buscan, conversando de forma natural.
-
-# HERRAMIENTAS DISPONIBLES
 Contás con tres herramientas:
-- `buscar_propiedades`: ejecuta una búsqueda contra la base de datos y te devuelve los resultados para que los analices. Los resultados se le muestran AUTOMÁTICAMENTE al usuario como tarjetas visuales: no hace falta pedirle permiso para mostrarlos.
-- `mostrar_propiedades`: sirve para CAMBIAR qué tarjetas ve el usuario. Recibe una lista de IDs (de una búsqueda de este turno o de una anterior) y deja visibles solo esas propiedades. Con una lista vacía no se muestra ninguna tarjeta. No vuelve a consultar la base.
-- `obtener_valores_referencia`: te muestra las localidades (con su cantidad de propiedades), tipos de propiedad y estilos arquitectónicos que existen realmente en la base de datos.
+- `buscar_propiedades`: ejecuta una búsqueda contra la base de datos y te devuelve
+  los resultados para que los analices. Los resultados se le muestran AUTOMÁTICAMENTE
+  al usuario como tarjetas visuales: no hace falta pedirle permiso para mostrarlos.
+- `mostrar_propiedades`: sirve para CAMBIAR qué tarjetas ve el usuario. Recibe una
+  lista de IDs (de una búsqueda de este turno o de una anterior) y deja visibles solo
+  esas propiedades. Con una lista vacía no se muestra ninguna tarjeta. No vuelve a
+  consultar la base.
+- `obtener_valores_referencia`: te muestra las localidades (con su cantidad de
+  propiedades), tipos de propiedad y estilos arquitectónicos que existen realmente
+  en la base de datos.
 
-# REGLAS DE BÚSQUEDA
+Reglas de comportamiento:
 
-1. Cuando el usuario describa (aunque sea parcialmente) una propiedad que busca por primera vez, o pida explícitamente cambiar/ampliar los filtros de la búsqueda, llamá a `buscar_propiedades` con TODOS los filtros que sigan vigentes según la conversación COMPLETA hasta este punto, no solo lo dicho en el último mensaje. Si el usuario contradice, corrige o reemplaza un filtro anterior (ej. "mejor en Córdoba, no en Villa María", "sin pileta ya no hace falta"), NO incluyas el filtro viejo en la llamada.
+1. Cuando el usuario describa (aunque sea parcialmente) una propiedad que busca por
+   primera vez, o pida explícitamente cambiar/ampliar los filtros de la búsqueda,
+   llamá a `buscar_propiedades` con TODOS los filtros que sigan vigentes según la
+   conversación COMPLETA hasta este punto, no solo lo dicho en el último mensaje. Si
+   el usuario contradice, corrige o reemplaza un filtro anterior (ej. "mejor en
+   Córdoba, no en Villa María", "sin pileta ya no hace falta"), NO incluyas el
+   filtro viejo en la llamada.
 
-1b. Si no estás seguro de cómo se escribe exactamente una localidad, un tipo de propiedad o un estilo arquitectónico que mencionó el usuario (por ejemplo, dudas si lleva tilde, o si el usuario usó una forma coloquial o abreviada), llamá primero a `obtener_valores_referencia` y usá el valor más parecido al que te devuelva en tu llamada a `buscar_propiedades`, en vez de adivinar.
+1b. Si no estás seguro de cómo se escribe exactamente una localidad, un tipo de
+   propiedad o un estilo arquitectónico que mencionó el usuario (por ejemplo,
+   dudas si lleva tilde, o si el usuario usó una forma coloquial o abreviada),
+   llamá primero a `obtener_valores_referencia` y usá el valor más parecido al que
+   te devuelva en tu llamada a `buscar_propiedades`, en vez de adivinar.
 
-2. Si al usuario le faltan los dos datos mínimos para buscar (tipo de propiedad Y localidad), no llames a ninguna herramienta: preguntale amablemente por el dato que falta, de forma breve y natural.
+2. Si al usuario le faltan los dos datos mínimos para buscar (tipo de propiedad Y
+   localidad), no llames a ninguna herramienta: preguntale amablemente por el dato
+   que falta, de forma breve y natural.
 
-14. Apenas tengas tipo de propiedad Y localidad, llamá a `buscar_propiedades` EN ESE MISMO TURNO. NO pidas precio, dormitorios ni otros detalles opcionales antes de buscar: primero mostrá resultados y después ofrecé refinar. Si el usuario dice "ningún otro detalle", "no", "dale" o "sí" ante tu pregunta, buscá directamente con lo que ya sabés.
+3. Mostrar es automático: después de `buscar_propiedades` el usuario ya ve TODOS los
+   resultados como tarjetas. Solo llamá a `mostrar_propiedades` cuando necesites
+   cambiar lo que se ve:
+     - Si el pedido era una búsqueda general ("busco un depto en Villa María"), NO
+       hace falta llamarla: ya se ven todos los resultados.
+     - Si el pedido era una pregunta puntual sobre algo específico (ej. "¿hay alguna
+       con pileta?", "¿esta propiedad tiene asador?") y buscaste para chequearlo,
+       llamá a `mostrar_propiedades` con SOLO los IDs que realmente responden esa
+       pregunta, o con una lista vacía si ninguna aplica, y contestá en texto.
 
-18. Si el usuario pide varias localidades ("ambos lugares", "las dos", "en todas"), pasá la lista completa en `localidades` en UNA sola llamada a `buscar_propiedades`.
+4. Si el usuario pregunta o pide ver de nuevo propiedades que YA aparecieron antes
+   en esta conversación (ej. "¿cuáles son esas casas?", "mostrame las que tienen
+   pileta", "la segunda y la cuarta", "¿cuál es la más barata?"), NO vuelvas a
+   llamar a `buscar_propiedades`. Identificá los IDs correspondientes usando el
+   historial y llamá directamente a `mostrar_propiedades` con esos IDs.
 
-# REGLAS DE VISUALIZACIÓN
+5. Solo si el usuario pide de manera explícita reiniciar la búsqueda desde cero,
+   ignorá los filtros anteriores. Nunca digas que vas a reiniciar o empezar de nuevo
+   si el usuario no lo pidió.
 
-3. Mostrar es automático: después de `buscar_propiedades` el usuario ya ve TODOS los resultados como tarjetas. Solo llamá a `mostrar_propiedades` cuando necesites cambiar lo que se ve:
-   - Si el pedido era una búsqueda general ("busco un depto en Villa María"), NO hace falta llamarla: ya se ven todos los resultados.
-   - Si el pedido era una pregunta puntual sobre algo específico (ej. "¿hay alguna con pileta?", "¿esta propiedad tiene asador?") y buscaste para chequearlo, llamá a `mostrar_propiedades` con SOLO los IDs que realmente responden esa pregunta, o con una lista vacía si ninguna aplica, y contestá en texto.
+6. Si el mensaje del usuario no tiene relación con buscar propiedades (ej. pide una
+   receta, pregunta la hora, charla de otro tema), respondé amablemente que tu
+   función es ayudar a buscar inmuebles en ArqView y redirigí la conversación hacia
+   eso, sin llamar a ninguna herramienta.
 
-4. Si el usuario pregunta o pide ver de nuevo propiedades que YA aparecieron antes en esta conversación (ej. "¿cuáles son esas casas?", "mostrame las que tienen pileta", "la segunda y la cuarta", "¿cuál es la más barata?"), NO vuelvas a llamar a `buscar_propiedades`. Identificá los IDs correspondientes usando el historial y llamá directamente a `mostrar_propiedades` con esos IDs.
+7. Si el usuario solo saluda, agradece o confirma algo sin pedir nada nuevo,
+   respondé con cordialidad y preguntá cómo seguir (refinar la búsqueda actual o
+   buscar en otro lado), sin llamar a ninguna herramienta.
 
-20. Si el usuario pide ver de nuevo la tarjeta, las fotos o los detalles de propiedades que ya aparecieron (aunque vengan hablando solo en texto), SIEMPRE llamá a `mostrar_propiedades` con sus IDs. Las tarjetas son lo único que tiene las fotos y el botón "Ver detalles": describirlas en texto no las reemplaza.
+8. Nunca inventes propiedades, precios, ubicaciones ni características que no vengan
+   del resultado de `buscar_propiedades` o `mostrar_propiedades`. Si una búsqueda no
+   devuelve resultados relevantes, decilo con naturalidad y ofrecé ajustar los
+   filtros.
 
-# REGLAS DE COMPORTAMIENTO
+9. Interpretá con libertad lo que el usuario quiere decir: sinónimos, expresiones
+   coloquiales, pedidos indirectos ("algo para una familia grande", "que no sea
+   caro"). No le exijas que use términos exactos ni una sintaxis particular.
 
-5. Solo si el usuario pide de manera explícita reiniciar la búsqueda desde cero, ignorá los filtros anteriores. Nunca digas que vas a reiniciar o empezar de nuevo si el usuario no lo pidió.
+10. Por defecto (por ejemplo, apenas mostrás los resultados de una búsqueda nueva, o
+   volvés a mostrar propiedades ya conocidas), tu texto debe ser breve (1-2 líneas):
+   NO repitas nombre, precio, dormitorios, baños ni otros datos que ya se ven en las
+   tarjetas. Alcanza con un comentario general y una pregunta de cómo seguir.
 
-6. Si el mensaje del usuario no tiene relación con buscar propiedades (ej. pide una receta, pregunta la hora, charla de otro tema), respondé amablemente que tu función es ayudar a buscar inmuebles en ArqView y redirigí la conversación hacia eso, sin llamar a ninguna herramienta.
+11. Si el usuario pide explícitamente un análisis más profundo sobre las propiedades
+   mostradas (ej. "dame un detalle de cada una", "qué recomendás", "pros y contras",
+   "cuál te parece mejor y por qué"), tu texto SÍ debe ser sustancial. Para cada
+   propiedad relevante, escribí algunas líneas con información que la tarjeta NO
+   muestra: para qué tipo de persona o situación es ideal, qué conviene chequear
+   antes de decidir (antigüedad, estado, zona, gastos, dudas para confirmar con la
+   inmobiliaria) y cómo se compara con las otras opciones. No repitas precio,
+   dormitorios o m². Mantené las tarjetas visibles (llamando a
+   `mostrar_propiedades`) salvo que el usuario pida no verlas.
 
-7. Si el usuario solo saluda, agradece o confirma algo sin pedir nada nuevo, respondé con cordialidad y preguntá cómo seguir (refinar la búsqueda actual o buscar en otro lado), sin llamar a ninguna herramienta.
+12. Para saber si tenemos propiedades disponibles en una localidad, llamá a
+    `obtener_valores_referencia`: ahí figura cuántas propiedades tiene cada una.
 
-9. Interpretá con libertad lo que el usuario quiere decir: sinónimos, expresiones coloquiales, pedidos indirectos ("algo para una familia grande", "que no sea caro"). No le exijas que use términos exactos ni una sintaxis particular.
+13. Usá siempre el mecanismo de llamadas a herramientas. NUNCA escribas el JSON de
+    una herramienta dentro de tu respuesta de texto al usuario.
 
-12. Para saber si tenemos propiedades disponibles en una localidad, llamá a `obtener_valores_referencia`: ahí figura cuántas propiedades tiene cada una.
+14. Apenas tengas tipo de propiedad Y localidad, llamá a `buscar_propiedades` EN ESE
+    MISMO TURNO. NO pidas precio, dormitorios ni otros detalles opcionales antes de
+    buscar: primero mostrá resultados y después ofrecé refinar. Si el usuario dice
+    "ningún otro detalle", "no", "dale" o "sí" ante tu pregunta, buscá directamente
+    con lo que ya sabés.
 
-# REGLAS DE FORMATO Y ESTILO
-
-10. Por defecto (por ejemplo, apenas mostrás los resultados de una búsqueda nueva, o volvés a mostrar propiedades ya conocidas), tu texto debe ser breve (1-2 líneas): NO repitas nombre, precio, dormitorios, baños ni otros datos que ya se ven en las tarjetas. Alcanza con un comentario general y una pregunta de cómo seguir.
-
-11. Si el usuario pide explícitamente un análisis más profundo sobre las propiedades mostradas (ej. "dame un detalle de cada una", "qué recomendás", "pros y contras", "cuál te parece mejor y por qué"), tu texto SÍ debe ser sustancial. Para cada propiedad relevante, escribí algunas líneas con información que la tarjeta NO muestra: para qué tipo de persona o situación es ideal, qué conviene chequear antes de decidir (antigüedad, estado, zona, gastos, dudas para confirmar con la inmobiliaria) y cómo se compara con las otras opciones. No repitas precio, dormitorios o m². Mantené las tarjetas visibles (llamando a `mostrar_propiedades`) salvo que el usuario pida no verlas.
+15. NUNCA anuncies que vas a buscar ("estoy buscando", "un momento", "espere") ni le
+    pidas al usuario que espere. Las búsquedas son instantáneas: no hay nada que
+    anunciar. Llamá a la herramienta y recién cuando tengas el resultado respondé.
 
 16. Hablale de "vos" (voseo rioplatense): "querés", "tenés", "mirá". Nunca de "tú".
 
-# PROHIBICIONES CRÍTICAS
+17. NUNCA le preguntes al usuario si quiere ver las propiedades ("¿te interesa
+    verlas?", "¿querés que te las muestre?") ni le avises que tenés propiedades sin
+    mostrarlas. Si ya hay tipo y localidad, buscá y las tarjetas aparecen solas.
+    Nunca digas que no encontraste algo sin haber llamado antes a la herramienta.
 
-8. Nunca inventes propiedades, precios, ubicaciones ni características que no vengan del resultado de `buscar_propiedades` o `mostrar_propiedades`. Si una búsqueda no devuelve resultados relevantes, decilo con naturalidad y ofrecé ajustar los filtros.
+18. Si el usuario pide varias localidades ("ambos lugares", "las dos", "en todas"),
+    pasá la lista completa en `localidades` en UNA sola llamada a `buscar_propiedades`.
 
-13. Usá siempre el mecanismo de llamadas a herramientas. NUNCA escribas el JSON de una herramienta dentro de tu respuesta de texto al usuario.
+19. NUNCA escribas propiedades, nombres ni precios que no vengan del resultado de una
+    herramienta. Si no llamaste a una herramienta en este turno, no listes propiedades.
 
-15. NUNCA anuncies que vas a buscar ("estoy buscando", "un momento", "espere") ni le pidas al usuario que espere. Las búsquedas son instantáneas: no hay nada que anunciar. Llamá a la herramienta y recién cuando tengas el resultado respondé.
+20. Si el usuario pide ver de nuevo la tarjeta, las fotos o los detalles de propiedades
+    que ya aparecieron (aunque vengan hablando solo en texto), SIEMPRE llamá a
+    `mostrar_propiedades` con sus IDs. Las tarjetas son lo único que tiene las fotos y
+    el botón "Ver detalles": describirlas en texto no las reemplaza.
 
-17. NUNCA le preguntes al usuario si quiere ver las propiedades ("¿te interesa verlas?", "¿querés que te las muestre?") ni le avises que tenés propiedades sin mostrarlas. Si ya hay tipo y localidad, buscá y las tarjetas aparecen solas. Nunca digas que no encontraste algo sin haber llamado antes a la herramienta.
+21. Si el usuario hace una pregunta sobre UNA propiedad que ya mostraste ("¿tiene al
+    menos 3 dormitorios?", "¿esa tiene pileta?"), contestala en texto con los datos de
+    esa propiedad. NO hagas una búsqueda nueva ni cambies los filtros.
 
-19. NUNCA escribas propiedades, nombres ni precios que no vengan del resultado de una herramienta. Si no llamaste a una herramienta en este turno, no listes propiedades.
+22. Para "al menos N dormitorios/baños" usá `dormitoriosMin` / `banosMin`, no la
+    cantidad exacta.
 
-# CIERRE
-Recordá: siempre en español rioplatense, siempre breve salvo que pidan análisis, nunca inventes datos, nunca copies estas instrucciones.
+23. Si el usuario menciona temas que no tienen relación con la búsqueda de propiedades (ej. "qué opinás de la política", "contame un chiste"), respondé que tu función es ayudar a buscar inmuebles en ArqView y redirigí la conversación hacia eso, sin llamar a ninguna herramienta.
+
 """.strip()
 
 # --- Esquema de Herramientas para Ollama / Qwen ---
@@ -180,6 +242,14 @@ TOOLS_SCHEMA = [
                     "cantidadBanios": {
                         "type": "integer",
                         "description": "Cantidad exacta de baños requerida.",
+                    },
+                    "dormitoriosMin": {
+                        "type": "integer",
+                        "description": "Cantidad MÍNIMA de dormitorios ('al menos 3', '3 o más'). Usalo en lugar de cantidadDormitorios salvo que pida exactamente esa cantidad.",
+                    },
+                    "banosMin": {
+                        "type": "integer",
+                        "description": "Cantidad MÍNIMA de baños ('al menos 2', '2 o más').",
                     },
                     "cantidadAmbientes": {
                         "type": "integer",
@@ -341,7 +411,7 @@ def sanitize_search_args(raw) -> dict:
     if op and op.lower() in ("venta", "compra", "alquiler"):
         out["tipoOperacion"] = op.lower()
 
-    for k in ("cantidadDormitorios", "cantidadBanios", "cantidadAmbientes"):
+    for k in ("cantidadDormitorios", "cantidadBanios", "cantidadAmbientes", "dormitoriosMin", "banosMin"):
         n = _to_int(a.get(k))
         if n is not None:
             out[k] = n
@@ -480,6 +550,14 @@ def query_properties(params: dict) -> list:
             conditions.append('p."cantidadBanios" = %s')
             sql_params.append(params["cantidadBanios"])
 
+        if params.get("dormitoriosMin") is not None:
+            conditions.append('p."cantidadDormitorios" >= %s')
+            sql_params.append(params["dormitoriosMin"])
+
+        if params.get("banosMin") is not None:
+            conditions.append('p."cantidadBanios" >= %s')
+            sql_params.append(params["banosMin"])
+
         if params.get("cantidadAmbientes") is not None:
             conditions.append('p."cantidadAmbientes" >= %s')
             sql_params.append(params["cantidadAmbientes"])
@@ -565,6 +643,16 @@ def query_properties(params: dict) -> list:
 def ejec_buscar_propiedades(session_id: str, raw_args) -> dict:
     try:
         args = sanitize_search_args(raw_args)
+        slot_op = ((SESSIONS[session_id].get("slots") or {}).get("operacion"))
+        arg_op = args.get("tipoOperacion")
+        if arg_op:
+            arg_op = "venta" if arg_op in ("compra", "venta") else arg_op
+            if not slot_op:
+                logger.warning(f"[{session_id}] tipoOperacion='{arg_op}' descartado: el usuario no lo indicó")
+                args.pop("tipoOperacion")
+            elif arg_op != slot_op:
+                logger.warning(f"[{session_id}] tipoOperacion='{arg_op}' corregido a '{slot_op}' (lo dicho por el usuario)")
+                args["tipoOperacion"] = slot_op
         logger.info(f"[{session_id}] buscar_propiedades con: {args}")
         raw_results = query_properties(args)
         full_results = [to_jsonable(dict(r)) for r in raw_results]
@@ -577,6 +665,7 @@ def ejec_buscar_propiedades(session_id: str, raw_args) -> dict:
                 known[pid] = prop
         session["last_search_ids"] = [p.get("id") for p in full_results if p.get("id") is not None]
         session["searched_this_turn"] = True
+        session["last_search_args"] = dict(args)
         session["last_search_pair"] = (
             [_norm(t) for t in args.get("tipoPropiedad", [])],
             [_norm(x) for x in args.get("localidades", [])],
@@ -600,10 +689,7 @@ def ejec_buscar_propiedades(session_id: str, raw_args) -> dict:
                 "banios": prop.get("cantidadBanios"),
                 "superficie": prop.get("superficie"),
                 "localidad": prop.get("localidad_nombre"),
-                "direccion": prop.get("direccion"),
                 "estilo": prop.get("estilo_arquitectonico_nombre"),
-                "tags_visuales": prop.get("tags_visuales_agregados"),
-                "visualizaciones": prop.get("tipo_visualizaciones_nombres"),
                 "coincide_contenido": (prop.get("rank") or 0) > 0,
                 "descripcion_breve": (prop.get("descripcion") or "")[:250],
             })
@@ -651,8 +737,19 @@ def ejec_mostrar_propiedades(session_id: str, raw_args) -> dict:
         result["nota"] = (
             "Las tarjetas YA son visibles para el usuario. Respondé en 1 o 2 líneas, hablando de "
             "vos, SIN listar propiedades, nombres ni precios (salvo que el usuario haya pedido "
-            "un análisis o detalle). Terminá preguntando cómo seguir."
+            "un análisis o detalle; en ese caso usá SOLO los datos de `detalle`). Si te preguntan "
+            "algo que no figura (inmobiliaria, contacto, visitas), decí que no tenés ese dato aquí "
+            "y no inventes. Terminá preguntando cómo seguir."
         )
+        if len(found) <= 3:
+            result["detalle"] = [{
+                "id": q.get("id"), "nombre": q.get("nombre"), "precio": q.get("precio"),
+                "tipoOperacion": q.get("tipoOperacion"), "direccion": q.get("direccion"),
+                "localidad": q.get("localidad_nombre"), "tipo": q.get("tipo_propiedad_nombre"),
+                "estilo": q.get("estilo_arquitectonico_nombre"), "dormitorios": q.get("cantidadDormitorios"),
+                "banios": q.get("cantidadBanios"), "ambientes": q.get("cantidadAmbientes"),
+                "superficie": q.get("superficie"), "descripcion": (q.get("descripcion") or "")[:800],
+            } for q in found]
     if missing:
         result["ids_no_encontrados"] = missing
     return result
@@ -748,6 +845,11 @@ CONVERSATIONAL_WORDS = {"gracia", "gracias", "perfecto", "excelente", "genial", 
                         "maravilla", "hola", "chau", "adios", "dale"}
 LOC_PREPOSITIONS = {"en", "de", "del", "a", "por", "cerca", "zona", "desde", "hacia", "para", "entre", "y", "o"}
 THANKS_RE = re.compile(r"\b(gracias|chau|adios|hasta luego|nos vemos)\b")
+# Palabras comunes del rubro: nunca deben "parecerse" a una localidad ("la plaza" ~ "La Plata").
+DOMAIN_WORDS = {"plaza", "plata", "centro", "parque", "costanera", "terminal", "escuela", "colegio", "hospital",
+                "shopping", "supermercado", "club", "banco", "universidad", "facultad", "ruta", "avenida", "calle",
+                "zona", "barrio", "patio", "jardin", "quincho", "garage", "cochera", "pileta", "piscina", "asador",
+                "paz", "pase", "plazo", "placa"}
 GENERIC_LOC_WORDS = {"general", "villa", "santa", "santo", "ciudad", "barrio", "puerto", "parque",
                      "capital", "pueblo", "colonia", "cuarto", "cuartos", "centro", "grande"}
 
@@ -774,8 +876,13 @@ def get_reference_cache() -> Optional[dict]:
     return data
 
 
-def detect_localidades(words: List[str], localidades: List[str]) -> List[str]:
-    """Todas las localidades de la base que aparecen (aun con typos) en las palabras dadas."""
+def detect_localidades(words: List[str], localidades: List[str], strict: bool = False) -> List[str]:
+    """
+    Todas las localidades de la base que aparecen (aun con typos) en las palabras dadas.
+    Los nombres cortos exigen más parecido, y las coincidencias aproximadas se descartan si la
+    ventana contiene palabras comunes del rubro ("plaza", "centro"...). strict=True sube el umbral
+    (se usa cuando ya hay una localidad vigente y no queremos cambiarla por un falso positivo).
+    """
     found = []
     for loc in localidades:
         loc_norm = _norm(loc)
@@ -787,8 +894,15 @@ def detect_localidades(words: List[str], localidades: List[str]) -> List[str]:
             if size < 1 or size > len(words):
                 continue
             for i in range(len(words) - size + 1):
-                best = max(best, difflib.SequenceMatcher(None, " ".join(words[i:i + size]), loc_norm).ratio())
-        if best >= 0.84:
+                window = words[i:i + size]
+                ratio = difflib.SequenceMatcher(None, " ".join(window), loc_norm).ratio()
+                if ratio < 0.999 and any(w in DOMAIN_WORDS for w in window):
+                    continue
+                best = max(best, ratio)
+        threshold = 0.84 if len(loc_norm) >= 11 else 0.9 if len(loc_norm) >= 9 else 0.93
+        if strict:
+            threshold = max(threshold, 0.92)
+        if best >= threshold:
             found.append(loc)
             continue
         # Respaldo: una palabra distintiva sola ("deheza" para "General Deheza"). Solo cuenta si
@@ -799,7 +913,7 @@ def detect_localidades(words: List[str], localidades: List[str]) -> List[str]:
             if len(lw) < 6 or lw in GENERIC_LOC_WORDS:
                 continue
             for i, w in enumerate(words):
-                if difflib.SequenceMatcher(None, w, lw).ratio() < 0.88:
+                if difflib.SequenceMatcher(None, w, lw).ratio() < 0.88 or (w in DOMAIN_WORDS and w != lw):
                     continue
                 prev_ok = i > 0 and words[i - 1] in LOC_PREPOSITIONS
                 if w in CONVERSATIONAL_WORDS and not prev_ok:
@@ -832,7 +946,7 @@ def detect_tipo(words: List[str], tipos: List[str]) -> Optional[str]:
 
 
 def detect_operacion(text_norm: str) -> Optional[str]:
-    if re.search(r"\balquil\w*", text_norm):
+    if re.search(r"\b(alquil\w*|arrend\w*|rentar)\b", text_norm):
         return "alquiler"
     if re.search(r"\b(compr(ar|arlo|arla|ando|a|o)|venta)\b", text_norm):
         return "venta"
@@ -842,29 +956,158 @@ def detect_operacion(text_norm: str) -> Optional[str]:
 BOTH_RE = re.compile(r"\b(ambos|ambas|los dos|las dos)\b")
 
 
+NUM_WORDS = {"un": 1, "una": 1, "uno": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5, "seis": 6}
+BUDGET_CUE_RE = re.compile(r"\b(hasta|maximo|tope|presupuesto|gastar|pagar|no mas de|menos de|como mucho|a lo sumo|dispongo|cuento con|limit\w*|alcanza\w*)\b")
+NO_BUDGET_RE = re.compile(r"\b(sin limite|no importa el precio|da igual el precio|cualquier precio|sin tope)\b")
+DORM_RE = re.compile(r"\b(\d+|un|una|uno|dos|tres|cuatro|cinco|seis)\s+(dormitorios?|habitaciones?|cuartos?|piezas?)\b")
+BANOS_RE = re.compile(r"\b(\d+|un|una|uno|dos|tres|cuatro)\s+banos?\b")
+
+
+_N = r"(\d+|un|una|uno|dos|tres|cuatro|cinco|seis)"
+_MIN = r"(?:al menos|como minimo|minimo|por lo menos|desde)"
+DORM_MIN_RES = [re.compile(rf"\b{_MIN}\s+{_N}\s+(?:dormitorios?|habitaciones?|cuartos?|piezas?)\b"),
+                re.compile(rf"\b{_N}\s+o\s+mas\s+(?:dormitorios?|habitaciones?|cuartos?|piezas?)\b")]
+BANOS_MIN_RES = [re.compile(rf"\b{_MIN}\s+{_N}\s+banos?\b"), re.compile(rf"\b{_N}\s+o\s+mas\s+banos?\b")]
+# Pregunta sobre UNA propiedad ya mostrada ("¿tiene al menos 3 dormitorios?"): no es un filtro nuevo.
+DORM_MORE_RE = re.compile(rf"\bmas de {_N}\s+(?:dormitorios?|habitaciones?|cuartos?|piezas?)\b")
+BANOS_MORE_RE = re.compile(rf"\bmas de {_N}\s+banos?\b")
+# (3) también preguntas de precio sobre la propiedad que se está mirando
+HAS_VERB_RE = re.compile(r"\b(tiene|tienen|posee|poseen|cuenta con|dispone|cuesta|cuestan|sale|salen|vale|valen|cuanto)\b")
+SEARCH_CUE_RE = re.compile(r"\b(busco|buscamos|buscando|quiero|queremos|necesito|necesitamos|mostrame|muestrame|"
+                           r"otra|otras|otros|alguna|alguno|algunas|algunos|opciones|hay|existe|existen)\b")
+
+
+def is_pointed_question(text: str) -> bool:
+    tn = _norm(text)
+    return bool(HAS_VERB_RE.search(tn)) and not SEARCH_CUE_RE.search(tn)
+
+
+UNIT_AFTER_RE = re.compile(r"\s*(m2|m²|mts?\b|metros|dorm|ambient|ba[ñn]o|cuarto|habitac|persona|a[ñn]o|piso|cuadra|km|%)")
+
+
+def _money_values(text: str) -> List[int]:
+    """Montos que aparecen en un texto: 400, 100000, 100.000, $100,000, 100 mil, 100k (≥ 50)."""
+    raw = (text or "").lower()
+    out = []
+    for mt in re.finditer(r"(\d[\d.,]*)\s*(mil|k)?\b", raw):
+        s, suffix = mt.group(1), mt.group(2)
+        if suffix and re.fullmatch(r"\d+[.,]\d{1,2}", s):
+            val = float(s.replace(",", ".")) * 1000
+        else:
+            digits = re.sub(r"\D", "", s)
+            if not digits:
+                continue
+            val = int(digits) * (1000 if suffix and int(digits) < 1000 else 1)
+        if val < 50:
+            continue
+        if not suffix and UNIT_AFTER_RE.match(raw, mt.end()):
+            continue  # "60 m2", "3 dormitorios", "2 personas": no es plata
+        out.append(int(val))
+    return out
+
+
+def _to_count(tok: str) -> Optional[int]:
+    return int(tok) if tok.isdigit() else NUM_WORDS.get(tok)
+
+
+def detect_filters(text: str) -> dict:
+    """Filtros numéricos dichos en ESTE mensaje: presupuesto, dormitorios y baños."""
+    tn = _norm(text)
+    out: Dict[str, Any] = {}
+    if BUDGET_CUE_RE.search(tn):
+        vals = _money_values(text)
+        if vals:
+            out["precioMax"] = float(max(vals))
+    for key_min, key_exact, min_res, more_re, exact_re in (
+        ("dormitoriosMin", "cantidadDormitorios", DORM_MIN_RES, DORM_MORE_RE, DORM_RE),
+        ("banosMin", "cantidadBanios", BANOS_MIN_RES, BANOS_MORE_RE, BANOS_RE),
+    ):
+        mo = more_re.search(tn)
+        if mo and _to_count(mo.group(1)):
+            out[key_min] = _to_count(mo.group(1)) + 1   # "más de 3" -> 4 o más
+            continue
+        mm = next((mt for mt in (r.search(tn) for r in min_res) if mt), None)
+        if mm and _to_count(mm.group(1)):
+            out[key_min] = _to_count(mm.group(1))      # "al menos 3" -> mínimo
+            continue
+        me = exact_re.search(tn)
+        if me and _to_count(me.group(1)):
+            out[key_exact] = _to_count(me.group(1))    # "3 dormitorios" -> exacto
+    return out
+
+
+def user_mentioned_amounts(session: dict) -> set:
+    """Montos que el propio usuario dijo (su presupuesto): no cuentan como precios inventados."""
+    out = set()
+    for x in session.get("messages", []):
+        c = str(x.get("content") or "")
+        if x.get("role") == "user" and not c.startswith("[Sistema]"):
+            out.update(_money_values(c))
+    return out
+
+
+def filters_pending(session: dict) -> bool:
+    """¿El usuario pidió en este mensaje un filtro que la última búsqueda no aplicó?"""
+    new = session.get("turn_filters") or {}
+    last = session.get("last_search_args") or {}
+    for k, v in new.items():
+        lv = last.get(k)
+        if lv is None or abs(float(lv) - float(v)) > 1e-6:
+            return True
+    return False
+
+
 def update_slots(session: dict, text: str, prev_assistant: str = "") -> None:
-    """Mantiene tipo/localidades/operación vigentes según lo que dijo el usuario (gana lo último)."""
+    """Mantiene tipo/localidades/operación/filtros vigentes según lo que dijo el usuario (gana lo último)."""
     slots = session.setdefault("slots", {})
     tn = _norm(text)
     if RESET_RE.search(tn):
         slots.clear()
         session["last_search_pair"] = None
+        session["last_search_args"] = None
+    filtros = slots.setdefault("filtros", {})
+    prev_ctx = (slots.get("tipo"), tuple(slots.get("localidades") or ()), slots.get("operacion"))
+
+    # Una pregunta sobre una propiedad puntual ("¿tiene al menos 3 dormitorios?") NO es un filtro nuevo.
+    new_filters = {} if is_pointed_question(text) else detect_filters(text)
+
     ref = get_reference_cache()
-    if not ref:
-        return
-    words = tn.split()
-    locs = detect_localidades(words, ref.get("localidades", []))
-    if not locs and BOTH_RE.search(tn) and prev_assistant:
-        # "¿Me mostrás en ambos lugares?": ambos = las localidades que mencionó el asistente.
-        locs = detect_localidades(_norm(prev_assistant).split(), ref.get("localidades", []))
-    tipo = detect_tipo(words, ref.get("tipos_propiedad", []))
-    op = detect_operacion(tn)
-    if locs:
-        slots["localidades"] = locs
-    if tipo:
-        slots["tipo"] = tipo
-    if op:
-        slots["operacion"] = op
+    if ref:
+        words = tn.split()
+        strict = bool(slots.get("localidades"))  # si ya hay localidad, cambiarla exige más certeza
+        locs = detect_localidades(words, ref.get("localidades", []), strict=strict)
+        if not locs and BOTH_RE.search(tn) and prev_assistant:
+            # "¿Me mostrás en ambos lugares?": ambos = las localidades que mencionó el asistente.
+            locs = detect_localidades(_norm(prev_assistant).split(), ref.get("localidades", []), strict=True)
+        tipo = detect_tipo(words, ref.get("tipos_propiedad", []))
+        op = detect_operacion(tn)
+        if locs:
+            slots["localidades"] = locs
+        if tipo:
+            slots["tipo"] = tipo
+        if op:
+            slots["operacion"] = op
+
+    # Si cambia de qué se está hablando (otro tipo, localidad u operación), los filtros viejos
+    # (p. ej. un presupuesto de alquiler) ya no aplican.
+    new_ctx = (slots.get("tipo"), tuple(slots.get("localidades") or ()), slots.get("operacion"))
+    changed = (
+        (bool(prev_ctx[0]) and new_ctx[0] != prev_ctx[0])                       # otro tipo
+        or (bool(prev_ctx[1]) and not set(prev_ctx[1]) <= set(new_ctx[1]))      # otra localidad (agregar una no cuenta)
+        or (bool(prev_ctx[2]) and new_ctx[2] != prev_ctx[2])                    # otra operación
+    )
+    session["context_changed"] = changed
+    if changed:
+        filtros.clear()
+    if NO_BUDGET_RE.search(tn):
+        filtros.pop("precioMax", None)
+    for k_exact, k_min in (("cantidadDormitorios", "dormitoriosMin"), ("cantidadBanios", "banosMin")):
+        if k_min in new_filters:
+            filtros.pop(k_exact, None)
+        if k_exact in new_filters:
+            filtros.pop(k_min, None)
+    filtros.update(new_filters)
+    session["turn_filters"] = new_filters
     logger.info(f"Slots vigentes: {slots}")
 
 
@@ -893,12 +1136,13 @@ def search_covers_slots(session: dict) -> bool:
 def build_slots_nudge(slots: dict) -> str:
     locs = ", ".join(f"'{x}'" for x in slots["localidades"])
     op = f", tipoOperacion='{slots['operacion']}'" if slots.get("operacion") else ""
+    extras = "".join(f", {k}={v:g}" for k, v in (slots.get("filtros") or {}).items())
     return (
         f"[Sistema] El usuario ya indicó tipo de propiedad ({slots['tipo']}) y localidades "
         f"({', '.join(slots['localidades'])}). No preguntes nada ni pidas permiso para mostrar: "
         f"llamá AHORA a buscar_propiedades con tipoPropiedad='{slots['tipo']}', "
-        f"localidades=[{locs}]{op} y los demás filtros vigentes de la conversación, en UNA sola "
-        "llamada. Las tarjetas se muestran solas apenas termine la búsqueda."
+        f"localidades=[{locs}]{op}{extras} y los demás filtros vigentes de la conversación, en UNA "
+        "sola llamada. Las tarjetas se muestran solas apenas termine la búsqueda."
     )
 
 
@@ -915,9 +1159,9 @@ SAFE_TEXT = (
 )
 
 
-def mentions_unknown_prices(text: str, known: Dict[Any, dict]) -> bool:
-    """True si el texto cita un precio que no corresponde a ninguna propiedad conocida (alucinación)."""
-    known_prices = set()
+def mentions_unknown_prices(text: str, known: Dict[Any, dict], allowed: Optional[set] = None) -> bool:
+    """True si el texto cita un precio que no es de ninguna propiedad conocida ni lo dijo el usuario."""
+    known_prices = set(allowed or ())
     for prop in known.values():
         try:
             if prop.get("precio") is not None:
@@ -936,10 +1180,18 @@ SHOW_CUE_RE = re.compile(r"\b(mostr\w*|muestr\w*|ver|veo|reenv\w*|mand\w*|pas(a|
 OBJ_CUE_RE = re.compile(r"\b(tarjetas?|fichas?|fotos?|imagenes|imagen|cards?)\b")
 AGAIN_CUE_RE = re.compile(r"\b(de nuevo|otra vez|nuevamente|arriba)\b")
 LOST_CUE_RE = re.compile(r"\b(perdi|perdio|no veo|no aparece|no me aparece|desaparec\w*)\b")
-ALL_CUE_RE = re.compile(r"\b(todas|todos|las propiedades|los inmuebles|las opciones|las tarjetas|las casas|los departamentos|los deptos)\b")
+# "todos los detalles de la propiedad" NO significa "todas las tarjetas"
+ALL_CUE_RE = re.compile(r"\b(?:todas|todos)\b(?!\s+(?:los\s+|las\s+)?(?:detalles?|datos|informacion|info))|"
+                        r"\b(?:las propiedades|los inmuebles|las opciones|las tarjetas|las casas|los departamentos|los deptos)\b")
 ORDINAL_RE = re.compile(r"\b(?:la|el)\s+(primer|segund|tercer|cuart|quint|sext|ultim)[ao]?\b")
 ORDINAL_IDX = {"primer": 0, "segund": 1, "tercer": 2, "cuart": 3, "quint": 4, "sext": 5, "ultim": -1}
 NAME_STOP = {"de", "la", "el", "con", "en", "y", "a", "un", "una", "los", "las", "del", "para", "por", "al", "sobre", "muy"}
+
+
+DETAIL_RE = re.compile(r"\b(detalles?|informacion|info|datos|descripcion)\b")
+THIS_PROP_RE = re.compile(r"\b(la propiedad|esa propiedad|esta propiedad|esa casa|esta casa|ese departamento|este departamento|"
+                          r"la casa|el departamento|esa|esta|ese|este)\b")
+NEW_SEARCH_RE = re.compile(r"\b(otra|otras|otro|otros|mas opciones|busco|buscar|buscame|nueva busqueda)\b")
 
 
 def wants_reshow(user_norm: str) -> bool:
@@ -947,7 +1199,8 @@ def wants_reshow(user_norm: str) -> bool:
     show = SHOW_CUE_RE.search(user_norm)
     again = AGAIN_CUE_RE.search(user_norm)
     lost = LOST_CUE_RE.search(user_norm)
-    return bool((obj and (show or again or lost)) or (show and again))
+    details = DETAIL_RE.search(user_norm) and THIS_PROP_RE.search(user_norm)
+    return bool((obj and (show or again or lost)) or (show and again) or details)
 
 
 def _name_tokens(name: str) -> List[str]:
@@ -1011,13 +1264,14 @@ def build_reshow_nudge(ids: List[Any], known: Dict[Any, dict]) -> str:
 
 
 NARRATION_RE = re.compile(
-    r"\b(estoy\s+(buscando|revisando|consultando|procesando)|buscando\s+\w+|"
+    r"\b(estoy\s+(buscando|revisando|consultando|procesando)|"
     r"voy\s+a\s+(buscar|consultar|revisar)|vamos\s+a\s+buscar|"
     r"un\s+momento|un\s+segundo|esper(a|á|e|ar|es)\b|dame\s+(un\s+)?(momento|segundo)|"
     r"ya\s+(te\s+)?(muestro|busco|traigo))",
     re.IGNORECASE,
 )
 MAX_NUDGES = 2
+MAX_SEARCH_NUDGES = int(os.getenv("MAX_SEARCH_NUDGES", "1"))  # reintentos antes de que busque el servidor
 NUDGE_TEXT = (
     "[Sistema] Anunciaste una búsqueda pero no llamaste a ninguna herramienta. "
     "Si ya tenés tipo de propiedad y localidad, llamá AHORA a buscar_propiedades con los "
@@ -1029,7 +1283,9 @@ NUDGE_TEXT = (
 
 def looks_like_narration(content: Optional[str]) -> bool:
     """True si el modelo anuncia una acción ('buscando...', 'un momento') en vez de ejecutarla."""
-    return bool(content) and bool(NARRATION_RE.search(content))
+    return bool(content) and (
+        bool(NARRATION_RE.search(content)) or bool(re.match(r"\s*buscando\b", content, re.IGNORECASE))
+    )
 
 
 LIST_LINE_RE = re.compile(r"^\s*(?:\d+[.)]|[-*•–])\s+")
@@ -1080,6 +1336,8 @@ def get_or_create_session(session_id: str) -> dict:
                 "last_search_pair": None,
                 "last_shown_ids": [],
                 "last_set_ids": [],
+                "last_search_args": None,
+                "turn_filters": {},
                 "searched_this_turn": False,
                 "auto_shown": False,
                 "lock": threading.Lock(),
@@ -1114,12 +1372,17 @@ def chat():
             update_slots(session, user_query, prev_assistant)
             session["messages"].append({"role": "user", "content": user_query})
             session["messages"] = trim_history(session["messages"])
+            un = _norm(user_query)
+            session["pinned_ids"] = (
+                resolve_reshow_ids(session, user_query)
+                if wants_reshow(un) and not NEW_SEARCH_RE.search(un) else []
+            )
 
             bot_response = ""
             nudges = 0
             extra: List[dict] = []  # mensajes temporales (no se guardan en el historial)
 
-            for turn in range(MAX_TURNS):
+            for turn in range(MAX_TURNS + MAX_NUDGES):  # los reintentos no gastan turnos de herramientas
                 response = ollama.chat(
                     model=OLLAMA_MODEL,
                     messages=session["messages"] + extra,
@@ -1145,35 +1408,45 @@ def chat():
                         slots.get("tipo") and slots.get("localidades")
                         and not THANKS_RE.search(_norm(user_query))
                         and not session.get("searched_this_turn")
-                        and not search_covers_slots(session)
+                        and (not search_covers_slots(session) or filters_pending(session))
                     )
-                    invented = no_action and mentions_unknown_prices(content, session.get("known_properties", {}))
+                    invented = no_action and mentions_unknown_prices(
+                        content, session.get("known_properties", {}), user_mentioned_amounts(session)
+                    )
                     narrating = no_action and looks_like_narration(content)
                     reshow_ids: List[Any] = []
                     if not session["last_results"] and wants_reshow(_norm(user_query)):
                         reshow_ids = resolve_reshow_ids(session, user_query)
                     reshow = bool(reshow_ids) and not must_search
-                    if must_search or reshow or invented or narrating:
-                        if nudges < MAX_NUDGES:
+                    can_force = bool(
+                        slots.get("tipo") and slots.get("localidades")
+                        and not THANKS_RE.search(_norm(user_query))
+                    )
+                    # Si inventa datos teniendo tipo y localidad, la solución es buscar de verdad.
+                    force_search = must_search or (invented and can_force and not reshow)
+                    if force_search or reshow or invented or narrating:
+                        limit = MAX_SEARCH_NUDGES if force_search else MAX_NUDGES
+                        if nudges < limit:
                             # Descartamos el texto del modelo (no entra al historial) y reintentamos.
                             nudges += 1
                             logger.warning(
                                 f"[{session_id}] Sin tool call (must_search={must_search}, reshow={reshow}, invented={invented}, "
-                                f"narrating={narrating}), reintento {nudges}/{MAX_NUDGES}: {content!r}"
+                                f"narrating={narrating}), reintento {nudges}/{limit}: {content!r}"
                             )
                             nudge = (
-                                build_slots_nudge(slots) if must_search
+                                build_slots_nudge(slots) if force_search
                                 else build_reshow_nudge(reshow_ids, session["known_properties"]) if reshow
                                 else NUDGE_INVENTED if invented
                                 else NUDGE_TEXT
                             )
                             extra = [{"role": "user", "content": nudge}]
                             continue
-                        if must_search:
+                        if force_search:
                             # El modelo no cooperó: ejecutamos la búsqueda desde el servidor.
                             forced_args = {"tipoPropiedad": slots["tipo"], "localidades": slots["localidades"]}
                             if slots.get("operacion"):
                                 forced_args["tipoOperacion"] = slots["operacion"]
+                            forced_args.update(slots.get("filtros") or {})
                             logger.warning(f"[{session_id}] Búsqueda forzada por el servidor: {forced_args}")
                             tool_calls = [{"function": {"name": "buscar_propiedades", "arguments": forced_args}}]
                             msg = {"role": "assistant", "content": "", "tool_calls": tool_calls}
@@ -1197,7 +1470,16 @@ def chat():
                     fn_args = call["function"].get("arguments")
                     logger.info(f"⚙️ [Turno {turn + 1}] {fn_name}({fn_args})")
 
-                    res_tool = run_tool(session_id, fn_name, fn_args)
+                    if (
+                        fn_name == "buscar_propiedades" and session.get("pinned_ids")
+                        and not session.get("context_changed") and not session.get("turn_filters")
+                    ):
+                        # Pide datos/fotos de una propiedad que ya conocemos: no hace falta otra búsqueda.
+                        logger.warning(f"[{session_id}] buscar_propiedades interceptada; se muestran {session['pinned_ids']}")
+                        res_tool = ejec_mostrar_propiedades(session_id, {"ids": session["pinned_ids"]})
+                        res_tool["aviso"] = "No hacía falta buscar: el usuario pide información de esa propiedad."
+                    else:
+                        res_tool = run_tool(session_id, fn_name, fn_args)
 
                     session["messages"].append({
                         "role": "tool",
